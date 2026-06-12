@@ -8,6 +8,8 @@ struct LoginFlowView: View {
     @State private var editingProfile: ServerProfile?
     @State private var connectingProfileID: UUID?
     @State private var quickConnectError: String?
+    /// 由父视图传入：RootView 正在尝试自动登录默认服务器。
+    var autoLoggingIn: Bool = false
 
     var body: some View {
         NavigationStack(path: $path) {

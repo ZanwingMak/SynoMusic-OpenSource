@@ -49,6 +49,8 @@ final class PlaybackEngine: ObservableObject {
     @Published var quality: AudioQuality = .original
     @Published private(set) var lyrics: [LyricLine] = []
     @Published private(set) var currentLyricIndex: Int? = nil
+    /// 用户可见的瞬时状态消息（错误、Demo 提示等）；nil 表示无消息。
+    @Published private(set) var statusMessage: String?
 
     /// 当前歌曲。
     var currentSong: Song? {
@@ -65,8 +67,13 @@ final class PlaybackEngine: ObservableObject {
     private var timeObserverToken: Any?
     private var endObserver: NSObjectProtocol?
     private var stallObserver: NSObjectProtocol?
+    private var failObserver: NSObjectProtocol?
     private var bag = Set<AnyCancellable>()
     private var originalQueue: [Song] = []   // 用于关闭随机时还原
+    private var demoTicker: Task<Void, Never>?
+    private var statusClearTask: Task<Void, Never>?
+    /// 是否正处于 Demo 模拟（apiClient 为 nil 但用户仍点歌的场景）。
+    private var isDemoPlayback: Bool = false
 
     init() {
         setupAudioSession()
@@ -112,6 +119,12 @@ final class PlaybackEngine: ObservableObject {
     }
 
     func resume() {
+        if isDemoPlayback {
+            isPlaying = true
+            startDemoTicker()
+            updateNowPlayingPlaybackState()
+            return
+        }
         // 若从未加载，尝试加载当前。
         if player.currentItem == nil { loadCurrent(autoPlay: true); return }
         player.play()
@@ -122,11 +135,14 @@ final class PlaybackEngine: ObservableObject {
     func stop() {
         player.pause()
         player.removeAllItems()
+        demoTicker?.cancel()
+        isDemoPlayback = false
         isPlaying = false
         queue = []
         currentIndex = -1
         currentTime = 0
         duration = 0
+        dismissStatus()
         clearNowPlaying()
     }
 
@@ -157,6 +173,11 @@ final class PlaybackEngine: ObservableObject {
     }
 
     func seek(to time: TimeInterval) {
+        if isDemoPlayback {
+            currentTime = max(0, min(time, duration))
+            updateNowPlayingPlaybackState()
+            return
+        }
         let target = CMTime(seconds: max(0, time), preferredTimescale: 600)
         player.seek(to: target) { [weak self] _ in
             guard let self else { return }
@@ -216,8 +237,18 @@ final class PlaybackEngine: ObservableObject {
     // MARK: 内部加载
 
     private func loadCurrent(autoPlay: Bool) {
-        guard let song = currentSong, let api = apiClient?.audioStation else { return }
-        guard let url = api.streamURL(songID: song.id, format: quality.streamFormat) else { return }
+        guard let song = currentSong else { return }
+        // 未连接服务器：进入 Demo 模拟，UI 跟着时间走但不发出声音
+        guard let api = apiClient?.audioStation else {
+            startDemoPlayback(for: song, autoPlay: autoPlay)
+            return
+        }
+        guard let url = api.streamURL(songID: song.id, format: quality.streamFormat) else {
+            setStatus("无法构造流地址：\(song.title)")
+            return
+        }
+        isDemoPlayback = false
+        demoTicker?.cancel()
 
         let item = AVPlayerItem(url: url)
         player.removeAllItems()
@@ -225,6 +256,7 @@ final class PlaybackEngine: ObservableObject {
 
         isBuffering = true
         observeStall(for: item)
+        observeFailure(for: item)
 
         if autoPlay {
             player.play()
@@ -235,6 +267,71 @@ final class PlaybackEngine: ObservableObject {
             await self.refreshDuration()
             await self.fetchLyricsAsync(for: song)
             self.updateNowPlayingMetadata()
+        }
+    }
+
+    /// Demo 模拟：UI 上时间线走，但不真正出声。
+    private func startDemoPlayback(for song: Song, autoPlay: Bool) {
+        isDemoPlayback = true
+        demoTicker?.cancel()
+        player.pause()
+        player.removeAllItems()
+        duration = song.duration > 0 ? song.duration : 240
+        currentTime = 0
+        isBuffering = false
+        isPlaying = autoPlay
+        setStatus("演示模式：尚未连接服务器，未真实播放。", persistent: true)
+        updateNowPlayingMetadata()
+        if autoPlay { startDemoTicker() }
+    }
+
+    private func startDemoTicker() {
+        demoTicker?.cancel()
+        demoTicker = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                await MainActor.run {
+                    guard let self else { return }
+                    guard self.isPlaying, self.isDemoPlayback else { return }
+                    let next = min(self.currentTime + 0.5, self.duration)
+                    self.currentTime = next
+                    self.updateCurrentLyric()
+                    self.updateNowPlayingPlaybackState()
+                    if next >= self.duration { self.next() }
+                }
+            }
+        }
+    }
+
+    /// 设置一条状态消息；`persistent=false` 时 4 秒后自动清除。
+    func setStatus(_ message: String?, persistent: Bool = false) {
+        statusMessage = message
+        statusClearTask?.cancel()
+        if let message, !persistent, !message.isEmpty {
+            statusClearTask = Task { [weak self] in
+                try? await Task.sleep(nanoseconds: 4_000_000_000)
+                await MainActor.run { self?.statusMessage = nil }
+            }
+        }
+    }
+
+    /// UI 关闭 Toast 时调用。
+    func dismissStatus() {
+        statusClearTask?.cancel()
+        statusMessage = nil
+    }
+
+    /// 监听 AVPlayerItem 失败事件，转成可见错误。
+    private func observeFailure(for item: AVPlayerItem) {
+        if let obs = failObserver { NotificationCenter.default.removeObserver(obs) }
+        failObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemFailedToPlayToEndTime,
+            object: item, queue: .main
+        ) { [weak self] note in
+            let err = note.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
+            Task { @MainActor in
+                self?.setStatus("播放中断：\(err?.localizedDescription ?? "未知错误")")
+            }
         }
     }
 

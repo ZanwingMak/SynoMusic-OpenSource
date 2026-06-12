@@ -13,12 +13,21 @@ final class ServerStore: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         load()
+        #if DEBUG
+        if DemoMode.isEnabled, profiles.isEmpty {
+            self.profiles = DemoMode.serverProfiles
+            self.activeProfileID = profiles.first?.id
+        }
+        #endif
     }
 
     var activeProfile: ServerProfile? {
         guard let id = activeProfileID else { return profiles.first }
         return profiles.first(where: { $0.id == id })
     }
+
+    /// 默认档案：与 activeProfile 同义；用于启动自动登录的语义入口。
+    var defaultProfile: ServerProfile? { activeProfile }
 
     /// 新增或更新档案。
     func upsert(_ profile: ServerProfile) {

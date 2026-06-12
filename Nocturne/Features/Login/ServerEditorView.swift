@@ -116,6 +116,8 @@ struct ServerEditorView: View {
                         SecureField("密码", text: $password)
                     }
                 }
+                .textContentType(.password)
+                .submitLabel(.done)
                 Button { passwordVisible.toggle() } label: {
                     Image(systemName: passwordVisible ? "eye.slash" : "eye")
                         .foregroundStyle(.secondary)
@@ -183,15 +185,20 @@ struct ServerEditorView: View {
 
     private func setupOnAppear() {
         portText = String(profile.port)
-        if isEditingExisting, let saved = serverStore.password(for: profile) {
-            password = saved
+        // 关键：新增模式下强制清空密码，避免系统 / SwiftUI 复用残留
+        if isEditingExisting {
+            password = serverStore.password(for: profile) ?? ""
+        } else {
+            password = ""
         }
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
         if let i = args.firstIndex(of: "-password"), i + 1 < args.count {
             password = args[i + 1]
         }
-        if args.contains("-autoconnect") {
+        // -autoconnect 在整个进程生命周期内只触发一次，防止反复打开 editor 都自动连接
+        if args.contains("-autoconnect"), !Self.autoconnectFired {
+            Self.autoconnectFired = true
             Task {
                 try? await Task.sleep(nanoseconds: 400_000_000)
                 await connectAndSave()
@@ -199,6 +206,11 @@ struct ServerEditorView: View {
         }
         #endif
     }
+
+    #if DEBUG
+    /// `-autoconnect` 触发节流：每个进程只在第一个 editor 出现时触发一次。
+    private static var autoconnectFired: Bool = false
+    #endif
 
     private func saveOnly() {
         var p = profile

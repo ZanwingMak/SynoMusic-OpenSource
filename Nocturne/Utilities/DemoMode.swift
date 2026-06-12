@@ -8,6 +8,26 @@ enum DemoMode {
         ProcessInfo.processInfo.arguments.contains("-demo")
     }
 
+    /// 预制服务器档案（仅用于设置页样式预览，不真实连接）。
+    static let serverProfiles: [ServerProfile] = [
+        ServerProfile(
+            id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            name: "家里的 DS220+",
+            scheme: .http,
+            host: "192.168.1.10",
+            port: 5000,
+            username: "alice"
+        ),
+        ServerProfile(
+            id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+            name: "公司 NAS",
+            scheme: .https,
+            host: "office.example.com",
+            port: 5001,
+            username: "alice.work"
+        )
+    ]
+
     /// 预制专辑。
     static let albums: [Album] = [
         Album(id: "a1", name: "夜航星", artist: "林俊杰", displayArtist: "林俊杰", year: 2023, songCount: 12),

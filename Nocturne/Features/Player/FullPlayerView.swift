@@ -11,7 +11,7 @@ struct FullPlayerView: View {
     @State private var dominantColor: Color = Color(red: 0.18, green: 0.10, blue: 0.25)
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             background
             VStack(spacing: Metrics.l) {
                 topBar
@@ -48,6 +48,31 @@ struct FullPlayerView: View {
             .padding(.top, Metrics.l)
         }
         .preferredColorScheme(.dark)
+        .overlay(alignment: .top) {
+            if let msg = playback.statusMessage {
+                HStack(spacing: Metrics.s) {
+                    Image(systemName: "info.circle.fill").foregroundStyle(.white)
+                    Text(msg)
+                        .font(.nocCaption)
+                        .foregroundStyle(.white)
+                        .lineLimit(3)
+                    Spacer(minLength: 4)
+                    Button {
+                        playback.dismissStatus()
+                    } label: {
+                        Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.white.opacity(0.8))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, Metrics.m)
+                .padding(.vertical, 10)
+                .background(Color.black.opacity(0.75), in: Capsule())
+                .padding(.horizontal, Metrics.m)
+                .padding(.top, 6)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: playback.statusMessage)
         .sheet(isPresented: $showQueue) {
             QueuePanel().presentationDetents([.medium, .large])
         }
