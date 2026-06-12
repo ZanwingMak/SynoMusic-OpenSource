@@ -6,6 +6,19 @@
 ## [Unreleased]
 
 ### 新增
+- **喜欢功能**：`FavoritesStore`（UserDefaults + 离线 Song 快照），全屏播放器右上角心形按钮按下变填充 + 弹性放大动画；浏览页/资料库首页新增「我喜欢的」入口，可全播/随机播。
+- **全球电台**：基于 radio-browser.info 公开 API，浏览页加「电台」分类。支持热门 / 12 个常用国家 / 10 个常用流派 pill 切换 + 关键词搜索；点击直接通过 `AVPlayer` 播放 stream。PlaybackEngine 现可识别 `song.id` 以 `radio:` 开头并走 `song.path` 直流，与 Audio Station 队列分流，不污染本地播放队列。
+- **定时停止**：播放器底部新增月亮按钮，弹出 `SleepTimerSheet`。支持 5/10/15/30/45/60/90 分钟倒计时与「本曲结束后停止」。激活时月亮图标变 accent 色 + 绿点角标。倒计时归零 / 曲终自动 `pause` 并 toast。
+- **随机歌单**：资料库首页新增渐变 ActionCard「随机歌单」，从全库通过 `SYNO.AudioStation.Song.list?sort_by=random` 抓 100 首；DSM 不支持 random 排序时客户端拉大 limit 后 `shuffled()` 兜底。
+
+### 体验
+- 文件夹里的单曲行整行可点击（`.contentShape(Rectangle())`）；按压时整行 0.98 缩放 + accent 浅色填充 + 触感反馈，不再只有文字才响应。
+- 迷你播放器改用 `.safeAreaInset(.bottom)` 实现，让 TabView 内所有滚动视图自动让出空间。移除各页面手工塞的 `Color.clear.frame(height: 100)` 底部占位。底部信息不再被悬浮播放条遮住。
+
+### AirPlay 验证
+- 已检查：`AVAudioSession.setCategory(.playback, options: [.allowAirPlay, .allowBluetoothA2DP])`、`Info.plist UIBackgroundModes: audio`、`AVRoutePickerView` 已嵌入全屏播放器、`MPRemoteCommandCenter` 注册了 play/pause/next/prev/seek。模拟器无法路由到真实 AirPlay 接收器（系统限制），实机上点击 AirPlay 按钮会弹出系统路由选择器，可选 HomePod / Apple TV / 其它 AirPlay 接收方。
+
+### 新增
 - DEBUG-only 演示模式：`-demo` 启动参数跳过登录并注入样本专辑/艺术家/歌曲；`-tab=browse|search|settings` 设定初始 Tab；`-fullplayer` 直接弹出全屏播放器；`-editor` 弹出服务器编辑器。便于设计审查与模拟器截图，不影响 Release。
 - 服务器编辑器内置密码 / OTP 字段与"连接并保存"按钮，一步完成档案创建 + 真实 SYNO.API.Auth Login。
 - 端口字段改为数字键盘 TextField，支持任意 1-65535；切换 HTTP/HTTPS 时若仍为默认端口才自动跟随。

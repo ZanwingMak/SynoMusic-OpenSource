@@ -25,7 +25,6 @@ struct AllArtistsView: View {
                         }
                     }
                     .padding(Metrics.l)
-                    Color.clear.frame(height: 100)
                 }
             }
         }

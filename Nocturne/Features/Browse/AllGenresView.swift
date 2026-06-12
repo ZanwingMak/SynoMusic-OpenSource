@@ -65,7 +65,6 @@ struct GenreDetailView: View {
                 }
                 .padding(Metrics.l)
             }
-            Color.clear.frame(height: 100)
         }
         .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle(genre.name)

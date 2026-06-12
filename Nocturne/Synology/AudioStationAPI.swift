@@ -119,6 +119,18 @@ final class AudioStationAPI: @unchecked Sendable {
 
     // MARK: 歌曲
 
+    /// 从全库随机抓 `count` 首歌；用于随机歌单。
+    /// 注意：Audio Station 的 sort_by=random 在不同 DSM 版本支持度不同，做兜底——
+    /// 先 random 取，失败回退到拉取较大 limit 然后客户端打乱。
+    func randomSongs(count: Int = 100) async throws -> [Song] {
+        do {
+            return try await listSongs(limit: count, sortBy: "random")
+        } catch {
+            let pool = try await listSongs(limit: max(count * 4, 400))
+            return Array(pool.shuffled().prefix(count))
+        }
+    }
+
     /// 列出歌曲，可按专辑/艺术家/流派限定。
     func listSongs(
         limit: Int = 500,

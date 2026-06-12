@@ -5,9 +5,11 @@ import AVKit
 struct FullPlayerView: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var session: AppSession
+    @EnvironmentObject private var favorites: FavoritesStore
     @Binding var isPresented: Bool
     @State private var showLyrics = false
     @State private var showQueue = false
+    @State private var showSleep = false
     @State private var dominantColor: Color = Color(red: 0.18, green: 0.10, blue: 0.25)
 
     var body: some View {
@@ -76,6 +78,15 @@ struct FullPlayerView: View {
         .sheet(isPresented: $showQueue) {
             QueuePanel().presentationDetents([.medium, .large])
         }
+        .sheet(isPresented: $showSleep) {
+            SleepTimerSheet(isPresented: $showSleep)
+                .presentationDetents([.medium])
+        }
+    }
+
+    /// 是否有任一定时停止策略已激活，决定月亮图标着色。
+    private var sleepActive: Bool {
+        playback.sleepRemaining != nil || playback.stopAtTrackEnd
     }
 
     // MARK: 子组件
@@ -126,18 +137,34 @@ struct FullPlayerView: View {
     }
 
     private var trackInfo: some View {
-        VStack(spacing: 6) {
-            Text(playback.currentSong?.title ?? "")
-                .font(.nocTitleHero)
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .padding(.horizontal, Metrics.l)
-            Text(playback.currentSong?.artist ?? "")
-                .font(.nocBody)
-                .foregroundStyle(.white.opacity(0.75))
-                .lineLimit(1)
+        HStack(alignment: .center, spacing: Metrics.m) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(playback.currentSong?.title ?? "")
+                    .font(.nocTitleHero)
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+                Text(playback.currentSong?.artist ?? "")
+                    .font(.nocBody)
+                    .foregroundStyle(.white.opacity(0.75))
+                    .lineLimit(1)
+            }
+            Spacer()
+            if let song = playback.currentSong {
+                Button {
+                    Haptics.soft()
+                    favorites.toggle(song)
+                } label: {
+                    Image(systemName: favorites.isFavorite(song) ? "heart.fill" : "heart")
+                        .font(.system(size: 26, weight: .semibold))
+                        .foregroundStyle(favorites.isFavorite(song) ? Color(red: 1, green: 0.32, blue: 0.45) : .white.opacity(0.75))
+                        .scaleEffect(favorites.isFavorite(song) ? 1.1 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.55), value: favorites.isFavorite(song))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(favorites.isFavorite(song) ? "取消喜欢" : "喜欢")
+            }
         }
+        .padding(.horizontal, Metrics.l)
     }
 
     private var controlBar: some View {
@@ -167,6 +194,16 @@ struct FullPlayerView: View {
             Button { playback.toggleShuffle() } label: {
                 Image(systemName: "shuffle")
                     .foregroundStyle(playback.isShuffling ? Theme.accent : .white.opacity(0.75))
+            }
+            Spacer()
+            Button { showSleep = true } label: {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "moon.zzz")
+                        .foregroundStyle(sleepActive ? Theme.accent : .white.opacity(0.85))
+                    if sleepActive {
+                        Circle().fill(Color.green).frame(width: 7, height: 7).offset(x: 4, y: -3)
+                    }
+                }
             }
             Spacer()
             Button { withAnimation { showLyrics.toggle() } } label: {

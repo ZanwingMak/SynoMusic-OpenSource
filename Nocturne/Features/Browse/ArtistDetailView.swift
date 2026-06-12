@@ -28,7 +28,6 @@ struct ArtistDetailView: View {
                         }
                     }
                 }
-                Color.clear.frame(height: 100)
             }
             .padding(.horizontal, Metrics.l)
         }

@@ -25,7 +25,6 @@ struct AlbumDetailView: View {
                         playback.play(queue: songs, startAt: idx)
                     }
                 }
-                Color.clear.frame(height: 100)
             }
             .padding(.horizontal, Metrics.l)
         }

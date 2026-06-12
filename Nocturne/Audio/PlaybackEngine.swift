@@ -51,6 +51,10 @@ final class PlaybackEngine: ObservableObject {
     @Published private(set) var currentLyricIndex: Int? = nil
     /// 用户可见的瞬时状态消息（错误、Demo 提示等）；nil 表示无消息。
     @Published private(set) var statusMessage: String?
+    /// 睡眠定时剩余秒数；nil 表示未启用。
+    @Published private(set) var sleepRemaining: TimeInterval?
+    /// 是否在"本曲结束后停止"模式。
+    @Published private(set) var stopAtTrackEnd: Bool = false
 
     /// 当前歌曲。
     var currentSong: Song? {
@@ -74,6 +78,7 @@ final class PlaybackEngine: ObservableObject {
     private var originalQueue: [Song] = []   // 用于关闭随机时还原
     private var demoTicker: Task<Void, Never>?
     private var statusClearTask: Task<Void, Never>?
+    private var sleepTask: Task<Void, Never>?
     /// 是否正处于 Demo 模拟（apiClient 为 nil 但用户仍点歌的场景）。
     private var isDemoPlayback: Bool = false
 
@@ -246,12 +251,19 @@ final class PlaybackEngine: ObservableObject {
 
     private func loadCurrent(autoPlay: Bool) {
         guard let song = currentSong else { return }
-        // 未连接服务器：进入 Demo 模拟，UI 跟着时间走但不发出声音
-        guard let api = apiClient?.audioStation else {
+        // 1. 电台：song.id 以 "radio:" 开头，直接用 song.path 作为 stream URL
+        // 2. 已登录：走 Audio Station streamURL
+        // 3. 未登录：走 Demo 模拟
+        let url: URL?
+        if song.id.hasPrefix("radio:"), let path = song.path {
+            url = URL(string: path)
+        } else if let api = apiClient?.audioStation {
+            url = api.streamURL(songID: song.id, format: quality.streamFormat)
+        } else {
             startDemoPlayback(for: song, autoPlay: autoPlay)
             return
         }
-        guard let url = api.streamURL(songID: song.id, format: quality.streamFormat) else {
+        guard let url else {
             setStatus("无法构造流地址：\(song.title)")
             return
         }
@@ -309,6 +321,44 @@ final class PlaybackEngine: ObservableObject {
                 }
             }
         }
+    }
+
+    // MARK: 定时停止
+
+    /// 在 `interval` 秒后自动暂停；nil 取消。
+    func setSleepTimer(_ interval: TimeInterval?) {
+        sleepTask?.cancel()
+        stopAtTrackEnd = false
+        guard let interval, interval > 0 else {
+            sleepRemaining = nil
+            return
+        }
+        sleepRemaining = interval
+        let deadline = Date().addingTimeInterval(interval)
+        sleepTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                let remain = deadline.timeIntervalSinceNow
+                await MainActor.run {
+                    guard let self else { return }
+                    if remain <= 0 {
+                        self.sleepRemaining = nil
+                        self.pause()
+                        self.setStatus("已按定时器暂停播放")
+                    } else {
+                        self.sleepRemaining = remain
+                    }
+                }
+                if remain <= 0 { break }
+            }
+        }
+    }
+
+    /// 标记"播放完当前曲目后停止"。曲目结束时由 endObserver 检查。
+    func enableStopAtTrackEnd() {
+        sleepTask?.cancel()
+        sleepRemaining = nil
+        stopAtTrackEnd = true
     }
 
     /// 设置一条状态消息；`persistent=false` 时 4 秒后自动清除。
@@ -419,6 +469,12 @@ final class PlaybackEngine: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor in
                 guard let self else { return }
+                if self.stopAtTrackEnd {
+                    self.stopAtTrackEnd = false
+                    self.pause()
+                    self.setStatus("已在本曲结束时停止")
+                    return
+                }
                 if self.repeatMode == .one {
                     self.seek(to: 0)
                     self.player.play()

@@ -24,14 +24,14 @@ struct FolderBrowseView: View {
                         if node.type == "folder" {
                             NavigationLink(value: BrowseRoute.folder(node)) {
                                 FolderRow(node: node)
+                                    .contentShape(Rectangle())
                             }
                         } else {
-                            Button {
+                            FolderSongRow(node: node) {
+                                Haptics.tap()
                                 Task { await playFile(node) }
-                            } label: {
-                                FolderRow(node: node)
                             }
-                            .buttonStyle(.plain)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                         }
                     }
                 }
@@ -79,7 +79,36 @@ private struct FolderRow: View {
                 .foregroundStyle(node.type == "folder" ? Theme.accent : .secondary)
                 .frame(width: 24)
             Text(node.title).font(.nocBody).lineLimit(1)
+            Spacer(minLength: 0)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// 文件夹里的单曲行：整行可点击 + 按压视觉反馈。
+private struct FolderSongRow: View {
+    let node: FolderNode
+    let onTap: () -> Void
+    @State private var pressed: Bool = false
+
+    var body: some View {
+        Button(action: onTap) {
+            FolderRow(node: node)
+                .padding(.horizontal, 4)
+                .contentShape(Rectangle())
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(pressed ? Theme.accent.opacity(0.10) : Color.clear)
+                )
+                .scaleEffect(pressed ? 0.98 : 1)
+                .animation(.spring(response: 0.25, dampingFraction: 0.7), value: pressed)
+        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in if !pressed { pressed = true } }
+                .onEnded { _ in pressed = false }
+        )
     }
 }

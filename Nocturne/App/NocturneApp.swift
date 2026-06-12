@@ -9,6 +9,8 @@ struct NocturneApp: App {
     @StateObject private var playback = PlaybackEngine()
     /// 当前会话：保存登录后的 Synology 客户端句柄；未登录时为 nil。
     @StateObject private var session = AppSession()
+    /// 喜欢的歌曲仓库（本地 UserDefaults，含离线快照）。
+    @StateObject private var favorites = FavoritesStore()
 
     var body: some Scene {
         WindowGroup {
@@ -16,6 +18,7 @@ struct NocturneApp: App {
                 .environmentObject(serverStore)
                 .environmentObject(playback)
                 .environmentObject(session)
+                .environmentObject(favorites)
                 .tint(Theme.accent)
                 .preferredColorScheme(nil)
         }

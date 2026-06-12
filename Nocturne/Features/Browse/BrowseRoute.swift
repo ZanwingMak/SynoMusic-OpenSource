@@ -12,6 +12,8 @@ enum BrowseRoute: Hashable {
     case allPlaylists
     case allGenres
     case allFolders
+    case radio
+    case favorites
 }
 
 extension BrowseRoute {
@@ -29,6 +31,8 @@ extension BrowseRoute {
         case .playlist(let playlist): PlaylistDetailView(playlist: playlist)
         case .genre(let genre): GenreDetailView(genre: genre)
         case .folder(let folder): FolderBrowseView(folder: folder)
+        case .radio: RadioBrowseView()
+        case .favorites: FavoritesView()
         }
     }
 }

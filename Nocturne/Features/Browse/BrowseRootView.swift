@@ -5,6 +5,8 @@ struct BrowseRootView: View {
     @EnvironmentObject private var session: AppSession
 
     private let categories: [(label: String, icon: String, route: BrowseRoute, gradient: [Color])] = [
+        ("电台", "antenna.radiowaves.left.and.right", .radio, [Color(red: 0.95, green: 0.42, blue: 0.5), Color(red: 0.55, green: 0.2, blue: 0.85)]),
+        ("我喜欢的", "heart.fill", .favorites, [Color(red: 0.99, green: 0.4, blue: 0.55), Color(red: 0.85, green: 0.15, blue: 0.45)]),
         ("专辑", "square.stack.fill", .allAlbums, [Color(red: 0.95, green: 0.42, blue: 0.65), Color(red: 0.7, green: 0.3, blue: 0.9)]),
         ("艺术家", "person.2.fill", .allArtists, [Color(red: 0.4, green: 0.5, blue: 0.95), Color(red: 0.2, green: 0.3, blue: 0.7)]),
         ("播放列表", "music.note.list", .allPlaylists, [Color(red: 0.95, green: 0.6, blue: 0.3), Color(red: 0.85, green: 0.3, blue: 0.3)]),
@@ -23,7 +25,6 @@ struct BrowseRootView: View {
                 }
             }
             .padding(Metrics.l)
-            Color.clear.frame(height: 100)
         }
         .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle("浏览")
