@@ -51,8 +51,13 @@ struct FolderBrowseView: View {
     }
 
     private func playFile(_ node: FolderNode) async {
-        guard let songID = node.songID else { return }
-        // 仅拿一首歌的最小信息播放，更详细的元数据让 NowPlaying 自动补全
+        // 兜底：folder.cgi 在不同 DSM 版本上对 file 节点要么把 song_id 放 additional 里，
+        // 要么直接把 node.id 当 song_id。两种都试。
+        let songID = node.songID ?? node.id
+        guard !songID.isEmpty else {
+            playback.setStatus("无法播放：未能解析歌曲 ID")
+            return
+        }
         let song = Song(
             id: songID,
             title: node.title,

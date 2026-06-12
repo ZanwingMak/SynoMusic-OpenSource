@@ -68,7 +68,8 @@ final class PlaybackEngine: ObservableObject {
     private var endObserver: NSObjectProtocol?
     private var stallObserver: NSObjectProtocol?
     private var failObserver: NSObjectProtocol?
-    private var statusObservation: NSKeyValueObservation?
+    /// 当前曲目的 status 订阅；切歌时取消。
+    private var statusCancel: AnyCancellable?
     private var bag = Set<AnyCancellable>()
     private var originalQueue: [Song] = []   // 用于关闭随机时还原
     private var demoTicker: Task<Void, Never>?
@@ -185,9 +186,11 @@ final class PlaybackEngine: ObservableObject {
         }
         let target = CMTime(seconds: max(0, time), preferredTimescale: 600)
         player.seek(to: target) { [weak self] _ in
-            guard let self else { return }
-            self.currentTime = time
-            self.updateNowPlayingPlaybackState()
+            Task { @MainActor in
+                guard let self else { return }
+                self.currentTime = time
+                self.updateNowPlayingPlaybackState()
+            }
         }
     }
 
@@ -327,6 +330,8 @@ final class PlaybackEngine: ObservableObject {
     }
 
     /// 监听 AVPlayerItem 失败事件，转成可见错误。
+    /// 注意：必须用 Combine + `receive(on: .main)` 把回调引回主线程，
+    /// 否则 KVO 在非主线程触发 `@MainActor` 隔离检查会让 Swift 6 直接 SIGTRAP。
     private func observeFailure(for item: AVPlayerItem) {
         if let obs = failObserver { NotificationCenter.default.removeObserver(obs) }
         failObserver = NotificationCenter.default.addObserver(
@@ -338,17 +343,17 @@ final class PlaybackEngine: ObservableObject {
                 self?.setStatus("播放中断：\(err?.localizedDescription ?? "未知错误")")
             }
         }
-        // KVO item.status：在初始解析阶段就能捕获 .failed
-        statusObservation?.invalidate()
-        statusObservation = item.observe(\.status, options: [.new]) { [weak self] item, _ in
-            Task { @MainActor in
+        statusCancel?.cancel()
+        statusCancel = item.publisher(for: \.status, options: [.new])
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self, weak item] status in
                 guard let self else { return }
-                switch item.status {
+                switch status {
                 case .readyToPlay:
                     self.isBuffering = false
                     self.dismissStatus()
                 case .failed:
-                    let reason = item.error?.localizedDescription ?? "未知错误"
+                    let reason = item?.error?.localizedDescription ?? "未知错误"
                     self.setStatus("无法播放：\(reason)")
                     self.isBuffering = false
                     self.isPlaying = false
@@ -356,7 +361,6 @@ final class PlaybackEngine: ObservableObject {
                     break
                 }
             }
-        }
     }
 
     private func refreshDuration() async {
@@ -397,10 +401,13 @@ final class PlaybackEngine: ObservableObject {
     private func setupTimeObserver() {
         let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            guard let self else { return }
-            self.currentTime = CMTimeGetSeconds(time)
-            self.updateCurrentLyric()
-            self.updateNowPlayingPlaybackState()
+            // queue: .main 保证在 main queue 上，但 Swift 6 严格并发要求显式 actor hop。
+            Task { @MainActor in
+                guard let self else { return }
+                self.currentTime = CMTimeGetSeconds(time)
+                self.updateCurrentLyric()
+                self.updateNowPlayingPlaybackState()
+            }
         }
     }
 
@@ -473,17 +480,17 @@ final class PlaybackEngine: ObservableObject {
         ]
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
 
-        // 异步抓封面，避免阻塞主线程；用任务隔离。
+        // 异步抓封面：URLSession 下载 hop 到 main 再合并到 NowPlaying。
+        // 全部在 @MainActor 上做读写，规避 Sendable 字典的跨 actor 捕获问题。
         if let api = apiClient?.audioStation, let url = api.songCoverURL(songID: song.id) {
-            Task {
-                if let (data, _) = try? await URLSession.shared.data(from: url),
-                   let image = UIImage(data: data) {
-                    let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
-                    info[MPMediaItemPropertyArtwork] = artwork
-                    await MainActor.run {
-                        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
-                    }
-                }
+            Task { @MainActor [weak self] in
+                guard self != nil else { return }
+                guard let (data, _) = try? await URLSession.shared.data(from: url) else { return }
+                guard let image = UIImage(data: data) else { return }
+                var current = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+                let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+                current[MPMediaItemPropertyArtwork] = artwork
+                MPNowPlayingInfoCenter.default().nowPlayingInfo = current
             }
         }
     }

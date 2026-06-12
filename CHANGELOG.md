@@ -43,7 +43,13 @@
 - 「连接并保存」按钮的 loading 圈不再贴最左：与「正在连接...」文本一起在按钮中央居中显示。
 - 「连接并保存」失败也持久化基础配置：进入流程第一步立即 `upsert(p)`，登录成功后再追加 `setActive` / `savePassword` / `signIn`。这样即便密码错、网络断、402 权限不足，新增的服务器条目也会立即出现在「设置 → 服务器」列表里，可后续编辑重试，不再"什么都没留下"。错误 Alert 会明确告知"配置已保存到列表"。
 - **首页点击专辑/艺术家无反应**：只有「浏览」Tab 的 `NavigationStack` 注册了 `BrowseRoute` 的 `navigationDestination`，其它 Tab（资料库 / 搜索）里同名 `NavigationLink(value:)` 因此全部静默失败。现把 destination 集中到 `BrowseRoute.destination`，并以 `View.browseRoutes()` modifier 在每个 Tab 的 NavigationStack 上 attach 一次。资料库 / 浏览 / 搜索 三 Tab 现在都能从专辑卡片正确进入专辑详情。
-- 点歌后无反馈：`playback.play(queue:startAt:)` 立刻设置 "正在加载：{歌名}" toast；KVO 监听 `AVPlayerItem.status`，`.readyToPlay` 时清除 toast、`.failed` 时把 `item.error.localizedDescription` 写到 toast 让用户看到原因（HTTPS 证书、流不可达、权限等）。
+- 点歌后无反馈：`playback.play(queue:startAt:)` 立刻设置 "正在加载：{歌名}" toast；监听 `AVPlayerItem.status`，`.readyToPlay` 时清除 toast、`.failed` 时把 `item.error.localizedDescription` 写到 toast 让用户看到原因（HTTPS 证书、流不可达、权限等）。
+- **点专辑播放按钮闪退（SIGTRAP）**：根因是 `item.observe(\.status)` 的 KVO 闭包在非主线程触发时访问 `@MainActor` 的 `PlaybackEngine`，被 Swift 6 严格并发的 `swift_task_checkIsolated` 主动 trap。改用 Combine：`item.publisher(for: \.status).receive(on: DispatchQueue.main).sink`，回调强制在 main 上，并把 `[weak self, weak item]` 同时弱捕获，杜绝隔离违规。
+- 同步修了其它三处隐患：`addPeriodicTimeObserver`、`player.seek(to:)` 完成回调、`updateNowPlayingMetadata` 内的封面下载 Task — 全部改为显式 `Task { @MainActor in ... }` 跳板。`BrowseRoute.destination` 标注 `@MainActor`。
+- **浏览 → 文件夹 → 文件点了没反应**：`folder.cgi` 在不同 DSM 版本上对 `type=file` 节点要么把 `song_id` 放 `additional` 里，要么直接拿 `id` 当 song id。`playFile` 改成 `node.songID ?? node.id` 兜底，并在 songID 为空时显式 toast 提示，不再静默吞掉点击。
+
+### 测试
+- 新增 `AlbumPlaySmokeTest.test_fullPlayerLaunchDoesNotCrash`：launch `-demo -fullplayer` 验证 KVO/timeObserver 转 2 秒后进程仍处于 `runningForeground`，回归测试上面那次 KVO 闪退。
 
 ## [1.0.0] - 2026-06-12
 

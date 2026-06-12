@@ -16,7 +16,7 @@ enum BrowseRoute: Hashable {
 
 extension BrowseRoute {
     /// 路由到目的视图；集中维护，让多个 NavigationStack 共用同一份 destination。
-    @ViewBuilder
+    @MainActor @ViewBuilder
     var destination: some View {
         switch self {
         case .allAlbums: AllAlbumsView()
