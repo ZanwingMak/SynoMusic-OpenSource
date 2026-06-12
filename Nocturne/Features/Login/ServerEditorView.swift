@@ -20,6 +20,15 @@ struct ServerEditorView: View {
     @State private var isConnecting: Bool = false
     @State private var error: String?
 
+    /// 显示用 loading：真实连接中或 DEBUG `-fakeloading` 启动参数。
+    private var loadingShown: Bool {
+        #if DEBUG
+        return isConnecting || ProcessInfo.processInfo.arguments.contains("-fakeloading")
+        #else
+        return isConnecting
+        #endif
+    }
+
     /// 编辑模式：表单标题与额外按钮以此判定。
     private var isEditingExisting: Bool {
         serverStore.profiles.contains(where: { $0.id == profile.id })
@@ -135,12 +144,16 @@ struct ServerEditorView: View {
             Button {
                 Task { await connectAndSave() }
             } label: {
-                HStack {
-                    if isConnecting {
-                        ProgressView().tint(.white)
+                HStack(spacing: 8) {
+                    Spacer(minLength: 0)
+                    if loadingShown {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .tint(.white)
+                            .scaleEffect(0.9)
                     }
-                    Text(isConnecting ? "正在连接..." : "连接并保存")
-                        .frame(maxWidth: .infinity)
+                    Text(loadingShown ? "正在连接..." : "连接并保存")
+                    Spacer(minLength: 0)
                 }
             }
             .buttonStyle(PrimaryButtonStyle())
@@ -223,7 +236,9 @@ struct ServerEditorView: View {
         dismiss()
     }
 
-    /// 真实发起 SYNO.API.Auth Login 请求；成功后落库 + 登录。
+    /// 真实发起 SYNO.API.Auth Login 请求；
+    /// 进入流程立即把基础配置 upsert 到 store，保证无论连接成败列表都能看到该条目；
+    /// 登录成功后再追加 setActive、savePassword 与 signIn。
     private func connectAndSave() async {
         guard canSubmit else { return }
         isConnecting = true
@@ -232,6 +247,9 @@ struct ServerEditorView: View {
 
         var p = profile
         if p.name.trimmingCharacters(in: .whitespaces).isEmpty { p.name = p.host }
+
+        // 第一步：立刻持久化基础配置（不含密码、不设默认），避免"连不上就什么都没留下"。
+        serverStore.upsert(p)
 
         let client = SynologyClient(profile: p)
         do {
@@ -246,14 +264,14 @@ struct ServerEditorView: View {
             Haptics.success()
             dismiss()
         } catch let SynologyError.api(code, _) where code == 403 {
-            self.error = "账号启用了两步验证。请展开「高级」填入 6 位 OTP 代码后再试。"
+            self.error = "账号启用了两步验证。请展开「高级」填入 6 位 OTP 代码后再试。配置已保存到「服务器」列表，可稍后重试。"
             advancedExpanded = true
             Haptics.warning()
         } catch let err as SynologyError {
-            self.error = err.errorDescription
+            self.error = (err.errorDescription ?? "连接失败") + "\n\n配置已保存到「服务器」列表，可在列表中点 ⓘ 修改后重试。"
             Haptics.warning()
         } catch {
-            self.error = error.localizedDescription
+            self.error = error.localizedDescription + "\n\n配置已保存到「服务器」列表。"
             Haptics.warning()
         }
     }
