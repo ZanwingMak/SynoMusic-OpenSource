@@ -5,7 +5,15 @@ struct MainShellView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
     @Binding var showFullPlayer: Bool
-    @State private var selectedTab: Tab = .library
+    @State private var selectedTab: Tab = {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("-tab=browse") { return .browse }
+        if args.contains("-tab=search") { return .search }
+        if args.contains("-tab=settings") { return .settings }
+        #endif
+        return .library
+    }()
 
     enum Tab: Hashable {
         case library, browse, search, settings

@@ -13,6 +13,15 @@ final class LibraryHomeViewModel: ObservableObject {
 
     /// 拉取首页数据；并发抓取，提升首屏速度。
     func load(client: SynologyClient?, force: Bool = false) async {
+        #if DEBUG
+        if DemoMode.isEnabled {
+            self.recentAlbums = Array(DemoMode.albums.prefix(8))
+            self.albums = DemoMode.albums
+            self.artists = DemoMode.artists
+            self.loaded = true
+            return
+        }
+        #endif
         guard let client else { return }
         if loaded && !force { return }
         isLoading = true

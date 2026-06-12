@@ -5,6 +5,9 @@
 
 ## [Unreleased]
 
+### 新增
+- DEBUG-only 演示模式：`-demo` 启动参数跳过登录并注入样本专辑/艺术家/歌曲；`-tab=browse|search|settings` 设定初始 Tab；`-fullplayer` 直接弹出全屏播放器。便于设计审查与模拟器截图，不影响 Release。
+
 ## [1.0.0] - 2026-06-12
 
 首个公开版本。
