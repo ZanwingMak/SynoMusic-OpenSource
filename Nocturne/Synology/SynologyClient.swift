@@ -102,7 +102,8 @@ final class SynologyClient: @unchecked Sendable, Equatable {
             return payload
         }
         if let err = envelope.error {
-            let isAuth = path.hasPrefix("auth.cgi")
+            // 通过 query item 中 api=SYNO.API.Auth 判断是否走认证码表
+            let isAuth = query.contains(where: { $0.name == "api" && $0.value == "SYNO.API.Auth" })
             let msg = isAuth ? SynologyError.describe(authCode: err.code) : SynologyError.describe(commonCode: err.code)
             if err.code == 106 || err.code == 107 || err.code == 119 {
                 // session 失效
@@ -132,7 +133,8 @@ final class SynologyClient: @unchecked Sendable, Equatable {
         if let otp, !otp.isEmpty {
             items.append(.init(name: "otp_code", value: otp))
         }
-        let payload: LoginData = try await request(path: "auth.cgi", query: items, as: LoginData.self)
+        // DSM 7+ 推荐 entry.cgi；entry.cgi 同时兼容 DSM 6。
+        let payload: LoginData = try await request(path: "entry.cgi", query: items, as: LoginData.self)
         guard let sid = payload.sid else { throw SynologyError.notAuthenticated }
         self.sid = sid
         return sid
@@ -146,7 +148,7 @@ final class SynologyClient: @unchecked Sendable, Equatable {
             .init(name: "version", value: "6"),
             .init(name: "session", value: "AudioStation")
         ]
-        _ = try? await request(path: "auth.cgi", query: items, as: EmptyPayload.self)
+        _ = try? await request(path: "entry.cgi", query: items, as: EmptyPayload.self)
         sid = nil
     }
 

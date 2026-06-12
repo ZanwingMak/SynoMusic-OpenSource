@@ -51,6 +51,18 @@ struct ServerEditorView: View {
                 if isEditingExisting, let saved = serverStore.password(for: profile) {
                     password = saved
                 }
+                #if DEBUG
+                let args = ProcessInfo.processInfo.arguments
+                if let i = args.firstIndex(of: "-password"), i + 1 < args.count {
+                    password = args[i + 1]
+                }
+                if args.contains("-autoconnect") {
+                    Task {
+                        try? await Task.sleep(nanoseconds: 400_000_000)
+                        await connectAndSave()
+                    }
+                }
+                #endif
             }
         }
     }

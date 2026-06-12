@@ -88,9 +88,16 @@ struct LoginFlowView: View {
             .preferredColorScheme(.dark)
             #if DEBUG
             .task {
-                if ProcessInfo.processInfo.arguments.contains("-editor") {
+                let args = ProcessInfo.processInfo.arguments
+                if args.contains("-editor") {
                     try? await Task.sleep(nanoseconds: 300_000_000)
-                    editingProfile = ServerProfile(host: "", username: "")
+                    var p = ServerProfile(host: "", username: "")
+                    // 仅 DEBUG：通过 launch args 预填编辑器，便于截图与排错。
+                    if let i = args.firstIndex(of: "-host"), i + 1 < args.count { p.host = args[i + 1] }
+                    if let i = args.firstIndex(of: "-port"), i + 1 < args.count, let v = Int(args[i + 1]) { p.port = v }
+                    if let i = args.firstIndex(of: "-user"), i + 1 < args.count { p.username = args[i + 1] }
+                    if args.contains("-https") { p.scheme = .https }
+                    editingProfile = p
                 }
             }
             #endif

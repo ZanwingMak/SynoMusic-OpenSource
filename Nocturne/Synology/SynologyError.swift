@@ -29,7 +29,7 @@ enum SynologyError: LocalizedError, Equatable {
         switch code {
         case 400: return "账号或密码错误"
         case 401: return "账号或密码错误"
-        case 402: return "权限不足"
+        case 402: return "账号未授权访问 Audio Station。请在 DSM 控制面板 → 用户与群组 → 编辑该用户 → 应用程序 中允许 Audio Station，再重试。"
         case 403: return "需要双重验证（请输入 OTP）"
         case 404: return "双重验证码错误"
         case 405: return "账号被锁定"

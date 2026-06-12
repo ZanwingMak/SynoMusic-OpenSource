@@ -16,6 +16,14 @@
 - `ServerEditorView` 接管原 `LoginView` 的"输入密码 → 登录"流程；`LoginView` 仅在需要更换密码时使用。
 - HTTP/HTTPS 切换会基于"是否仍为默认端口"判定是否自动同步端口，避免覆盖用户自定义值。
 
+### 修复
+- DSM 7+ 兼容：`SYNO.API.Auth` 的请求路径从 `auth.cgi` 切到 `entry.cgi`（DSM 6/7 通用），适配 DSM 7+ 老路径退役。
+- 错误码 402 的中文文案改为可执行提示：「账号未授权访问 Audio Station。请在 DSM 控制面板 → 用户与群组 → 编辑该用户 → 应用程序 中允许 Audio Station，再重试。」此前误显示为模糊的「权限不足」，并易被误解为密码错误。
+- 内部判断"是否走认证错误码表"改为读 query 中 `api=SYNO.API.Auth`，而不是 hardcoded 的 path 前缀，使路径变更不影响错误码翻译。
+
+### DEBUG 工具
+- 服务器编辑器 `-host / -port / -user / -password / -https / -autoconnect` 启动参数：用于在没有键盘输入能力的模拟器里端到端打通真实 NAS 请求，仅用于本地诊断。
+
 ## [1.0.0] - 2026-06-12
 
 首个公开版本。
