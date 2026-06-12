@@ -42,6 +42,8 @@
 - DEBUG `-autoconnect` 启动参数改为整个进程只触发一次，防止之后每次重开编辑器都自动尝试连接。
 - 「连接并保存」按钮的 loading 圈不再贴最左：与「正在连接...」文本一起在按钮中央居中显示。
 - 「连接并保存」失败也持久化基础配置：进入流程第一步立即 `upsert(p)`，登录成功后再追加 `setActive` / `savePassword` / `signIn`。这样即便密码错、网络断、402 权限不足，新增的服务器条目也会立即出现在「设置 → 服务器」列表里，可后续编辑重试，不再"什么都没留下"。错误 Alert 会明确告知"配置已保存到列表"。
+- **首页点击专辑/艺术家无反应**：只有「浏览」Tab 的 `NavigationStack` 注册了 `BrowseRoute` 的 `navigationDestination`，其它 Tab（资料库 / 搜索）里同名 `NavigationLink(value:)` 因此全部静默失败。现把 destination 集中到 `BrowseRoute.destination`，并以 `View.browseRoutes()` modifier 在每个 Tab 的 NavigationStack 上 attach 一次。资料库 / 浏览 / 搜索 三 Tab 现在都能从专辑卡片正确进入专辑详情。
+- 点歌后无反馈：`playback.play(queue:startAt:)` 立刻设置 "正在加载：{歌名}" toast；KVO 监听 `AVPlayerItem.status`，`.readyToPlay` 时清除 toast、`.failed` 时把 `item.error.localizedDescription` 写到 toast 让用户看到原因（HTTPS 证书、流不可达、权限等）。
 
 ## [1.0.0] - 2026-06-12
 

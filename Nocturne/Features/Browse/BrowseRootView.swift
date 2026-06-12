@@ -27,25 +27,6 @@ struct BrowseRootView: View {
         }
         .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle("浏览")
-        .navigationDestination(for: BrowseRoute.self) { route in
-            destination(for: route)
-        }
-    }
-
-    @ViewBuilder
-    private func destination(for route: BrowseRoute) -> some View {
-        switch route {
-        case .allAlbums: AllAlbumsView()
-        case .allArtists: AllArtistsView()
-        case .allPlaylists: AllPlaylistsView()
-        case .allGenres: AllGenresView()
-        case .allFolders: FolderBrowseView(folder: nil)
-        case .album(let album): AlbumDetailView(album: album)
-        case .artist(let artist): ArtistDetailView(artist: artist)
-        case .playlist(let playlist): PlaylistDetailView(playlist: playlist)
-        case .genre(let genre): GenreDetailView(genre: genre)
-        case .folder(let f): FolderBrowseView(folder: f)
-        }
     }
 }
 

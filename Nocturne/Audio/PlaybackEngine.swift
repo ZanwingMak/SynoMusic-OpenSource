@@ -68,6 +68,7 @@ final class PlaybackEngine: ObservableObject {
     private var endObserver: NSObjectProtocol?
     private var stallObserver: NSObjectProtocol?
     private var failObserver: NSObjectProtocol?
+    private var statusObservation: NSKeyValueObservation?
     private var bag = Set<AnyCancellable>()
     private var originalQueue: [Song] = []   // 用于关闭随机时还原
     private var demoTicker: Task<Void, Never>?
@@ -95,6 +96,10 @@ final class PlaybackEngine: ObservableObject {
         if isShuffling { ordered = shuffledKeepingHead(songs, head: index) }
         self.queue = ordered
         self.currentIndex = ordered.indices.contains(index) ? index : 0
+        // 立即给用户视觉反馈，避免"点了没反应"的错觉
+        if let title = currentSong?.title {
+            setStatus("正在加载：\(title)")
+        }
         loadCurrent(autoPlay: true)
     }
 
@@ -331,6 +336,25 @@ final class PlaybackEngine: ObservableObject {
             let err = note.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
             Task { @MainActor in
                 self?.setStatus("播放中断：\(err?.localizedDescription ?? "未知错误")")
+            }
+        }
+        // KVO item.status：在初始解析阶段就能捕获 .failed
+        statusObservation?.invalidate()
+        statusObservation = item.observe(\.status, options: [.new]) { [weak self] item, _ in
+            Task { @MainActor in
+                guard let self else { return }
+                switch item.status {
+                case .readyToPlay:
+                    self.isBuffering = false
+                    self.dismissStatus()
+                case .failed:
+                    let reason = item.error?.localizedDescription ?? "未知错误"
+                    self.setStatus("无法播放：\(reason)")
+                    self.isBuffering = false
+                    self.isPlaying = false
+                default:
+                    break
+                }
             }
         }
     }

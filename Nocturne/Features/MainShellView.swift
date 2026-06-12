@@ -22,15 +22,15 @@ struct MainShellView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $selectedTab) {
-                NavigationStack { LibraryHomeView() }
+                NavigationStack { LibraryHomeView().browseRoutes() }
                     .tabItem { Label("资料库", systemImage: "rectangle.stack.fill") }
                     .tag(Tab.library)
 
-                NavigationStack { BrowseRootView() }
+                NavigationStack { BrowseRootView().browseRoutes() }
                     .tabItem { Label("浏览", systemImage: "square.grid.2x2.fill") }
                     .tag(Tab.browse)
 
-                NavigationStack { SearchView() }
+                NavigationStack { SearchView().browseRoutes() }
                     .tabItem { Label("搜索", systemImage: "magnifyingglass") }
                     .tag(Tab.search)
 
