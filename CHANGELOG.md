@@ -6,7 +6,15 @@
 ## [Unreleased]
 
 ### 新增
-- DEBUG-only 演示模式：`-demo` 启动参数跳过登录并注入样本专辑/艺术家/歌曲；`-tab=browse|search|settings` 设定初始 Tab；`-fullplayer` 直接弹出全屏播放器。便于设计审查与模拟器截图，不影响 Release。
+- DEBUG-only 演示模式：`-demo` 启动参数跳过登录并注入样本专辑/艺术家/歌曲；`-tab=browse|search|settings` 设定初始 Tab；`-fullplayer` 直接弹出全屏播放器；`-editor` 弹出服务器编辑器。便于设计审查与模拟器截图，不影响 Release。
+- 服务器编辑器内置密码 / OTP 字段与"连接并保存"按钮，一步完成档案创建 + 真实 SYNO.API.Auth Login。
+- 端口字段改为数字键盘 TextField，支持任意 1-65535；切换 HTTP/HTTPS 时若仍为默认端口才自动跟随。
+- 登录列表新增长按菜单（编辑 / 用其他密码登录 / 移除）。
+- 点击已保存档案时，若 Keychain 中已存密码则自动登录（显示行内 ProgressView），失败再回退至 LoginView。
+
+### 变更
+- `ServerEditorView` 接管原 `LoginView` 的"输入密码 → 登录"流程；`LoginView` 仅在需要更换密码时使用。
+- HTTP/HTTPS 切换会基于"是否仍为默认端口"判定是否自动同步端口，避免覆盖用户自定义值。
 
 ## [1.0.0] - 2026-06-12
 

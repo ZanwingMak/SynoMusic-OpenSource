@@ -6,6 +6,8 @@ struct LoginFlowView: View {
     @EnvironmentObject private var session: AppSession
     @State private var path = NavigationPath()
     @State private var editingProfile: ServerProfile?
+    @State private var connectingProfileID: UUID?
+    @State private var quickConnectError: String?
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -39,12 +41,27 @@ struct LoginFlowView: View {
                             VStack(spacing: Metrics.s) {
                                 ForEach(serverStore.profiles) { profile in
                                     Button {
-                                        path.append(profile)
+                                        handleProfileTap(profile)
                                     } label: {
-                                        ServerRow(profile: profile)
+                                        ServerRow(profile: profile, isConnecting: connectingProfileID == profile.id)
                                     }
                                     .buttonStyle(.plain)
+                                    .contextMenu {
+                                        Button("编辑") { editingProfile = profile }
+                                        Button("用其他密码登录") { path.append(profile) }
+                                        Button(role: .destructive) {
+                                            serverStore.remove(profile)
+                                        } label: { Text("移除") }
+                                    }
                                 }
+                            }
+
+                            if let quickConnectError {
+                                Text(quickConnectError)
+                                    .font(.nocCaption)
+                                    .foregroundStyle(.orange)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, Metrics.m)
                             }
 
                             Button {
@@ -69,6 +86,43 @@ struct LoginFlowView: View {
                     .presentationDetents([.large])
             }
             .preferredColorScheme(.dark)
+            #if DEBUG
+            .task {
+                if ProcessInfo.processInfo.arguments.contains("-editor") {
+                    try? await Task.sleep(nanoseconds: 300_000_000)
+                    editingProfile = ServerProfile(host: "", username: "")
+                }
+            }
+            #endif
+        }
+    }
+
+    /// 点击已保存档案：若 Keychain 有密码就直接快速登录；否则打开登录页输入密码。
+    private func handleProfileTap(_ profile: ServerProfile) {
+        Haptics.tap()
+        guard let saved = serverStore.password(for: profile), !saved.isEmpty else {
+            path.append(profile)
+            return
+        }
+        connectingProfileID = profile.id
+        quickConnectError = nil
+        Task {
+            let client = SynologyClient(profile: profile)
+            do {
+                try await client.login(password: saved)
+                var p = profile
+                p.lastConnectedAt = Date()
+                serverStore.upsert(p)
+                serverStore.setActive(p)
+                session.sign(in: client)
+                Haptics.success()
+            } catch {
+                // 已存密码失败：清掉 connecting 状态，转入手动登录页
+                let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                quickConnectError = "自动登录失败：\(message)。请重新输入密码。"
+                path.append(profile)
+            }
+            connectingProfileID = nil
         }
     }
 }
@@ -123,6 +177,7 @@ private struct EmptyServerCard: View {
 
 private struct ServerRow: View {
     let profile: ServerProfile
+    var isConnecting: Bool = false
     var body: some View {
         GlassPanel(cornerRadius: Theme.cornerCard) {
             HStack(spacing: Metrics.m) {
@@ -140,9 +195,13 @@ private struct ServerRow: View {
                         .foregroundStyle(.white.opacity(0.6))
                 }
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(.white.opacity(0.5))
-                    .font(.system(size: 14, weight: .semibold))
+                if isConnecting {
+                    ProgressView().tint(.white)
+                } else {
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.white.opacity(0.5))
+                        .font(.system(size: 14, weight: .semibold))
+                }
             }
             .padding(.horizontal, Metrics.m)
             .padding(.vertical, Metrics.m)
