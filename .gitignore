@@ -1,0 +1,42 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcuserdatad/
+*.swp
+*.swo
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Xcode project — 由 xcodegen 生成，不进仓库
+Nocturne.xcodeproj/
+
+# SwiftPM
+.build/
+.swiftpm/
+Packages/
+Package.pins
+Package.resolved
+
+# Carthage / CocoaPods
+Carthage/Build/
+Pods/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Misc
+*.log
+.env
+.env.local
