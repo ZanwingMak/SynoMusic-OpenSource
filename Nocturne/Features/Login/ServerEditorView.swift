@@ -1,23 +1,26 @@
 import SwiftUI
 
 /// 服务器档案编辑：新增或编辑 NAS 连接信息；同时承担"测试并登录"功能。
+///
+/// 布局策略：把常用 5 件（协议/主机/端口/用户名/密码 + 连接按钮）压缩在第一屏，
+/// 二步验证、信任自签、记住密码、备注名等次要项目折叠在「高级」中默认隐藏。
 struct ServerEditorView: View {
     @EnvironmentObject private var serverStore: ServerStore
     @EnvironmentObject private var session: AppSession
     @Environment(\.dismiss) private var dismiss
 
     @State var profile: ServerProfile
-    /// 是否记住密码到 Keychain；保存即登录则强制为 true。
     @State private var password: String = ""
     @State private var otp: String = ""
     @State private var portText: String = ""
     @State private var passwordVisible: Bool = false
     @State private var rememberPassword: Bool = true
+    @State private var advancedExpanded: Bool = false
 
     @State private var isConnecting: Bool = false
     @State private var error: String?
 
-    /// 编辑模式：编辑现有档案时禁用"连接并保存"为唯一选项，提供"仅保存"。
+    /// 编辑模式：表单标题与额外按钮以此判定。
     private var isEditingExisting: Bool {
         serverStore.profiles.contains(where: { $0.id == profile.id })
     }
@@ -27,17 +30,8 @@ struct ServerEditorView: View {
             Form {
                 connectionSection
                 accountSection
-                if profile.scheme == .https {
-                    httpsSection
-                }
-                if let error {
-                    Section {
-                        Text(error)
-                            .font(.nocCaption)
-                            .foregroundStyle(.red)
-                    }
-                }
                 actionSection
+                advancedSection
             }
             .navigationTitle(isEditingExisting ? "编辑服务器" : "添加服务器")
             .navigationBarTitleDisplayMode(.inline)
@@ -46,33 +40,31 @@ struct ServerEditorView: View {
                     Button("取消") { dismiss() }
                 }
             }
-            .onAppear {
-                portText = String(profile.port)
-                if isEditingExisting, let saved = serverStore.password(for: profile) {
-                    password = saved
-                }
-                #if DEBUG
-                let args = ProcessInfo.processInfo.arguments
-                if let i = args.firstIndex(of: "-password"), i + 1 < args.count {
-                    password = args[i + 1]
-                }
-                if args.contains("-autoconnect") {
-                    Task {
-                        try? await Task.sleep(nanoseconds: 400_000_000)
-                        await connectAndSave()
+            .alert(
+                "连接失败",
+                isPresented: Binding(
+                    get: { error != nil },
+                    set: { if !$0 { error = nil } }
+                )
+            ) {
+                Button("我知道了", role: .cancel) { error = nil }
+                if (error ?? "").contains("Audio Station") {
+                    Button("复制 DSM 路径") {
+                        UIPasteboard.general.string = "控制面板 → 用户与群组 → 编辑用户 → 应用程序 → Audio Station → 允许"
                     }
                 }
-                #endif
+            } message: {
+                Text(error ?? "")
             }
+            .onAppear { setupOnAppear() }
         }
     }
 
     // MARK: 章节
 
+    /// 连接：协议 / 主机 / 端口（默认显示，第一屏可见）。
     private var connectionSection: some View {
         Section {
-            TextField("备注名（家里的 DS220+）", text: $profile.name)
-                .textInputAutocapitalization(.never)
             Picker("协议", selection: $profile.scheme) {
                 ForEach(ServerProfile.Scheme.allCases) { s in
                     Text(s.rawValue.uppercased()).tag(s)
@@ -80,7 +72,6 @@ struct ServerEditorView: View {
             }
             .pickerStyle(.segmented)
             .onChange(of: profile.scheme) { _, newValue in
-                // 用户未自定义过端口时跟随协议默认值
                 let defaultsToFollow: Set<Int> = [5000, 5001]
                 if defaultsToFollow.contains(profile.port) {
                     profile.port = (newValue == .https) ? 5001 : 5000
@@ -99,7 +90,6 @@ struct ServerEditorView: View {
                     .keyboardType(.numberPad)
                     .frame(maxWidth: 120)
                     .onChange(of: portText) { _, new in
-                        // 仅允许数字，落入 1-65535
                         let digits = new.filter(\.isNumber)
                         if digits != new { portText = digits }
                         if let v = Int(digits), v > 0, v <= 65535 { profile.port = v }
@@ -107,11 +97,10 @@ struct ServerEditorView: View {
             }
         } header: {
             Text("连接")
-        } footer: {
-            Text("默认 HTTP 5000、HTTPS 5001；外网或自定义端口请改为实际值。")
         }
     }
 
+    /// 账号：用户名 + 密码（第一屏可见）。
     private var accountSection: some View {
         Section {
             TextField("用户名", text: $profile.username)
@@ -133,24 +122,12 @@ struct ServerEditorView: View {
                 }
                 .buttonStyle(.plain)
             }
-            TextField("二步验证码（可选）", text: $otp)
-                .keyboardType(.numberPad)
-            Toggle("记住密码", isOn: $rememberPassword)
         } header: {
             Text("账号")
-        } footer: {
-            Text("启用了二步验证（OTP）的账号需填入 6 位代码。密码加密存于 Keychain。")
         }
     }
 
-    private var httpsSection: some View {
-        Section {
-            Toggle("信任自签名证书", isOn: $profile.ignoreInvalidCertificate)
-        } footer: {
-            Text("仅在你信任的局域网或私有 NAS 上开启。")
-        }
-    }
-
+    /// 主按钮：直接放在账号下方，第一屏可见。
     private var actionSection: some View {
         Section {
             Button {
@@ -165,14 +142,33 @@ struct ServerEditorView: View {
                 }
             }
             .buttonStyle(PrimaryButtonStyle())
-            .listRowInsets(EdgeInsets())
+            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
             .listRowBackground(Color.clear)
             .disabled(!canSubmit || isConnecting)
+        }
+    }
 
-            if isEditingExisting {
-                Button("仅保存配置（不立即登录）") { saveOnly() }
-                    .frame(maxWidth: .infinity)
+    /// 高级：折叠收纳次要选项。
+    private var advancedSection: some View {
+        Section {
+            DisclosureGroup(isExpanded: $advancedExpanded) {
+                TextField("备注名（家里的 DS220+）", text: $profile.name)
+                    .textInputAutocapitalization(.never)
+                TextField("二步验证码（OTP）", text: $otp)
+                    .keyboardType(.numberPad)
+                Toggle("记住密码", isOn: $rememberPassword)
+                if profile.scheme == .https {
+                    Toggle("信任自签名证书", isOn: $profile.ignoreInvalidCertificate)
+                }
+                if isEditingExisting {
+                    Button("仅保存配置，不立即登录") { saveOnly() }
+                }
+            } label: {
+                Label("高级", systemImage: "slider.horizontal.3")
+                    .foregroundStyle(.secondary)
             }
+        } footer: {
+            Text("默认 HTTP 5000、HTTPS 5001；启用了二步验证的账号需在「高级」填入 OTP。密码加密保存于 Keychain。")
         }
     }
 
@@ -183,6 +179,25 @@ struct ServerEditorView: View {
             && !profile.username.trimmingCharacters(in: .whitespaces).isEmpty
             && !password.isEmpty
             && profile.port > 0 && profile.port <= 65535
+    }
+
+    private func setupOnAppear() {
+        portText = String(profile.port)
+        if isEditingExisting, let saved = serverStore.password(for: profile) {
+            password = saved
+        }
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if let i = args.firstIndex(of: "-password"), i + 1 < args.count {
+            password = args[i + 1]
+        }
+        if args.contains("-autoconnect") {
+            Task {
+                try? await Task.sleep(nanoseconds: 400_000_000)
+                await connectAndSave()
+            }
+        }
+        #endif
     }
 
     private func saveOnly() {
@@ -209,7 +224,6 @@ struct ServerEditorView: View {
         let client = SynologyClient(profile: p)
         do {
             try await client.login(password: password, otp: otp.isEmpty ? nil : otp)
-            // 成功：保存档案、密码（如选择）、激活、注入会话
             p.lastConnectedAt = Date()
             serverStore.upsert(p)
             serverStore.setActive(p)
@@ -220,7 +234,8 @@ struct ServerEditorView: View {
             Haptics.success()
             dismiss()
         } catch let SynologyError.api(code, _) where code == 403 {
-            self.error = "需要双重验证：请在「二步验证码」字段输入 6 位代码后再试。"
+            self.error = "账号启用了两步验证。请展开「高级」填入 6 位 OTP 代码后再试。"
+            advancedExpanded = true
             Haptics.warning()
         } catch let err as SynologyError {
             self.error = err.errorDescription
