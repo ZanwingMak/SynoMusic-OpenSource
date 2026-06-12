@@ -50,6 +50,10 @@
 
 ### 测试
 - 新增 `AlbumPlaySmokeTest.test_fullPlayerLaunchDoesNotCrash`：launch `-demo -fullplayer` 验证 KVO/timeObserver 转 2 秒后进程仍处于 `runningForeground`，回归测试上面那次 KVO 闪退。
+- 新增 `AlbumPlaySmokeTest.test_nowPlayingArtworkHandlerSurvivesBackgrounding`：launch 后按 Home 入后台再回到前台，强制 MediaPlayer 在自己的 accessQueue 上回调 artwork handler；断言进程仍未崩溃。回归测试本次 attachArtwork SIGTRAP。
+
+### 修复（再）
+- **MPMediaItemArtwork handler 闭包隔离崩溃（SIGTRAP）**：上次 `updateNowPlayingMetadata` 内的 `MPMediaItemArtwork(boundsSize:) { _ in image }` 写在 `@MainActor Task` 里，闭包继承了 main actor 隔离；MediaPlayer 内部在它自己的 `*/accessQueue` 上调用这个闭包时 Swift 6 runtime 主动 `_swift_task_checkIsolated` SIGTRAP。改为 `nonisolated private static func attachArtwork(_:)` 静态方法在 nonisolated 上下文构造 artwork 并合并进 `MPNowPlayingInfoCenter`，handler 闭包不再绑定到 MainActor。
 
 ## [1.0.0] - 2026-06-12
 

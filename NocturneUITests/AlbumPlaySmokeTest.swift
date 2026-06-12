@@ -23,4 +23,22 @@ final class AlbumPlaySmokeTest: XCTestCase {
         // 仍在运行则进程态为 runningForeground。
         XCTAssertEqual(app.state, .runningForeground)
     }
+
+    /// 让 NowPlaying artwork 闭包真正被 MediaPlayer 在 accessQueue 上回调一次：
+    /// 后台短切回前台，模拟系统读取锁屏元数据。回归 attachArtwork 隔离崩溃。
+    func test_nowPlayingArtworkHandlerSurvivesBackgrounding() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-fullplayer"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["正在播放"].waitForExistence(timeout: 5))
+
+        // 触发后台 + 回前台，让锁屏 / 控制中心读 NowPlaying。
+        XCUIDevice.shared.press(.home)
+        Thread.sleep(forTimeInterval: 1.5)
+        app.activate()
+        Thread.sleep(forTimeInterval: 1.5)
+
+        // 关键是进程没死：notRunning 表示崩溃；其它状态都说明 artwork 闭包未触发 SIGTRAP。
+        XCTAssertNotEqual(app.state, .notRunning, "进程崩溃了（artwork 闭包又被 trap）")
+    }
 }

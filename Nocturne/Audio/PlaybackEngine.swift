@@ -480,19 +480,27 @@ final class PlaybackEngine: ObservableObject {
         ]
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
 
-        // 异步抓封面：URLSession 下载 hop 到 main 再合并到 NowPlaying。
-        // 全部在 @MainActor 上做读写，规避 Sendable 字典的跨 actor 捕获问题。
+        // 异步抓封面：下载在 @MainActor，但 MPMediaItemArtwork 的 handler 闭包
+        // 必须在 nonisolated 上下文里创建——MediaPlayer 会在它自己的 accessQueue
+        // 上调用这个闭包，闭包若被绑定到 @MainActor，runtime 会主动 SIGTRAP。
         if let api = apiClient?.audioStation, let url = api.songCoverURL(songID: song.id) {
             Task { @MainActor [weak self] in
                 guard self != nil else { return }
                 guard let (data, _) = try? await URLSession.shared.data(from: url) else { return }
                 guard let image = UIImage(data: data) else { return }
-                var current = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
-                let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
-                current[MPMediaItemPropertyArtwork] = artwork
-                MPNowPlayingInfoCenter.default().nowPlayingInfo = current
+                Self.attachArtwork(image)
             }
         }
+    }
+
+    /// nonisolated 静态方法：构造 MPMediaItemArtwork 并合并进 NowPlaying。
+    /// 必须 nonisolated，否则它内部生成的 handler 闭包会继承 @MainActor 隔离，
+    /// 在 MediaPlayer 的 accessQueue 上回调时触发 swift_task_checkIsolated 崩溃。
+    nonisolated private static func attachArtwork(_ image: UIImage) {
+        let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+        var current = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+        current[MPMediaItemPropertyArtwork] = artwork
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = current
     }
 
     private func updateNowPlayingPlaybackState() {
