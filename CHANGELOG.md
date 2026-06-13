@@ -65,6 +65,19 @@
 - 新增 `AlbumPlaySmokeTest.test_fullPlayerLaunchDoesNotCrash`：launch `-demo -fullplayer` 验证 KVO/timeObserver 转 2 秒后进程仍处于 `runningForeground`，回归测试上面那次 KVO 闪退。
 - 新增 `AlbumPlaySmokeTest.test_nowPlayingArtworkHandlerSurvivesBackgrounding`：launch 后按 Home 入后台再回到前台，强制 MediaPlayer 在自己的 accessQueue 上回调 artwork handler；断言进程仍未崩溃。回归测试本次 attachArtwork SIGTRAP。
 
+### 新增（二）
+- **定时停止扩展**：SleepTimerSheet 在 7 个分钟预设之外，增加「自定义时长」（小时 0-23 + 分钟 0-59 双 wheel 选择）与「时间点停止」（DatePicker 选今天/明天任一时间点，自动转换为倒计时）。
+- **喜欢列表批量编辑**：FavoritesView 右上菜单进入「批量编辑」模式；行内圆圈选中；底部浮条提供「全选/全不选」「播放选中」「删除选中」；与 FavoritesStore.remove(ids:) 联动。
+- **App 图标**：1024×1024 渐变（粉→紫）+ 白色 5 条波形 SF 风格 icon，通过一次性 Swift 脚本用 NSGraphicsContext 生成；放入 `Assets.xcassets/AppIcon.appiconset/AppIcon.png`，更新 Contents.json filename。
+
+### 体验（二）
+- 迷你播放器布局再修：上一版 `.safeAreaInset(.bottom)` 放在 TabView 上导致 mini player 被 TabBar 覆盖、内容也被遮挡。改为 ZStack 浮 + `View.reserveMiniPlayer(visible:)` modifier，让每个 NavigationStack 内部用 safeAreaInset reserve `miniPlayerHeight + 8` 空间，mini player 干净悬浮在 TabBar 之上。
+- 电台切换分类：tap pill 立即清空 stations + 进入 LoadingState，避免"切了但旧列表还在"的错觉。
+- 「重试」按钮：点击触发 360° 旋转 + 0.9 缩放弹簧动效，再延迟 0.18s 执行 retry callback，反馈用户操作已收到。
+
+### 修复（三）
+- 设置中新增配置后列表不刷新：根因是 `simctl terminate` 或 SwiftUI @Published 时序导致更新未到。`ServerStore.save()` 末尾显式 `defaults.synchronize()` 保证 UserDefaults 同步落盘；`upsert` 进入时显式 `objectWillChange.send()` 作为 SwiftUI 双保险。重启后默认服务器 + Keychain 密码静默登录验证通过。
+
 ### 修复（再）
 - **MPMediaItemArtwork handler 闭包隔离崩溃（SIGTRAP）**：上次 `updateNowPlayingMetadata` 内的 `MPMediaItemArtwork(boundsSize:) { _ in image }` 写在 `@MainActor Task` 里，闭包继承了 main actor 隔离；MediaPlayer 内部在它自己的 `*/accessQueue` 上调用这个闭包时 Swift 6 runtime 主动 `_swift_task_checkIsolated` SIGTRAP。改为 `nonisolated private static func attachArtwork(_:)` 静态方法在 nonisolated 上下文构造 artwork 并合并进 `MPNowPlayingInfoCenter`，handler 闭包不再绑定到 MainActor。
 

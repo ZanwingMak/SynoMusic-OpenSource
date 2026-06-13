@@ -20,31 +20,32 @@ struct MainShellView: View {
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            NavigationStack { LibraryHomeView().browseRoutes() }
-                .tabItem { Label("资料库", systemImage: "rectangle.stack.fill") }
-                .tag(Tab.library)
+        ZStack(alignment: .bottom) {
+            TabView(selection: $selectedTab) {
+                NavigationStack { LibraryHomeView().browseRoutes().reserveMiniPlayer(visible: playback.currentSong != nil) }
+                    .tabItem { Label("资料库", systemImage: "rectangle.stack.fill") }
+                    .tag(Tab.library)
 
-            NavigationStack { BrowseRootView().browseRoutes() }
-                .tabItem { Label("浏览", systemImage: "square.grid.2x2.fill") }
-                .tag(Tab.browse)
+                NavigationStack { BrowseRootView().browseRoutes().reserveMiniPlayer(visible: playback.currentSong != nil) }
+                    .tabItem { Label("浏览", systemImage: "square.grid.2x2.fill") }
+                    .tag(Tab.browse)
 
-            NavigationStack { SearchView().browseRoutes() }
-                .tabItem { Label("搜索", systemImage: "magnifyingglass") }
-                .tag(Tab.search)
+                NavigationStack { SearchView().browseRoutes().reserveMiniPlayer(visible: playback.currentSong != nil) }
+                    .tabItem { Label("搜索", systemImage: "magnifyingglass") }
+                    .tag(Tab.search)
 
-            NavigationStack { SettingsView() }
-                .tabItem { Label("设置", systemImage: "gearshape.fill") }
-                .tag(Tab.settings)
-        }
-        .tint(Theme.accent)
-        // 用 safeAreaInset 让 TabView 内所有滚动视图的底部自动让出迷你播放器空间，
-        // 替代之前在每个页面手工塞 Color.clear(height:100) 的方式。
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+                NavigationStack { SettingsView().reserveMiniPlayer(visible: playback.currentSong != nil) }
+                    .tabItem { Label("设置", systemImage: "gearshape.fill") }
+                    .tag(Tab.settings)
+            }
+            .tint(Theme.accent)
+
+            // 迷你播放器悬浮在 TabBar 之上：用 ZStack 浮，避免被 TabBar 覆盖；
+            // 让位通过 .reserveMiniPlayer modifier 在每个 NavigationStack 内做。
             if playback.currentSong != nil {
                 MiniPlayerBar(onTap: { showFullPlayer = true })
                     .padding(.horizontal, Metrics.s)
-                    .padding(.bottom, 6)
+                    .padding(.bottom, 52)   // TabBar 高度
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -53,5 +54,17 @@ struct MainShellView: View {
             playback.apiClient = newClient
         }
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: playback.currentSong)
+    }
+}
+
+extension View {
+    /// 在自己内部的滚动视图底部 reserve 给迷你播放器的空间；
+    /// 仅在 `visible == true` 时生效。
+    func reserveMiniPlayer(visible: Bool) -> some View {
+        self.safeAreaInset(edge: .bottom, spacing: 0) {
+            if visible {
+                Color.clear.frame(height: Metrics.miniPlayerHeight + 8)
+            }
+        }
     }
 }

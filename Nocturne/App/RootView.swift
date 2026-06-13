@@ -44,11 +44,17 @@ struct RootView: View {
         .task { await attemptAutoLogin() }
         #if DEBUG
         .onAppear {
-            if ProcessInfo.processInfo.arguments.contains("-fullplayer") {
+            let args = ProcessInfo.processInfo.arguments
+            if args.contains("-fullplayer") {
                 playback.play(queue: DemoMode.songs, startAt: 0)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                     playback.pause()
                     showFullPlayer = true
+                }
+            } else if args.contains("-miniplayer") {
+                playback.play(queue: DemoMode.songs, startAt: 0)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    playback.pause()
                 }
             }
         }

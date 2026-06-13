@@ -43,6 +43,14 @@ final class FavoritesStore: ObservableObject {
         persist()
     }
 
+    /// 批量移除一批 songID 对应的喜欢。
+    func remove(ids: Set<String>) {
+        guard !ids.isEmpty else { return }
+        songIDs.subtract(ids)
+        snapshots.removeAll { ids.contains($0.id) }
+        persist()
+    }
+
     // MARK: 持久化
 
     private func load() {

@@ -140,13 +140,41 @@ struct ErrorStateView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, Metrics.xl)
             if let retry {
-                Button("重试", action: retry)
-                    .buttonStyle(SecondaryButtonStyle())
+                RetryButton(action: retry)
                     .frame(maxWidth: 200)
                     .padding(.top, Metrics.s)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// 带旋转 + 缩放动效的"重试"按钮。
+private struct RetryButton: View {
+    let action: () -> Void
+    @State private var rotation: Double = 0
+    @State private var pressed: Bool = false
+
+    var body: some View {
+        Button {
+            Haptics.tap()
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.55)) {
+                rotation += 360
+                pressed = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                pressed = false
+                action()
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "arrow.clockwise")
+                    .rotationEffect(.degrees(rotation))
+                Text("重试")
+            }
+        }
+        .buttonStyle(SecondaryButtonStyle())
+        .scaleEffect(pressed ? 0.9 : 1)
     }
 }
 

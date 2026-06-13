@@ -95,7 +95,14 @@ struct RadioBrowseView: View {
     }
 
     private func pill(_ label: String, isActive: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: { Haptics.tap(); action() }) {
+        Button(action: {
+            Haptics.tap()
+            // 立刻清空旧结果，触发 LoadingState；防止"切了但看起来没变化"的错觉。
+            stations = []
+            isLoading = true
+            error = nil
+            action()
+        }) {
             Text(label)
                 .font(.nocLabel.weight(.medium))
                 .padding(.horizontal, 14)

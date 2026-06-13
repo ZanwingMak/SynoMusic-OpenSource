@@ -31,6 +31,7 @@ final class ServerStore: ObservableObject {
 
     /// 新增或更新档案。
     func upsert(_ profile: ServerProfile) {
+        objectWillChange.send()
         if let idx = profiles.firstIndex(where: { $0.id == profile.id }) {
             profiles[idx] = profile
         } else {
@@ -81,5 +82,8 @@ final class ServerStore: ObservableObject {
         if let data = try? JSONEncoder().encode(profiles) {
             defaults.set(data, forKey: key)
         }
+        // 显式 synchronize：simulator 通过 simctl terminate 关进程时，UserDefaults
+        // 的异步写回可能丢失。这里同步落盘，保证下次启动能读到。
+        defaults.synchronize()
     }
 }
