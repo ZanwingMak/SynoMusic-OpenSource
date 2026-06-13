@@ -12,8 +12,11 @@ enum BrowseRoute: Hashable {
     case allPlaylists
     case allGenres
     case allFolders
+    case allSongs
     case radio
     case favorites
+    case localPlaylists
+    case localPlaylist(UUID)
 }
 
 extension BrowseRoute {
@@ -32,7 +35,10 @@ extension BrowseRoute {
         case .genre(let genre): GenreDetailView(genre: genre)
         case .folder(let folder): FolderBrowseView(folder: folder)
         case .radio: RadioBrowseView()
-        case .favorites: FavoritesView()
+        case .favorites: LocalPlaylistDetailView(playlistID: PlaylistStore.favoritesID)
+        case .allSongs: AllSongsView()
+        case .localPlaylists: LocalPlaylistsView()
+        case .localPlaylist(let id): LocalPlaylistDetailView(playlistID: id)
         }
     }
 }

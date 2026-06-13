@@ -5,11 +5,13 @@ struct BrowseRootView: View {
     @EnvironmentObject private var session: AppSession
 
     private let categories: [(label: String, icon: String, route: BrowseRoute, gradient: [Color])] = [
+        ("所有歌曲", "music.note", .allSongs, [Color(red: 0.55, green: 0.4, blue: 0.95), Color(red: 0.25, green: 0.25, blue: 0.65)]),
         ("电台", "antenna.radiowaves.left.and.right", .radio, [Color(red: 0.95, green: 0.42, blue: 0.5), Color(red: 0.55, green: 0.2, blue: 0.85)]),
+        ("我的歌单", "music.note.list", .localPlaylists, [Color(red: 0.95, green: 0.6, blue: 0.3), Color(red: 0.85, green: 0.3, blue: 0.3)]),
         ("我喜欢的", "heart.fill", .favorites, [Color(red: 0.99, green: 0.4, blue: 0.55), Color(red: 0.85, green: 0.15, blue: 0.45)]),
         ("专辑", "square.stack.fill", .allAlbums, [Color(red: 0.95, green: 0.42, blue: 0.65), Color(red: 0.7, green: 0.3, blue: 0.9)]),
         ("艺术家", "person.2.fill", .allArtists, [Color(red: 0.4, green: 0.5, blue: 0.95), Color(red: 0.2, green: 0.3, blue: 0.7)]),
-        ("播放列表", "music.note.list", .allPlaylists, [Color(red: 0.95, green: 0.6, blue: 0.3), Color(red: 0.85, green: 0.3, blue: 0.3)]),
+        ("服务器歌单", "server.rack", .allPlaylists, [Color(red: 0.4, green: 0.85, blue: 0.7), Color(red: 0.1, green: 0.55, blue: 0.55)]),
         ("流派", "guitars.fill", .allGenres, [Color(red: 0.3, green: 0.8, blue: 0.7), Color(red: 0.1, green: 0.5, blue: 0.5)]),
         ("文件夹", "folder.fill", .allFolders, [Color(red: 0.6, green: 0.6, blue: 0.6), Color(red: 0.35, green: 0.35, blue: 0.4)])
     ]

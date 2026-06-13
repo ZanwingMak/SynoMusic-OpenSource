@@ -5,6 +5,19 @@
 
 ## [Unreleased]
 
+### 新增（三）
+- **「所有歌曲」入口**：浏览页加入"所有歌曲" tile；`AllSongsView` 实现 200 条/页的滚动分页加载（接近末 30 条触发下一页）、4 种排序（名称/艺术家/专辑/最近添加）；行内 swipe action：「接下来」「喜欢/取消喜欢」「加入歌单」；contextMenu 同样齐备；顶部「播放/随机」整库按钮。
+- **本地歌单（多收藏夹）**：新增 `PlaylistStore` 管理多个本地歌单，「我喜欢的」改为内置歌单（固定 UUID，不可删除/重命名，但可清空）；其它歌单用户可自建/重命名/删除。
+  - 浏览页加「我的歌单」入口 → `LocalPlaylistsView` 列表 + 新建弹窗（名称 + 8 色封面色板）
+  - 任意歌曲 contextMenu / swipe →「添加到歌单…」打开 `AddToPlaylistSheet` 多选 + 顶部「新建歌单…」内嵌新建
+  - 全屏播放器右上多了一个 ＋ 按钮（旁边是心形），快速加入歌单
+  - 自动迁移旧 `FavoritesStore` 的 UserDefaults 数据（`noc.favorites.ids` + `noc.favorites.snapshots`）到内置「我喜欢的」歌单后清除老 key
+  - `LocalPlaylistDetailView` 复用为「我喜欢的」与所有用户自建歌单详情：播放/随机、批量编辑、清空、重命名、删除
+  - 旧 `FavoritesView.swift` 删除；旧文件名 `FavoritesStore` 通过 `typealias` 暂时桥接 EnvironmentObject 调用方
+
+### 体验（三）
+- **mini 播放器进度条溢出修复**：旧版用 `ProgressView(.linear)` overlay 在 GlassPanel 之外，两端圆头超出胶囊圆角。改为 GeometryReader + Rectangle 自绘进度条嵌入 GlassPanel 内部底端，由 GlassPanel 的 `clipShape` 自动裁切，不再溢出；底色用 `Color.primary.opacity(0.10)`，进度色用 `Theme.accentGradient`。
+
 ### 新增
 - **喜欢功能**：`FavoritesStore`（UserDefaults + 离线 Song 快照），全屏播放器右上角心形按钮按下变填充 + 弹性放大动画；浏览页/资料库首页新增「我喜欢的」入口，可全播/随机播。
 - **全球电台**：基于 radio-browser.info 公开 API，浏览页加「电台」分类。支持热门 / 12 个常用国家 / 10 个常用流派 pill 切换 + 关键词搜索；点击直接通过 `AVPlayer` 播放 stream。PlaybackEngine 现可识别 `song.id` 以 `radio:` 开头并走 `song.path` 直流，与 Audio Station 队列分流，不污染本地播放队列。

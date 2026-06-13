@@ -99,8 +99,10 @@ struct AlbumDetailView: View {
 /// 通用的歌曲列表节，复用于专辑/播放列表详情。
 struct SongListSection: View {
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var playlists: PlaylistStore
     let songs: [Song]
     var onTap: (Int) -> Void
+    @State private var pickerSong: Song?
 
     var body: some View {
         LazyVStack(spacing: 0) {
@@ -116,11 +118,25 @@ struct SongListSection: View {
                     Button {
                         playback.appendNext(song)
                     } label: { Label("接下来播放", systemImage: "text.line.first.and.arrowtriangle.forward") }
+                    Button {
+                        pickerSong = song
+                    } label: { Label("添加到歌单…", systemImage: "text.badge.plus") }
+                    Button {
+                        playlists.toggleFavorite(song)
+                        Haptics.tap()
+                    } label: {
+                        Label(playlists.isFavorite(song) ? "取消喜欢" : "喜欢",
+                              systemImage: playlists.isFavorite(song) ? "heart.slash" : "heart")
+                    }
                 }
                 if idx < songs.count - 1 {
                     Divider().padding(.leading, 56)
                 }
             }
+        }
+        .sheet(item: $pickerSong) { song in
+            AddToPlaylistSheet(song: song)
+                .presentationDetents([.medium, .large])
         }
     }
 }

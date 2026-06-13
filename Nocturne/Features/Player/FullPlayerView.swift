@@ -5,11 +5,12 @@ import AVKit
 struct FullPlayerView: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var session: AppSession
-    @EnvironmentObject private var favorites: FavoritesStore
+    @EnvironmentObject private var playlists: PlaylistStore
     @Binding var isPresented: Bool
     @State private var showLyrics = false
     @State private var showQueue = false
     @State private var showSleep = false
+    @State private var showAddToPlaylist = false
     @State private var dominantColor: Color = Color(red: 0.18, green: 0.10, blue: 0.25)
 
     var body: some View {
@@ -82,6 +83,12 @@ struct FullPlayerView: View {
             SleepTimerSheet(isPresented: $showSleep)
                 .presentationDetents([.medium])
         }
+        .sheet(isPresented: $showAddToPlaylist) {
+            if let song = playback.currentSong {
+                AddToPlaylistSheet(song: song)
+                    .presentationDetents([.medium, .large])
+            }
+        }
     }
 
     /// 是否有任一定时停止策略已激活，决定月亮图标着色。
@@ -151,17 +158,28 @@ struct FullPlayerView: View {
             Spacer()
             if let song = playback.currentSong {
                 Button {
-                    Haptics.soft()
-                    favorites.toggle(song)
+                    showAddToPlaylist = true
                 } label: {
-                    Image(systemName: favorites.isFavorite(song) ? "heart.fill" : "heart")
-                        .font(.system(size: 26, weight: .semibold))
-                        .foregroundStyle(favorites.isFavorite(song) ? Color(red: 1, green: 0.32, blue: 0.45) : .white.opacity(0.75))
-                        .scaleEffect(favorites.isFavorite(song) ? 1.1 : 1.0)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.55), value: favorites.isFavorite(song))
+                    Image(systemName: "text.badge.plus")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.75))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(favorites.isFavorite(song) ? "取消喜欢" : "喜欢")
+                .accessibilityLabel("加入歌单")
+                .padding(.trailing, 8)
+
+                Button {
+                    Haptics.soft()
+                    playlists.toggleFavorite(song)
+                } label: {
+                    Image(systemName: playlists.isFavorite(song) ? "heart.fill" : "heart")
+                        .font(.system(size: 26, weight: .semibold))
+                        .foregroundStyle(playlists.isFavorite(song) ? Color(red: 1, green: 0.32, blue: 0.45) : .white.opacity(0.75))
+                        .scaleEffect(playlists.isFavorite(song) ? 1.1 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.55), value: playlists.isFavorite(song))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(playlists.isFavorite(song) ? "取消喜欢" : "喜欢")
             }
         }
         .padding(.horizontal, Metrics.l)

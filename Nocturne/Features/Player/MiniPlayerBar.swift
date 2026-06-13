@@ -9,58 +9,73 @@ struct MiniPlayerBar: View {
     var body: some View {
         Button(action: { Haptics.tap(); onTap() }) {
             GlassPanel(cornerRadius: 18) {
-                HStack(spacing: Metrics.m) {
-                    CoverArt(
-                        url: session.client?.audioStation.songCoverURL(songID: playback.currentSong?.id ?? ""),
-                        cornerRadius: 8,
-                        fallbackSeed: playback.currentSong?.id ?? ""
-                    )
-                    .frame(width: 44, height: 44)
+                VStack(spacing: 0) {
+                    HStack(spacing: Metrics.m) {
+                        CoverArt(
+                            url: session.client?.audioStation.songCoverURL(songID: playback.currentSong?.id ?? ""),
+                            cornerRadius: 8,
+                            fallbackSeed: playback.currentSong?.id ?? ""
+                        )
+                        .frame(width: 44, height: 44)
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(playback.currentSong?.title ?? "")
-                            .font(.nocBody.weight(.semibold))
-                            .lineLimit(1)
-                        Text(playback.currentSong?.artist ?? "")
-                            .font(.nocLabel)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(playback.currentSong?.title ?? "")
+                                .font(.nocBody.weight(.semibold))
+                                .lineLimit(1)
+                            Text(playback.currentSong?.artist ?? "")
+                                .font(.nocLabel)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+
+                        Spacer()
+
+                        Button {
+                            playback.togglePlayPause()
+                        } label: {
+                            Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(.primary)
+                                .frame(width: 36, height: 36)
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            playback.next()
+                        } label: {
+                            Image(systemName: "forward.fill")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(.primary)
+                                .frame(width: 36, height: 36)
+                        }
+                        .buttonStyle(.plain)
                     }
+                    .padding(.horizontal, Metrics.m)
+                    .padding(.vertical, 9)
 
-                    Spacer()
-
-                    Button {
-                        playback.togglePlayPause()
-                    } label: {
-                        Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(.primary)
-                            .frame(width: 36, height: 36)
-                    }
-                    .buttonStyle(.plain)
-
-                    Button {
-                        playback.next()
-                    } label: {
-                        Image(systemName: "forward.fill")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.primary)
-                            .frame(width: 36, height: 36)
-                    }
-                    .buttonStyle(.plain)
+                    // 进度条贴底、被 GlassPanel 外层 clipShape 自动裁切，不会溢出圆角。
+                    progressBar
                 }
-                .padding(.horizontal, Metrics.m)
-                .padding(.vertical, 10)
             }
         }
         .buttonStyle(.plain)
-        .overlay(alignment: .bottom) {
-            ProgressView(value: playback.duration > 0 ? playback.currentTime : 0, total: max(playback.duration, 0.01))
-                .progressViewStyle(.linear)
-                .tint(Theme.accent)
-                .frame(height: 2)
-                .padding(.horizontal, 6)
-                .opacity(0.8)
+    }
+
+    /// 自绘进度条：左侧渐变 + 右侧灰底，避免 ProgressView linear 圆角溢出问题。
+    private var progressBar: some View {
+        GeometryReader { geo in
+            let total = max(playback.duration, 0.01)
+            let value = min(max(playback.currentTime, 0), total)
+            let ratio = total > 0 ? value / total : 0
+            ZStack(alignment: .leading) {
+                Rectangle()
+                    .fill(Color.primary.opacity(0.10))
+                Rectangle()
+                    .fill(Theme.accentGradient)
+                    .frame(width: geo.size.width * ratio)
+                    .animation(.linear(duration: 0.5), value: value)
+            }
         }
+        .frame(height: 2.5)
     }
 }
