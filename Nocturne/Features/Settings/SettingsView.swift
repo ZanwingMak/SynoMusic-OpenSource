@@ -83,7 +83,7 @@ struct SettingsView: View {
                         profile: p,
                         isDefault: p.id == serverStore.activeProfileID,
                         isCurrentSession: p.id == session.client?.profile.id,
-                        onTap: { serverStore.setActive(p) },
+                        onTap: { Task { await switchSession(to: p) } },
                         onEdit: { editingProfile = p }
                     )
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -182,6 +182,36 @@ struct SettingsView: View {
     private func signOut() async {
         playback.stop()
         await session.signOut()
+    }
+
+    /// 切换会话到指定档案：设为默认 + 用 Keychain 密码 silent login。
+    /// 切换成功后 RootView 的 `.id(client.profile.id)` 会重建 MainShellView，
+    /// 各页面的缓存数据（专辑/艺术家/歌曲列表）随之失效并重新加载。
+    private func switchSession(to p: ServerProfile) async {
+        Haptics.tap()
+        serverStore.setActive(p)
+        // 已经是当前会话则只更新默认标记
+        if p.id == session.client?.profile.id { return }
+        guard let pwd = serverStore.password(for: p), !pwd.isEmpty else {
+            playback.setStatus("「\(p.name)」未保存密码，请在登录页输入")
+            await signOut()
+            return
+        }
+        playback.stop()
+        await session.signOut()
+        let client = SynologyClient(profile: p)
+        do {
+            try await client.login(password: pwd)
+            var updated = p
+            updated.lastConnectedAt = Date()
+            serverStore.upsert(updated)
+            session.sign(in: client)
+            playback.setStatus("已切换到「\(p.name)」")
+            Haptics.success()
+        } catch {
+            playback.setStatus("切换失败：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
+            Haptics.warning()
+        }
     }
 }
 

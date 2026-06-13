@@ -36,6 +36,8 @@
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Nocturne 需要访问局域网以连接你的群晖 NAS 上的 Audio Station。</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

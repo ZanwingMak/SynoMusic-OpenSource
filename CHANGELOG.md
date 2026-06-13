@@ -5,6 +5,24 @@
 
 ## [Unreleased]
 
+### 新增（四）
+- **灵动岛 + 锁屏 Live Activity**：新增 `NocturneLive` Widget Extension 实现 ActivityKit 三态：
+  - **compactLeading**：曲目封面缩略图；**compactTrailing**：播放/暂停图标（playing 时 SF Symbol variable color 律动）；**minimal**：waveform/music note。
+  - **expanded**：左侧 56pt 封面、中间标题+艺术家、右侧大播放图标、底部渐变进度条。
+  - **锁屏**：与展开形态类似，黑色背景胶囊，跟随 NowPlaying 数据。
+  - `NowPlayingActivityAttributes` 携带 `title/artist/album/isPlaying/elapsed/duration/coverURL`。主 App `Info.plist` 加 `NSSupportsLiveActivities=true`。
+  - `LiveActivityCoordinator` 单例（`@unchecked Sendable` + `NSLock`）持有 Activity 句柄，规避 Swift 6 严格并发对 ActivityKit 跨 actor 边界的 sending 检查。
+  - `PlaybackEngine` 在切歌 / 播放 / 暂停 / stop 时 `refreshLiveActivity()` 同步更新；timeObserver 每 0.5 s 走限流 1 s/次的 `updateLiveActivityThrottled()`。
+- **歌曲评分（0-5 星）**：全屏播放器右上 Menu 下「评分」子菜单调用 `SYNO.AudioStation.Song.setrating`。
+- **删除歌曲文件**：全屏播放器右上 Menu「删除文件…」走 `SYNO.FileStation.Delete`（带二次确认 alert），成功后从队列自动移除当前曲。注意：Audio Station 没有 ID3 tag 编辑 API，编辑歌曲元数据不可行——只能改评分或直接删除文件。
+- **流式播放兜底**：`AVPlayerItem.failed` 且当前是 raw 直流时，自动切到 `mp3` 转码重试一次（per-song 状态，不修改用户全局音质设置），toast 提示「原始格式无法播放，正在改用 MP3 转码…」。
+
+### 体验（四）
+- **切换服务器配置立即重新登录 + 资源刷新**：SettingsView 行 tap = `setActive` + 立即停止播放 + `signOut` + 用 Keychain 密码 silent login 新档案；`RootView` 用 `.id(session.client?.profile.id)` 给 `MainShellView` 标 stable identity，账号切换时整棵子树重建，各页面的 `@State songs/albums/artists` 缓存随之丢弃下次出现重新加载。再也不需要重启 App。
+
+### 核查
+- **锁屏 NowPlaying 链路**：确认全套已就绪——`AVAudioSession(.playback, [.allowAirPlay, .allowBluetoothA2DP])` 在 `setupAudioSession()` 激活；`UIBackgroundModes: audio` 在 Info.plist；`MPNowPlayingInfoCenter` 在 `updateNowPlayingMetadata` / `updateNowPlayingPlaybackState` 每次切歌/进度/暂停都更新；`MPRemoteCommandCenter` 注册了 play/pause/togglePlayPause/next/previous/changePlaybackPosition；nonisolated artwork handler 让封面也能在系统 accessQueue 上被读取。模拟器锁屏 widget 可能不显示，实机会自动出现。
+
 ### 新增（三）
 - **「所有歌曲」入口**：浏览页加入"所有歌曲" tile；`AllSongsView` 实现 200 条/页的滚动分页加载（接近末 30 条触发下一页）、4 种排序（名称/艺术家/专辑/最近添加）；行内 swipe action：「接下来」「喜欢/取消喜欢」「加入歌单」；contextMenu 同样齐备；顶部「播放/随机」整库按钮。
 - **本地歌单（多收藏夹）**：新增 `PlaylistStore` 管理多个本地歌单，「我喜欢的」改为内置歌单（固定 UUID，不可删除/重命名，但可清空）；其它歌单用户可自建/重命名/删除。

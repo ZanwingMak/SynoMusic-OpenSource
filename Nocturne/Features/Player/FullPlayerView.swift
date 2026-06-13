@@ -11,6 +11,8 @@ struct FullPlayerView: View {
     @State private var showQueue = false
     @State private var showSleep = false
     @State private var showAddToPlaylist = false
+    @State private var showDeleteConfirm = false
+    @State private var ratingPending: Int?
     @State private var dominantColor: Color = Color(red: 0.18, green: 0.10, blue: 0.25)
 
     var body: some View {
@@ -89,6 +91,54 @@ struct FullPlayerView: View {
                     .presentationDetents([.medium, .large])
             }
         }
+        .alert("删除文件", isPresented: $showDeleteConfirm) {
+            Button("删除", role: .destructive) { Task { await deleteCurrent() } }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text(deleteAlertMessage)
+        }
+    }
+
+    /// 删除确认提示文案，避免内联插值让 SwiftUI 编译器超时。
+    private var deleteAlertMessage: String {
+        let title = playback.currentSong?.title ?? "该歌曲"
+        return "将通过 File Station 永久删除「\(title)」对应的文件。该操作不可撤销。"
+    }
+
+    /// 调用 setrating 接口。
+    private func applyRating(_ stars: Int) async {
+        guard let song = playback.currentSong,
+              let api = session.client?.audioStation else { return }
+        do {
+            try await api.setRating(songID: song.id, rating: stars)
+            playback.setStatus(stars == 0 ? "已清除评分" : "已设为 \(stars) 星")
+            Haptics.success()
+        } catch {
+            playback.setStatus("评分失败：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
+            Haptics.warning()
+        }
+    }
+
+    /// 通过 File Station 删除当前歌曲文件，然后从队列中移除。
+    private func deleteCurrent() async {
+        guard let song = playback.currentSong,
+              let api = session.client?.audioStation,
+              let path = song.path, !path.isEmpty else {
+            playback.setStatus("没有可删除的文件路径")
+            return
+        }
+        do {
+            _ = try await api.deleteFiles(paths: [path])
+            playback.setStatus("删除任务已提交")
+            // 从本地队列移除当前曲并尝试播放下一首
+            if let idx = playback.queue.firstIndex(of: song) {
+                playback.removeFromQueue(at: idx)
+            }
+            Haptics.success()
+        } catch {
+            playback.setStatus("删除失败：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
+            Haptics.warning()
+        }
     }
 
     /// 是否有任一定时停止策略已激活，决定月亮图标着色。
@@ -129,9 +179,31 @@ struct FullPlayerView: View {
             }
             Spacer()
             Menu {
-                Button {
-                    if let song = playback.currentSong { playback.appendNext(song) }
-                } label: { Label("加入队列", systemImage: "text.line.first.and.arrowtriangle.forward") }
+                if let song = playback.currentSong {
+                    Button { playback.appendNext(song) } label: {
+                        Label("加入队列", systemImage: "text.line.first.and.arrowtriangle.forward")
+                    }
+                    Button { showAddToPlaylist = true } label: {
+                        Label("添加到歌单…", systemImage: "text.badge.plus")
+                    }
+                    Menu("评分") {
+                        ForEach(0...5, id: \.self) { r in
+                            Button {
+                                ratingPending = r
+                                Task { await applyRating(r) }
+                            } label: {
+                                Label("\(r) 星", systemImage: r == 0 ? "star.slash" : "star.fill")
+                            }
+                        }
+                    }
+                    Divider()
+                    Button(role: .destructive) {
+                        showDeleteConfirm = true
+                    } label: {
+                        Label("删除文件…", systemImage: "trash")
+                    }
+                    .disabled(song.id.hasPrefix("radio:") || (song.path ?? "").isEmpty)
+                }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 18, weight: .bold))

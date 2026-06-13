@@ -167,6 +167,46 @@ final class AudioStationAPI: @unchecked Sendable {
         return list.items.map(Self.mapSong)
     }
 
+    /// 给歌曲打分（0..5）。AudioStation 没有 ID3 tag 编辑 API，唯一可写的元数据就是评分。
+    func setRating(songID: String, rating: Int) async throws {
+        let r = max(0, min(rating, 5))
+        let items: [URLQueryItem] = [
+            .init(name: "api", value: "SYNO.AudioStation.Song"),
+            .init(name: "version", value: "3"),
+            .init(name: "method", value: "setrating"),
+            .init(name: "id", value: songID),
+            .init(name: "rating", value: String(r))
+        ]
+        _ = try await client.request(
+            path: "AudioStation/song.cgi",
+            query: items,
+            as: EmptyPayload.self
+        )
+    }
+
+    /// 通过 File Station 删除一首歌曲文件。Audio Station 没有删除接口，必须走 File Station。
+    /// `paths` 是文件在 NAS 上的绝对路径，多个用逗号分隔。
+    /// 返回 taskid，调用方可在 UI 上提示"已下发删除任务"。
+    @discardableResult
+    func deleteFiles(paths: [String]) async throws -> String? {
+        struct DeleteResult: Decodable { let taskid: String? }
+        // 用 JSON 数组拼装路径字段（File Station 的约定）
+        let joined = "[\"" + paths.map { $0.replacingOccurrences(of: "\"", with: "\\\"") }.joined(separator: "\",\"") + "\"]"
+        let items: [URLQueryItem] = [
+            .init(name: "api", value: "SYNO.FileStation.Delete"),
+            .init(name: "version", value: "2"),
+            .init(name: "method", value: "delete"),
+            .init(name: "path", value: joined),
+            .init(name: "recursive", value: "true")
+        ]
+        let result: DeleteResult = try await client.request(
+            path: "entry.cgi",
+            query: items,
+            as: DeleteResult.self
+        )
+        return result.taskid
+    }
+
     /// 搜索歌曲（按标题）。
     func searchSongs(keyword: String, limit: Int = 100, offset: Int = 0) async throws -> [Song] {
         let items: [URLQueryItem] = [

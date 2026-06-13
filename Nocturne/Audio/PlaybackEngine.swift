@@ -3,6 +3,9 @@ import AVFoundation
 import MediaPlayer
 import Combine
 import UIKit
+#if canImport(ActivityKit)
+import ActivityKit
+#endif
 
 /// 重复模式。
 enum RepeatMode: String, CaseIterable {
@@ -79,6 +82,13 @@ final class PlaybackEngine: ObservableObject {
     private var demoTicker: Task<Void, Never>?
     private var statusClearTask: Task<Void, Never>?
     private var sleepTask: Task<Void, Never>?
+    /// 当前曲目临时使用的转码偏好（fallback 用），不修改用户全局设置。
+    private var transcodeOverride: AudioQuality?
+    /// 当前曲目是否已尝试过 raw→mp3 兜底重试，避免无限循环。
+    private var fallbackTried: Bool = false
+
+    /// 限流：避免 timeObserver 每 0.5s 都调 LA update（系统对 LA 更新频率有上限）。
+    private var lastActivityUpdate: Date = .distantPast
     /// 是否正处于 Demo 模拟（apiClient 为 nil 但用户仍点歌的场景）。
     private var isDemoPlayback: Bool = false
 
@@ -102,6 +112,9 @@ final class PlaybackEngine: ObservableObject {
         if isShuffling { ordered = shuffledKeepingHead(songs, head: index) }
         self.queue = ordered
         self.currentIndex = ordered.indices.contains(index) ? index : 0
+        // 新曲：清空临时转码状态
+        transcodeOverride = nil
+        fallbackTried = false
         // 立即给用户视觉反馈，避免"点了没反应"的错觉
         if let title = currentSong?.title {
             setStatus("正在加载：\(title)")
@@ -127,6 +140,7 @@ final class PlaybackEngine: ObservableObject {
         player.pause()
         isPlaying = false
         updateNowPlayingPlaybackState()
+        refreshLiveActivity()
     }
 
     func resume() {
@@ -141,6 +155,7 @@ final class PlaybackEngine: ObservableObject {
         player.play()
         isPlaying = true
         updateNowPlayingPlaybackState()
+        refreshLiveActivity()
     }
 
     func stop() {
@@ -155,6 +170,11 @@ final class PlaybackEngine: ObservableObject {
         duration = 0
         dismissStatus()
         clearNowPlaying()
+        #if canImport(ActivityKit)
+        if #available(iOS 16.2, *) {
+            Task { await LiveActivityCoordinator.shared.endActivity() }
+        }
+        #endif
     }
 
     func next() {
@@ -258,7 +278,8 @@ final class PlaybackEngine: ObservableObject {
         if song.id.hasPrefix("radio:"), let path = song.path {
             url = URL(string: path)
         } else if let api = apiClient?.audioStation {
-            url = api.streamURL(songID: song.id, format: quality.streamFormat)
+            let effective = transcodeOverride ?? quality
+            url = api.streamURL(songID: song.id, format: effective.streamFormat)
         } else {
             startDemoPlayback(for: song, autoPlay: autoPlay)
             return
@@ -287,6 +308,7 @@ final class PlaybackEngine: ObservableObject {
             await self.refreshDuration()
             await self.fetchLyricsAsync(for: song)
             self.updateNowPlayingMetadata()
+            self.refreshLiveActivity()
         }
     }
 
@@ -404,9 +426,19 @@ final class PlaybackEngine: ObservableObject {
                     self.dismissStatus()
                 case .failed:
                     let reason = item?.error?.localizedDescription ?? "未知错误"
-                    self.setStatus("无法播放：\(reason)")
-                    self.isBuffering = false
-                    self.isPlaying = false
+                    // 兜底：原始流失败时，自动用 MP3 转码再试一次（仅 NAS 流，不针对电台）
+                    let isNasStream = !(self.currentSong?.id.hasPrefix("radio:") ?? false)
+                    let usingRaw = (self.transcodeOverride ?? self.quality).streamFormat == "raw"
+                    if isNasStream, usingRaw, !self.fallbackTried {
+                        self.fallbackTried = true
+                        self.transcodeOverride = .high
+                        self.setStatus("原始格式无法播放，正在改用 MP3 转码…")
+                        self.loadCurrent(autoPlay: true)
+                    } else {
+                        self.setStatus("无法播放：\(reason)")
+                        self.isBuffering = false
+                        self.isPlaying = false
+                    }
                 default:
                     break
                 }
@@ -565,6 +597,52 @@ final class PlaybackEngine: ObservableObject {
         info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
         info[MPMediaItemPropertyPlaybackDuration] = duration
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        updateLiveActivityThrottled()
+    }
+
+    // MARK: Live Activity
+
+    #if canImport(ActivityKit)
+    /// 构造可 Sendable 的 ContentState 后交给 LiveActivityCoordinator actor 持有 Activity。
+    @available(iOS 16.2, *)
+    private func buildLiveActivityState() -> NowPlayingActivityAttributes.ContentState? {
+        guard let song = currentSong else { return nil }
+        let cover = apiClient?.audioStation.songCoverURL(songID: song.id)?.absoluteString
+        return NowPlayingActivityAttributes.ContentState(
+            title: song.title,
+            artist: song.artist ?? "",
+            album: song.album,
+            isPlaying: isPlaying,
+            elapsed: currentTime,
+            duration: duration,
+            coverURL: cover
+        )
+    }
+    #endif
+
+    /// 限流的 LA 更新：1 秒内最多一次。
+    private func updateLiveActivityThrottled() {
+        #if canImport(ActivityKit)
+        guard #available(iOS 16.2, *) else { return }
+        let now = Date()
+        guard now.timeIntervalSince(lastActivityUpdate) > 1.0 else { return }
+        guard let state = buildLiveActivityState() else { return }
+        lastActivityUpdate = now
+        Task { await LiveActivityCoordinator.shared.updateOrStart(state) }
+        #endif
+    }
+
+    /// 通用入口：切歌、暂停/播放时调用。
+    private func refreshLiveActivity() {
+        #if canImport(ActivityKit)
+        guard #available(iOS 16.2, *) else { return }
+        if let state = buildLiveActivityState() {
+            lastActivityUpdate = Date()
+            Task { await LiveActivityCoordinator.shared.updateOrStart(state) }
+        } else {
+            Task { await LiveActivityCoordinator.shared.endActivity() }
+        }
+        #endif
     }
 
     private func clearNowPlaying() {

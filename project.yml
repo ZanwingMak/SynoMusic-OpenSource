@@ -23,8 +23,12 @@ targets:
       - path: Nocturne
         excludes:
           - "**/.DS_Store"
+          - "NocturneLive/**"
     resources:
       - Nocturne/Resources/Assets.xcassets
+    dependencies:
+      - target: NocturneLive
+        embed: true
     info:
       path: Nocturne/Resources/Info.plist
       properties:
@@ -35,6 +39,7 @@ targets:
           UIColorName: BrandBackground
         UIBackgroundModes:
           - audio
+        NSSupportsLiveActivities: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UISupportedInterfaceOrientations~ipad:
@@ -61,6 +66,28 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+
+  NocturneLive:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Nocturne/NocturneLive
+      - Nocturne/Audio/NowPlayingActivityAttributes.swift
+    info:
+      path: Nocturne/NocturneLive/Info.plist
+      properties:
+        CFBundleDisplayName: Nocturne Live
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.nocturne.Nocturne.NocturneLive
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        CODE_SIGN_STYLE: Automatic
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
 
   NocturneTests:
     type: bundle.unit-test

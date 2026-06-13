@@ -22,6 +22,10 @@ struct RootView: View {
         ZStack {
             if session.isLoggedIn || isDemo {
                 MainShellView(showFullPlayer: $showFullPlayer)
+                    // 关键：用当前会话的 profile.id 当 stable identity。
+                    // 切换不同账号时整个子树会重建，所有 @State / @StateObject 的
+                    // 缓存（专辑/艺术家/歌曲列表）随之失效，下一次出现立即重新加载。
+                    .id(session.client?.profile.id ?? UUID())
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             } else {
                 LoginFlowView(autoLoggingIn: isAutoLogging)
