@@ -46,15 +46,27 @@ struct NocturneLiveActivity: Widget {
                     .frame(width: 22, height: 22)
                     .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
             } compactTrailing: {
-                Image(systemName: context.state.isPlaying ? "waveform" : "pause.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.pink)
-                    .symbolEffect(.variableColor.iterative, isActive: context.state.isPlaying)
+                if context.state.isPlaying {
+                    Image(systemName: "waveform")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.pink)
+                        .symbolEffect(.variableColor.iterative.reversing, options: .repeating)
+                } else {
+                    Image(systemName: "pause.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
             } minimal: {
-                Image(systemName: context.state.isPlaying ? "waveform" : "music.note")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.pink)
-                    .symbolEffect(.variableColor.iterative, isActive: context.state.isPlaying)
+                if context.state.isPlaying {
+                    Image(systemName: "waveform")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.pink)
+                        .symbolEffect(.variableColor.iterative.reversing, options: .repeating)
+                } else {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white)
+                }
             }
         }
     }

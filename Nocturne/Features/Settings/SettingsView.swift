@@ -9,6 +9,7 @@ struct SettingsView: View {
     @State private var serverInfo: [String: String] = [:]
     @State private var editingProfile: ServerProfile?
     @State private var pendingDelete: ServerProfile?
+    @State private var showSponsors: Bool = false
 
     var body: some View {
         Form {
@@ -24,6 +25,11 @@ struct SettingsView: View {
         .sheet(item: $editingProfile) { profile in
             ServerEditorView(profile: profile)
                 .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showSponsors) {
+            SponsorListSheet()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
         .alert(
             "删除服务器",
@@ -155,8 +161,27 @@ struct SettingsView: View {
     private var aboutSection: some View {
         Section("关于") {
             infoRow("版本", Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
-            Link(destination: URL(string: "https://www.synology.com/en-global/dsm/feature/audio_station")!) {
-                Label("Synology Audio Station", systemImage: "link")
+            Button {
+                Haptics.tap()
+                showSponsors = true
+            } label: {
+                Label {
+                    Text("赞助支持")
+                        .foregroundStyle(.primary)
+                } icon: {
+                    Image(systemName: "heart.circle.fill")
+                        .foregroundStyle(.pink)
+                }
+            }
+            .buttonStyle(.borderless)
+            Link(destination: URL(string: "https://github.com/ZanwingMak/Nocturne/issues")!) {
+                Label("反馈问题", systemImage: "exclamationmark.bubble.fill")
+            }
+            Link(destination: URL(string: "https://github.com/ZanwingMak/Nocturne")!) {
+                Label("GitHub 仓库", systemImage: "chevron.left.forwardslash.chevron.right")
+            }
+            Link(destination: URL(string: "https://github.com/ZanwingMak/Nocturne/blob/main/CHANGELOG.md")!) {
+                Label("更新日志", systemImage: "list.bullet.rectangle")
             }
             Text("Nocturne 是一个非官方的 Audio Station 客户端。Synology 商标与 Audio Station 名称归群晖科技所有。")
                 .font(.caption2)

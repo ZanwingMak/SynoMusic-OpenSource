@@ -21,13 +21,20 @@ struct FullPlayerView: View {
             VStack(spacing: Metrics.l) {
                 topBar
                 Spacer(minLength: 0)
-                if showLyrics {
-                    LyricsPanel(lines: playback.lyrics, currentIndex: playback.currentLyricIndex)
-                        .transition(.opacity)
-                } else {
-                    CoverHero(songID: playback.currentSong?.id, seed: playback.currentSong?.id ?? "")
-                        .padding(.horizontal, Metrics.l)
-                        .transition(.opacity)
+                Group {
+                    if showLyrics {
+                        LyricsPanel(lines: playback.lyrics, currentIndex: playback.currentLyricIndex)
+                            .transition(.opacity)
+                    } else {
+                        CoverHero(songID: playback.currentSong?.id, seed: playback.currentSong?.id ?? "")
+                            .padding(.horizontal, Metrics.l)
+                            .transition(.opacity)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    Haptics.tap()
+                    withAnimation(.easeInOut(duration: 0.28)) { showLyrics.toggle() }
                 }
                 Spacer(minLength: 0)
                 trackInfo

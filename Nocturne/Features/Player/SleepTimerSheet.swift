@@ -45,9 +45,10 @@ struct SleepTimerSheet: View {
                         .monospacedDigit()
                     Spacer()
                     Button("取消") {
-                        playback.setSleepTimer(nil)
                         Haptics.tap()
+                        playback.setSleepTimer(nil)
                     }
+                    .buttonStyle(.borderless)
                     .foregroundStyle(.red)
                 }
             } else if playback.stopAtTrackEnd {
@@ -56,9 +57,10 @@ struct SleepTimerSheet: View {
                     Text("本曲结束后停止")
                     Spacer()
                     Button("取消") {
-                        playback.setSleepTimer(nil)
                         Haptics.tap()
+                        playback.setSleepTimer(nil)
                     }
+                    .buttonStyle(.borderless)
                     .foregroundStyle(.red)
                 }
             } else {
