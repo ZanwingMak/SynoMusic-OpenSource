@@ -1,0 +1,438 @@
+import Foundation
+import SwiftUI
+
+/// 支持的 UI 语言。
+enum AppLanguage: String, CaseIterable, Identifiable {
+    case system, zhHans = "zh-Hans", zhHant = "zh-Hant", en, ja, ko, de, fr
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system: return "跟随系统"
+        case .zhHans: return "简体中文"
+        case .zhHant: return "繁體中文"
+        case .en: return "English"
+        case .ja: return "日本語"
+        case .ko: return "한국어"
+        case .de: return "Deutsch"
+        case .fr: return "Français"
+        }
+    }
+
+    /// 用于查表的实际 locale code（system 时根据 Locale.preferred）。
+    var lookupCode: String {
+        if self == .system {
+            let p = (Locale.preferredLanguages.first ?? "en").lowercased()
+            if p.hasPrefix("zh-hans") || p.hasPrefix("zh-cn") || p.hasPrefix("zh_cn") { return AppLanguage.zhHans.rawValue }
+            if p.hasPrefix("zh-hant") || p.hasPrefix("zh-tw") || p.hasPrefix("zh-hk") { return AppLanguage.zhHant.rawValue }
+            if p.hasPrefix("ja") { return AppLanguage.ja.rawValue }
+            if p.hasPrefix("ko") { return AppLanguage.ko.rawValue }
+            if p.hasPrefix("de") { return AppLanguage.de.rawValue }
+            if p.hasPrefix("fr") { return AppLanguage.fr.rawValue }
+            if p.hasPrefix("en") { return AppLanguage.en.rawValue }
+            return AppLanguage.zhHans.rawValue
+        }
+        return rawValue
+    }
+}
+
+/// 字符串本地化管理：基于一个核心 key（默认中文）映射到 7 种目标语言。
+/// 未在字典里登记的 key 直接回落为原文（中文）显示，方便增量补全。
+@MainActor
+final class LanguageManager: ObservableObject {
+    static let shared = LanguageManager()
+
+    @Published var current: AppLanguage {
+        didSet {
+            UserDefaults.standard.set(current.rawValue, forKey: key)
+            UserDefaults.standard.synchronize()
+        }
+    }
+
+    private let key = "syno.language"
+
+    init() {
+        let raw = UserDefaults.standard.string(forKey: "syno.language") ?? AppLanguage.system.rawValue
+        self.current = AppLanguage(rawValue: raw) ?? .system
+    }
+
+    /// 翻译入口：key 是简体中文原文；不存在时回落原文。
+    func t(_ key: String) -> String {
+        let code = current.lookupCode
+        if code == AppLanguage.zhHans.rawValue { return key }
+        return L10n.table[code]?[key] ?? key
+    }
+}
+
+/// 翻译字典。覆盖核心 UI；其它界面将逐步补全。
+enum L10n {
+    /// `[langCode: [中文 key: 翻译]]`
+    static let table: [String: [String: String]] = [
+        // MARK: 繁體中文
+        "zh-Hant": [
+            "设置": "設定",
+            "资料库": "資料庫",
+            "浏览": "瀏覽",
+            "搜索": "搜尋",
+            "电台": "電台",
+            "随机歌单": "隨機歌單",
+            "我喜欢的": "我喜歡的",
+            "我的歌单": "我的歌單",
+            "所有歌曲": "所有歌曲",
+            "全部专辑": "全部專輯",
+            "艺术家": "藝術家",
+            "流派": "流派",
+            "服务器歌单": "伺服器歌單",
+            "文件夹": "資料夾",
+            "添加服务器": "新增伺服器",
+            "连接并保存": "連接並保存",
+            "正在连接...": "正在連接...",
+            "退出登录": "登出",
+            "密码": "密碼",
+            "高级": "進階",
+            "音质": "音質",
+            "原始音质": "原始音質",
+            "高品质 320kbps": "高品質 320kbps",
+            "标准 128kbps": "標準 128kbps",
+            "下载与缓存": "下載與快取",
+            "已下载歌曲": "已下載歌曲",
+            "管理": "管理",
+            "锁屏控制": "鎖屏控制",
+            "其它": "其他",
+            "关于": "關於",
+            "版本": "版本",
+            "赞助支持": "贊助支持",
+            "反馈问题": "回報問題",
+            "GitHub 仓库": "GitHub 倉庫",
+            "更新日志": "更新日誌",
+            "正在播放": "正在播放",
+            "队列": "佇列",
+            "歌词": "歌詞",
+            "定时停止": "定時停止",
+            "本曲结束后停止": "本曲結束後停止",
+            "倒计时": "倒數計時",
+            "时间点停止": "時間點停止",
+            "外观": "外觀",
+            "强调色": "強調色",
+            "跟随系统": "跟隨系統",
+            "浅色": "淺色",
+            "深色": "深色",
+            "重试": "重試",
+            "加载失败": "載入失敗",
+            "取消": "取消",
+            "确定": "確定",
+            "保存": "儲存",
+            "完成": "完成",
+            "删除": "刪除",
+            "重命名": "重新命名",
+            "全选": "全選",
+            "全不选": "取消全選"
+        ],
+
+        // MARK: English
+        "en": [
+            "设置": "Settings",
+            "资料库": "Library",
+            "浏览": "Browse",
+            "搜索": "Search",
+            "电台": "Radio",
+            "随机歌单": "Shuffle All",
+            "我喜欢的": "Favorites",
+            "我的歌单": "My Playlists",
+            "所有歌曲": "All Songs",
+            "全部专辑": "All Albums",
+            "艺术家": "Artists",
+            "流派": "Genres",
+            "服务器歌单": "Server Playlists",
+            "文件夹": "Folders",
+            "添加服务器": "Add Server",
+            "连接并保存": "Connect & Save",
+            "正在连接...": "Connecting…",
+            "退出登录": "Sign Out",
+            "密码": "Password",
+            "高级": "Advanced",
+            "音质": "Audio Quality",
+            "原始音质": "Original",
+            "高品质 320kbps": "High 320 kbps",
+            "标准 128kbps": "Standard 128 kbps",
+            "下载与缓存": "Downloads & Cache",
+            "已下载歌曲": "Downloaded Songs",
+            "管理": "Manage",
+            "锁屏控制": "Lock Screen Controls",
+            "其它": "Others",
+            "关于": "About",
+            "版本": "Version",
+            "赞助支持": "Support / Sponsor",
+            "反馈问题": "Report Issue",
+            "GitHub 仓库": "GitHub Repo",
+            "更新日志": "Changelog",
+            "正在播放": "Now Playing",
+            "队列": "Queue",
+            "歌词": "Lyrics",
+            "定时停止": "Sleep Timer",
+            "本曲结束后停止": "Stop after current song",
+            "倒计时": "Countdown",
+            "时间点停止": "Stop at time",
+            "外观": "Appearance",
+            "强调色": "Accent",
+            "跟随系统": "System",
+            "浅色": "Light",
+            "深色": "Dark",
+            "重试": "Retry",
+            "加载失败": "Load Failed",
+            "取消": "Cancel",
+            "确定": "OK",
+            "保存": "Save",
+            "完成": "Done",
+            "删除": "Delete",
+            "重命名": "Rename",
+            "全选": "Select All",
+            "全不选": "Deselect All"
+        ],
+
+        // MARK: 日本語
+        "ja": [
+            "设置": "設定",
+            "资料库": "ライブラリ",
+            "浏览": "ブラウズ",
+            "搜索": "検索",
+            "电台": "ラジオ",
+            "随机歌单": "シャッフル再生",
+            "我喜欢的": "お気に入り",
+            "我的歌单": "マイプレイリスト",
+            "所有歌曲": "すべての曲",
+            "全部专辑": "すべてのアルバム",
+            "艺术家": "アーティスト",
+            "流派": "ジャンル",
+            "服务器歌单": "サーバーリスト",
+            "文件夹": "フォルダ",
+            "添加服务器": "サーバーを追加",
+            "连接并保存": "接続して保存",
+            "正在连接...": "接続中…",
+            "退出登录": "ログアウト",
+            "密码": "パスワード",
+            "高级": "詳細",
+            "音质": "音質",
+            "原始音质": "オリジナル",
+            "高品质 320kbps": "高品質 320 kbps",
+            "标准 128kbps": "標準 128 kbps",
+            "下载与缓存": "ダウンロードとキャッシュ",
+            "已下载歌曲": "ダウンロード済み",
+            "管理": "管理",
+            "锁屏控制": "ロック画面のコントロール",
+            "其它": "その他",
+            "关于": "アプリについて",
+            "版本": "バージョン",
+            "赞助支持": "サポートする",
+            "反馈问题": "問題を報告",
+            "GitHub 仓库": "GitHub リポジトリ",
+            "更新日志": "更新履歴",
+            "正在播放": "再生中",
+            "队列": "再生リスト",
+            "歌词": "歌詞",
+            "定时停止": "スリープタイマー",
+            "本曲结束后停止": "この曲の終わりで停止",
+            "倒计时": "カウントダウン",
+            "时间点停止": "指定時刻に停止",
+            "外观": "外観",
+            "强调色": "アクセントカラー",
+            "跟随系统": "システムに従う",
+            "浅色": "ライト",
+            "深色": "ダーク",
+            "重试": "再試行",
+            "加载失败": "読み込み失敗",
+            "取消": "キャンセル",
+            "确定": "OK",
+            "保存": "保存",
+            "完成": "完了",
+            "删除": "削除",
+            "重命名": "名前を変更",
+            "全选": "すべて選択",
+            "全不选": "選択解除"
+        ],
+
+        // MARK: 한국어
+        "ko": [
+            "设置": "설정",
+            "资料库": "라이브러리",
+            "浏览": "둘러보기",
+            "搜索": "검색",
+            "电台": "라디오",
+            "随机歌单": "전체 셔플",
+            "我喜欢的": "좋아요",
+            "我的歌单": "내 플레이리스트",
+            "所有歌曲": "모든 곡",
+            "全部专辑": "모든 앨범",
+            "艺术家": "아티스트",
+            "流派": "장르",
+            "服务器歌单": "서버 플레이리스트",
+            "文件夹": "폴더",
+            "添加服务器": "서버 추가",
+            "连接并保存": "연결 및 저장",
+            "正在连接...": "연결 중…",
+            "退出登录": "로그아웃",
+            "密码": "비밀번호",
+            "高级": "고급",
+            "音质": "음질",
+            "原始音质": "원본",
+            "高品质 320kbps": "고품질 320 kbps",
+            "标准 128kbps": "표준 128 kbps",
+            "下载与缓存": "다운로드 및 캐시",
+            "已下载歌曲": "다운로드된 곡",
+            "管理": "관리",
+            "锁屏控制": "잠금 화면 컨트롤",
+            "其它": "기타",
+            "关于": "정보",
+            "版本": "버전",
+            "赞助支持": "후원하기",
+            "反馈问题": "문제 신고",
+            "GitHub 仓库": "GitHub 저장소",
+            "更新日志": "변경 로그",
+            "正在播放": "재생 중",
+            "队列": "대기열",
+            "歌词": "가사",
+            "定时停止": "취침 타이머",
+            "本曲结束后停止": "이 곡 종료 후 정지",
+            "倒计时": "카운트다운",
+            "时间点停止": "지정 시각 정지",
+            "外观": "테마",
+            "强调色": "강조 색상",
+            "跟随系统": "시스템 설정",
+            "浅色": "라이트",
+            "深色": "다크",
+            "重试": "다시 시도",
+            "加载失败": "로드 실패",
+            "取消": "취소",
+            "确定": "확인",
+            "保存": "저장",
+            "完成": "완료",
+            "删除": "삭제",
+            "重命名": "이름 변경",
+            "全选": "모두 선택",
+            "全不选": "전체 해제"
+        ],
+
+        // MARK: Deutsch
+        "de": [
+            "设置": "Einstellungen",
+            "资料库": "Bibliothek",
+            "浏览": "Durchsuchen",
+            "搜索": "Suche",
+            "电台": "Radio",
+            "随机歌单": "Alles zufällig",
+            "我喜欢的": "Favoriten",
+            "我的歌单": "Meine Playlists",
+            "所有歌曲": "Alle Titel",
+            "全部专辑": "Alle Alben",
+            "艺术家": "Künstler",
+            "流派": "Genres",
+            "服务器歌单": "Server-Playlists",
+            "文件夹": "Ordner",
+            "添加服务器": "Server hinzufügen",
+            "连接并保存": "Verbinden & Speichern",
+            "正在连接...": "Wird verbunden…",
+            "退出登录": "Abmelden",
+            "密码": "Passwort",
+            "高级": "Erweitert",
+            "音质": "Audioqualität",
+            "原始音质": "Original",
+            "高品质 320kbps": "Hoch 320 kbps",
+            "标准 128kbps": "Standard 128 kbps",
+            "下载与缓存": "Downloads & Cache",
+            "已下载歌曲": "Heruntergeladene Titel",
+            "管理": "Verwalten",
+            "锁屏控制": "Sperrbildschirm-Steuerung",
+            "其它": "Sonstiges",
+            "关于": "Über",
+            "版本": "Version",
+            "赞助支持": "Spenden",
+            "反馈问题": "Problem melden",
+            "GitHub 仓库": "GitHub Repo",
+            "更新日志": "Changelog",
+            "正在播放": "Jetzt läuft",
+            "队列": "Warteliste",
+            "歌词": "Songtext",
+            "定时停止": "Sleep-Timer",
+            "本曲结束后停止": "Nach diesem Titel stoppen",
+            "倒计时": "Countdown",
+            "时间点停止": "Zu Zeitpunkt stoppen",
+            "外观": "Darstellung",
+            "强调色": "Akzentfarbe",
+            "跟随系统": "System",
+            "浅色": "Hell",
+            "深色": "Dunkel",
+            "重试": "Wiederholen",
+            "加载失败": "Ladefehler",
+            "取消": "Abbrechen",
+            "确定": "OK",
+            "保存": "Speichern",
+            "完成": "Fertig",
+            "删除": "Löschen",
+            "重命名": "Umbenennen",
+            "全选": "Alle auswählen",
+            "全不选": "Auswahl aufheben"
+        ],
+
+        // MARK: Français
+        "fr": [
+            "设置": "Réglages",
+            "资料库": "Bibliothèque",
+            "浏览": "Explorer",
+            "搜索": "Recherche",
+            "电台": "Radio",
+            "随机歌单": "Lecture aléatoire",
+            "我喜欢的": "Favoris",
+            "我的歌单": "Mes playlists",
+            "所有歌曲": "Toutes les chansons",
+            "全部专辑": "Tous les albums",
+            "艺术家": "Artistes",
+            "流派": "Genres",
+            "服务器歌单": "Playlists serveur",
+            "文件夹": "Dossiers",
+            "添加服务器": "Ajouter un serveur",
+            "连接并保存": "Connecter et enregistrer",
+            "正在连接...": "Connexion…",
+            "退出登录": "Se déconnecter",
+            "密码": "Mot de passe",
+            "高级": "Avancé",
+            "音质": "Qualité audio",
+            "原始音质": "Original",
+            "高品质 320kbps": "Haute 320 kbps",
+            "标准 128kbps": "Standard 128 kbps",
+            "下载与缓存": "Téléchargements et cache",
+            "已下载歌曲": "Téléchargements",
+            "管理": "Gérer",
+            "锁屏控制": "Verrouillage",
+            "其它": "Autres",
+            "关于": "À propos",
+            "版本": "Version",
+            "赞助支持": "Soutenir",
+            "反馈问题": "Signaler un problème",
+            "GitHub 仓库": "Dépôt GitHub",
+            "更新日志": "Journal",
+            "正在播放": "Lecture en cours",
+            "队列": "File",
+            "歌词": "Paroles",
+            "定时停止": "Minuteur",
+            "本曲结束后停止": "Arrêter après ce titre",
+            "倒计时": "Compte à rebours",
+            "时间点停止": "Arrêter à une heure",
+            "外观": "Apparence",
+            "强调色": "Couleur d'accentuation",
+            "跟随系统": "Système",
+            "浅色": "Clair",
+            "深色": "Sombre",
+            "重试": "Réessayer",
+            "加载失败": "Échec du chargement",
+            "取消": "Annuler",
+            "确定": "OK",
+            "保存": "Enregistrer",
+            "完成": "Terminé",
+            "删除": "Supprimer",
+            "重命名": "Renommer",
+            "全选": "Tout sélectionner",
+            "全不选": "Tout désélectionner"
+        ]
+    ]
+}

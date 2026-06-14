@@ -1,0 +1,70 @@
+import SwiftUI
+
+/// 主框架：底部 Tab + 浮动迷你播放器。
+struct MainShellView: View {
+    @EnvironmentObject private var session: AppSession
+    @EnvironmentObject private var playback: PlaybackEngine
+    @Binding var showFullPlayer: Bool
+    @State private var selectedTab: Tab = {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("-tab=browse") { return .browse }
+        if args.contains("-tab=search") { return .search }
+        if args.contains("-tab=settings") { return .settings }
+        #endif
+        return .library
+    }()
+
+    enum Tab: Hashable {
+        case library, browse, search, settings
+    }
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            TabView(selection: $selectedTab) {
+                NavigationStack { LibraryHomeView().browseRoutes().reserveMiniPlayer(visible: playback.currentSong != nil) }
+                    .tabItem { Label("资料库".t, systemImage: "rectangle.stack.fill") }
+                    .tag(Tab.library)
+
+                NavigationStack { BrowseRootView().browseRoutes().reserveMiniPlayer(visible: playback.currentSong != nil) }
+                    .tabItem { Label("浏览".t, systemImage: "square.grid.2x2.fill") }
+                    .tag(Tab.browse)
+
+                NavigationStack { SearchView().browseRoutes().reserveMiniPlayer(visible: playback.currentSong != nil) }
+                    .tabItem { Label("搜索".t, systemImage: "magnifyingglass") }
+                    .tag(Tab.search)
+
+                NavigationStack { SettingsView().reserveMiniPlayer(visible: playback.currentSong != nil) }
+                    .tabItem { Label("设置".t, systemImage: "gearshape.fill") }
+                    .tag(Tab.settings)
+            }
+            .tint(Theme.accent)
+
+            // 迷你播放器悬浮在 TabBar 之上：用 ZStack 浮，避免被 TabBar 覆盖；
+            // 让位通过 .reserveMiniPlayer modifier 在每个 NavigationStack 内做。
+            if playback.currentSong != nil {
+                MiniPlayerBar(onTap: { showFullPlayer = true })
+                    .padding(.horizontal, Metrics.s)
+                    .padding(.bottom, 52)   // TabBar 高度
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .onAppear { playback.apiClient = session.client }
+        .onChange(of: session.client) { _, newClient in
+            playback.apiClient = newClient
+        }
+        .animation(.spring(response: 0.45, dampingFraction: 0.85), value: playback.currentSong)
+    }
+}
+
+extension View {
+    /// 在自己内部的滚动视图底部 reserve 给迷你播放器的空间；
+    /// 仅在 `visible == true` 时生效。
+    func reserveMiniPlayer(visible: Bool) -> some View {
+        self.safeAreaInset(edge: .bottom, spacing: 0) {
+            if visible {
+                Color.clear.frame(height: Metrics.miniPlayerHeight + 8)
+            }
+        }
+    }
+}
