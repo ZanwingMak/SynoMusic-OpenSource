@@ -15,6 +15,8 @@ struct SynoMusicApp: App {
     @StateObject private var theme = ThemeManager.shared
     /// 多语言。
     @StateObject private var lm = LanguageManager.shared
+    /// 播放偏好（后台播放 / 锁屏 / AirPlay 开关）。
+    @StateObject private var playbackSettings = PlaybackSettings()
 
     var body: some Scene {
         WindowGroup {
@@ -25,11 +27,14 @@ struct SynoMusicApp: App {
                 .environmentObject(playlists)
                 .environmentObject(theme)
                 .environmentObject(lm)
+                .environmentObject(playbackSettings)
+                .onAppear { playback.applyPlaybackSettings(playbackSettings) }
                 .tint(theme.current.accent(in: .dark))
                 .preferredColorScheme(theme.appearance.colorScheme)
-                // 主题 / 外观 / 语言切换时让整棵视图树重渲染，
-                // 否则 String 翻译值不会触发视图重新求值。
-                .id("\(theme.currentID)-\(theme.appearance.rawValue)-\(lm.current.rawValue)")
+                // 只对语言变化重建整树（翻译值仅在 body 重算时才会刷新）；
+                // 主题强调色与 appearance 通过 .tint() 与 .preferredColorScheme()
+                // 由 SwiftUI 自动传播，不需要重建，避免切换主题就跳回首页。
+                .id(lm.current.rawValue)
         }
     }
 }

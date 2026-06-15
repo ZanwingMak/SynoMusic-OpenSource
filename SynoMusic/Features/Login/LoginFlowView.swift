@@ -45,7 +45,12 @@ struct LoginFlowView: View {
                                     Button {
                                         handleProfileTap(profile)
                                     } label: {
-                                        ServerRow(profile: profile, isConnecting: connectingProfileID == profile.id)
+                                        ServerRow(
+                                            profile: profile,
+                                            isConnecting: connectingProfileID == profile.id,
+                                            isAutoLogin: session.autoLoginProfileID == profile.id,
+                                            isDefault: serverStore.activeProfileID == profile.id
+                                        )
                                     }
                                     .buttonStyle(.plain)
                                     .contextMenu {
@@ -187,6 +192,9 @@ private struct EmptyServerCard: View {
 private struct ServerRow: View {
     let profile: ServerProfile
     var isConnecting: Bool = false
+    var isAutoLogin: Bool = false
+    var isDefault: Bool = false
+
     var body: some View {
         GlassPanel(cornerRadius: Theme.cornerCard) {
             HStack(spacing: Metrics.m) {
@@ -194,17 +202,28 @@ private struct ServerRow: View {
                     .font(.system(size: 22))
                     .foregroundStyle(.white)
                     .frame(width: 40, height: 40)
-                    .background(Color.white.opacity(0.1), in: Circle())
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(profile.name)
-                        .font(.nocBody.weight(.semibold))
-                        .foregroundStyle(.white)
+                    .background(
+                        (isAutoLogin ? Theme.accent.opacity(0.45) : Color.white.opacity(0.1)),
+                        in: Circle()
+                    )
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(profile.name)
+                            .font(.nocBody.weight(.semibold))
+                            .foregroundStyle(.white)
+                        if isDefault {
+                            tagPill("默认", color: Theme.accent)
+                        }
+                        if isAutoLogin {
+                            tagPill("正在自动登录", color: .green)
+                        }
+                    }
                     Text(profile.displayURL)
                         .font(.nocLabel)
                         .foregroundStyle(.white.opacity(0.6))
                 }
                 Spacer()
-                if isConnecting {
+                if isConnecting || isAutoLogin {
                     ProgressView().tint(.white)
                 } else {
                     Image(systemName: "chevron.right")
@@ -215,6 +234,18 @@ private struct ServerRow: View {
             .padding(.horizontal, Metrics.m)
             .padding(.vertical, Metrics.m)
         }
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.cornerCard, style: .continuous)
+                .stroke(isAutoLogin ? Theme.accent.opacity(0.7) : .clear, lineWidth: 2)
+        )
+    }
+
+    private func tagPill(_ text: String, color: Color) -> some View {
+        Text(text)
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(color.opacity(0.2), in: Capsule())
+            .foregroundStyle(color)
     }
 }
 

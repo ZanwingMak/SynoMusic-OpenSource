@@ -5,6 +5,7 @@ struct MiniPlayerBar: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var session: AppSession
     var onTap: () -> Void
+    var onQueue: (() -> Void)? = nil
 
     var body: some View {
         Button(action: { Haptics.tap(); onTap() }) {
@@ -49,6 +50,20 @@ struct MiniPlayerBar: View {
                                 .frame(width: 36, height: 36)
                         }
                         .buttonStyle(.plain)
+
+                        if let onQueue {
+                            Button {
+                                Haptics.tap()
+                                onQueue()
+                            } label: {
+                                Image(systemName: "list.bullet")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundStyle(.primary)
+                                    .frame(width: 36, height: 36)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("队列")
+                        }
                     }
                     .padding(.horizontal, Metrics.m)
                     .padding(.vertical, 9)

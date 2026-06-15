@@ -67,6 +67,11 @@ final class PlaybackEngine: ObservableObject {
 
     /// 当前 API 客户端，由外部注入。
     weak var apiClient: SynologyClient?
+    /// 本地歌单仓库；用于锁屏 like 命令触发喜欢/取消。
+    weak var playlistStore: PlaylistStore?
+    /// 播放偏好（后台播放 / 锁屏 / AirPlay）；由 App 注入。
+    private var settings: PlaybackSettings?
+    private var bgObserver: NSObjectProtocol?
 
     // MARK: 私有
 
@@ -480,6 +485,26 @@ final class PlaybackEngine: ObservableObject {
         }
     }
 
+    /// 应用播放偏好；启用后立刻按当前开关重新配置 audio session
+    /// 并订阅 `didEnterBackgroundNotification` 在「后台播放」关闭时进入后台自动暂停。
+    func applyPlaybackSettings(_ settings: PlaybackSettings) {
+        self.settings = settings
+        settings.applyAudioSession()
+        if bgObserver == nil {
+            bgObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.didEnterBackgroundNotification,
+                object: nil, queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    guard let self else { return }
+                    if self.settings?.backgroundPlaybackEnabled == false {
+                        self.pause()
+                    }
+                }
+            }
+        }
+    }
+
     private func setupTimeObserver() {
         let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
@@ -554,10 +579,23 @@ final class PlaybackEngine: ObservableObject {
             Task { @MainActor in self?.seek(to: pos.positionTime) }
             return .success
         }
+        // 锁屏「★」喜欢命令，与本地 FavoritesStore 双向同步
+        center.likeCommand.localizedTitle = "喜欢"
+        center.likeCommand.localizedShortTitle = "喜欢"
+        center.likeCommand.addTarget { [weak self] _ in
+            Task { @MainActor in
+                guard let song = self?.currentSong else { return }
+                self?.playlistStore?.toggleFavorite(song)
+                self?.updateNowPlayingMetadata()
+            }
+            return .success
+        }
     }
 
     private func updateNowPlayingMetadata() {
         guard let song = currentSong else { clearNowPlaying(); return }
+        // 同步 like 状态到锁屏 ★
+        MPRemoteCommandCenter.shared().likeCommand.isActive = playlistStore?.isFavorite(song) ?? false
         var info: [String: Any] = [
             MPMediaItemPropertyTitle: song.title,
             MPMediaItemPropertyArtist: song.artist ?? "",

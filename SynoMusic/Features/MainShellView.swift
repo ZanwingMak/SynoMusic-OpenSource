@@ -4,6 +4,7 @@ import SwiftUI
 struct MainShellView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var playlists: PlaylistStore
     @Binding var showFullPlayer: Bool
     @State private var selectedTab: Tab = {
         #if DEBUG
@@ -18,6 +19,8 @@ struct MainShellView: View {
     enum Tab: Hashable {
         case library, browse, search, settings
     }
+
+    @State private var showQueueSheet: Bool = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -43,17 +46,75 @@ struct MainShellView: View {
             // 迷你播放器悬浮在 TabBar 之上：用 ZStack 浮，避免被 TabBar 覆盖；
             // 让位通过 .reserveMiniPlayer modifier 在每个 NavigationStack 内做。
             if playback.currentSong != nil {
-                MiniPlayerBar(onTap: { showFullPlayer = true })
-                    .padding(.horizontal, Metrics.s)
-                    .padding(.bottom, 52)   // TabBar 高度
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                MiniPlayerBar(
+                    onTap: { showFullPlayer = true },
+                    onQueue: { showQueueSheet = true }
+                )
+                .padding(.horizontal, Metrics.s)
+                .padding(.bottom, 52)   // TabBar 高度
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .onAppear { playback.apiClient = session.client }
+        .onAppear {
+            playback.apiClient = session.client
+            playback.playlistStore = playlists
+        }
         .onChange(of: session.client) { _, newClient in
             playback.apiClient = newClient
         }
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: playback.currentSong)
+        .sheet(isPresented: $showQueueSheet) {
+            QueueSheet().presentationDetents([.medium, .large])
+        }
+    }
+}
+
+/// 通用队列面板，被迷你播放器队列按钮触发。
+struct QueueSheet: View {
+    @EnvironmentObject private var playback: PlaybackEngine
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            List {
+                Section(playback.isShuffling ? "随机播放队列" : "播放队列") {
+                    ForEach(Array(playback.queue.enumerated()), id: \.element.id) { idx, song in
+                        Button {
+                            Haptics.tap()
+                            playback.playItem(at: idx)
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(song.title).font(.nocBody)
+                                        .foregroundStyle(idx == playback.currentIndex ? Theme.accent : .primary)
+                                    Text(song.artist ?? "").font(.nocLabel).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if idx == playback.currentIndex {
+                                    EqualizerIcon(isAnimating: playback.isPlaying)
+                                        .frame(width: 18, height: 18)
+                                        .foregroundStyle(Theme.accent)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .onMove { from, to in
+                        playback.moveInQueue(from: from, to: to)
+                    }
+                    .onDelete { idx in
+                        if let i = idx.first { playback.removeFromQueue(at: i) }
+                    }
+                }
+            }
+            .navigationTitle("队列")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { EditButton() }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("完成") { dismiss() }
+                }
+            }
+        }
     }
 }
 

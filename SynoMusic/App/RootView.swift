@@ -71,7 +71,12 @@ struct RootView: View {
         guard let p = serverStore.defaultProfile,
               let pwd = serverStore.password(for: p), !pwd.isEmpty else { return }
         isAutoLogging = true
-        defer { isAutoLogging = false }
+        // 暴露给 LoginFlowView：让用户在多档案列表里看到「正在自动登录…」高亮哪一行
+        session.autoLoginProfileID = p.id
+        defer {
+            isAutoLogging = false
+            if session.client == nil { session.autoLoginProfileID = nil }
+        }
         let client = SynologyClient(profile: p)
         do {
             try await client.login(password: pwd)

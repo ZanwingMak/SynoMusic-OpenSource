@@ -87,17 +87,13 @@ struct ServerEditorView: View {
                     portText = String(profile.port)
                 }
             }
-            TextField("主机或 QuickConnect ID", text: $profile.host)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled(true)
-                .keyboardType(.URL)
+            ClearableTextField(title: "主机或 QuickConnect ID", text: $profile.host, keyboard: .URL)
             HStack {
                 Text("端口")
                 Spacer()
-                TextField("5000", text: $portText)
+                ClearableTextField(title: "5000", text: $portText, keyboard: .numberPad)
                     .multilineTextAlignment(.trailing)
-                    .keyboardType(.numberPad)
-                    .frame(maxWidth: 120)
+                    .frame(maxWidth: 140)
                     .onChange(of: portText) { _, new in
                         let digits = new.filter(\.isNumber)
                         if digits != new { portText = digits }
@@ -112,27 +108,8 @@ struct ServerEditorView: View {
     /// 账号：用户名 + 密码（第一屏可见）。
     private var accountSection: some View {
         Section {
-            TextField("用户名", text: $profile.username)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled(true)
-            HStack {
-                Group {
-                    if passwordVisible {
-                        TextField("密码", text: $password)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled(true)
-                    } else {
-                        SecureField("密码", text: $password)
-                    }
-                }
-                .textContentType(.password)
-                .submitLabel(.done)
-                Button { passwordVisible.toggle() } label: {
-                    Image(systemName: passwordVisible ? "eye.slash" : "eye")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
+            ClearableTextField(title: "用户名", text: $profile.username)
+            ClearableSecureField(title: "密码", text: $password)
         } header: {
             Text("账号")
         }
@@ -167,10 +144,8 @@ struct ServerEditorView: View {
     private var advancedSection: some View {
         Section {
             DisclosureGroup(isExpanded: $advancedExpanded) {
-                TextField("备注名（家里的 DS220+）", text: $profile.name)
-                    .textInputAutocapitalization(.never)
-                TextField("二步验证码（OTP）", text: $otp)
-                    .keyboardType(.numberPad)
+                ClearableTextField(title: "备注名（家里的 DS220+）", text: $profile.name, autocapitalization: .sentences)
+                ClearableTextField(title: "二步验证码（OTP）", text: $otp, keyboard: .numberPad)
                 Toggle("记住密码", isOn: $rememberPassword)
                 if profile.scheme == .https {
                     Toggle("信任自签名证书", isOn: $profile.ignoreInvalidCertificate)

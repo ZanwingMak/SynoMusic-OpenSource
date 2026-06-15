@@ -13,6 +13,8 @@ struct FullPlayerView: View {
     @State private var showAddToPlaylist = false
     @State private var showDeleteConfirm = false
     @State private var ratingPending: Int?
+    @State private var showSongInfo = false
+    @State private var showSongEdit = false
     @State private var dominantColor: Color = Color(red: 0.18, green: 0.10, blue: 0.25)
 
     var body: some View {
@@ -104,6 +106,18 @@ struct FullPlayerView: View {
         } message: {
             Text(deleteAlertMessage)
         }
+        .sheet(isPresented: $showSongInfo) {
+            if let song = playback.currentSong {
+                SongInfoSheet(song: song)
+                    .presentationDetents([.large])
+            }
+        }
+        .sheet(isPresented: $showSongEdit) {
+            if let song = playback.currentSong {
+                SongEditSheet(song: song)
+                    .presentationDetents([.large])
+            }
+        }
     }
 
     /// 删除确认提示文案，避免内联插值让 SwiftUI 编译器超时。
@@ -192,6 +206,12 @@ struct FullPlayerView: View {
                     }
                     Button { showAddToPlaylist = true } label: {
                         Label("添加到歌单…", systemImage: "text.badge.plus")
+                    }
+                    Button { showSongInfo = true } label: {
+                        Label("歌曲信息", systemImage: "info.circle")
+                    }
+                    Button { showSongEdit = true } label: {
+                        Label("编辑歌曲信息", systemImage: "square.and.pencil")
                     }
                     Menu("评分") {
                         ForEach(0...5, id: \.self) { r in

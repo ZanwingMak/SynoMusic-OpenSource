@@ -39,29 +39,18 @@ struct SleepTimerSheet: View {
     private var currentSection: some View {
         Section {
             if let remain = playback.sleepRemaining {
-                HStack {
+                HStack(spacing: 12) {
                     Image(systemName: "moon.zzz.fill").foregroundStyle(Theme.accent)
-                    Text("剩余 \(format(remain))")
-                        .monospacedDigit()
+                    Text("剩余 \(format(remain))").monospacedDigit()
                     Spacer()
-                    Button("取消") {
-                        Haptics.tap()
-                        playback.setSleepTimer(nil)
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(.red)
+                    cancelButton
                 }
             } else if playback.stopAtTrackEnd {
-                HStack {
+                HStack(spacing: 12) {
                     Image(systemName: "stop.circle.fill").foregroundStyle(Theme.accent)
                     Text("本曲结束后停止")
                     Spacer()
-                    Button("取消") {
-                        Haptics.tap()
-                        playback.setSleepTimer(nil)
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(.red)
+                    cancelButton
                 }
             } else {
                 Label("当前未设置", systemImage: "moon.zzz")
@@ -231,6 +220,26 @@ struct SleepTimerSheet: View {
         Haptics.soft()
         playback.setSleepTimer(seconds)
         isPresented = false
+    }
+
+    /// 取消按钮：用图标按钮 + .contentShape 保证整体可点击；
+    /// 同时把 sheet 关掉以给用户明确视觉反馈。
+    private var cancelButton: some View {
+        Button {
+            Haptics.tap()
+            playback.setSleepTimer(nil)
+            isPresented = false
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "xmark.circle.fill")
+                Text("取消")
+            }
+            .foregroundStyle(.red)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     private func format(_ s: TimeInterval) -> String {

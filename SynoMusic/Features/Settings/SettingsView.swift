@@ -7,6 +7,7 @@ struct SettingsView: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var lm: LanguageManager
+    @EnvironmentObject private var playbackSettings: PlaybackSettings
 
     @State private var serverInfo: [String: String] = [:]
     @State private var editingProfile: ServerProfile?
@@ -24,7 +25,7 @@ struct SettingsView: View {
             othersSection
             aboutSection
         }
-        .navigationTitle("设置")
+        .navigationTitle("设置".t)
         .task { await loadServerInfo() }
         .sheet(item: $editingProfile) { profile in
             ServerEditorView(profile: profile)
@@ -36,22 +37,24 @@ struct SettingsView: View {
                 .presentationDragIndicator(.visible)
         }
         .alert(
-            "删除服务器",
+            "删除服务器".t,
             isPresented: Binding(
                 get: { pendingDelete != nil },
                 set: { if !$0 { pendingDelete = nil } }
             )
         ) {
-            Button("删除", role: .destructive) {
+            Button("删除".t, role: .destructive) {
                 if let p = pendingDelete {
                     if session.client?.profile.id == p.id {
                         Task { await signOut() }
                     }
-                    serverStore.remove(p)
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        serverStore.remove(p)
+                    }
                 }
                 pendingDelete = nil
             }
-            Button("取消", role: .cancel) { pendingDelete = nil }
+            Button("取消".t, role: .cancel) { pendingDelete = nil }
         } message: {
             if let p = pendingDelete {
                 Text("将移除「\(p.name)」与该服务器保存的密码。该操作不可撤销。")
@@ -62,19 +65,19 @@ struct SettingsView: View {
     // MARK: 当前会话
 
     private var currentServerSection: some View {
-        Section("当前会话") {
+        Section("当前会话".t) {
             if let active = session.client?.profile {
-                infoRow("名称", active.name)
-                infoRow("地址", active.displayURL)
-                infoRow("用户", active.username)
+                infoRow("名称".t, active.name)
+                infoRow("地址".t, active.displayURL)
+                infoRow("用户".t, active.username)
                 if let v = serverInfo["version_string"] {
                     infoRow("Audio Station", v)
                 }
                 Button(role: .destructive) {
                     Task { await signOut() }
-                } label: { Text("退出登录") }
+                } label: { Text("退出登录".t) }
             } else {
-                Text("未登录").foregroundStyle(.secondary)
+                Text("未登录".t).foregroundStyle(.secondary)
             }
         }
     }
@@ -84,7 +87,7 @@ struct SettingsView: View {
     private var serversSection: some View {
         Section {
             if serverStore.profiles.isEmpty {
-                Text("还没有添加任何服务器。")
+                Text("还没有添加任何服务器。".t)
                     .foregroundStyle(.secondary)
                     .font(.nocCaption)
             } else {
@@ -96,11 +99,15 @@ struct SettingsView: View {
                         onTap: { Task { await switchSession(to: p) } },
                         onEdit: { editingProfile = p }
                     )
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .top).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button(role: .destructive) {
                             pendingDelete = p
-                        } label: { Label("删除", systemImage: "trash") }
-                        Button { editingProfile = p } label: { Label("编辑", systemImage: "pencil") }
+                        } label: { Label("删除".t, systemImage: "trash") }
+                        Button { editingProfile = p } label: { Label("编辑".t, systemImage: "pencil") }
                             .tint(.blue)
                     }
                 }
@@ -108,10 +115,10 @@ struct SettingsView: View {
             Button {
                 editingProfile = ServerProfile(host: "", username: "")
             } label: {
-                Label("添加服务器", systemImage: "plus")
+                Label("添加服务器".t, systemImage: "plus")
             }
         } header: {
-            Text("服务器")
+            Text("服务器".t)
         } footer: {
             Text("点击行设为默认；下次启动 App 会用默认服务器自动登录。点 ⓘ 编辑配置；左滑删除。")
         }
@@ -150,7 +157,7 @@ struct SettingsView: View {
                     }
                     .padding(.vertical, 2)
                 }
-                Picker("外观", selection: $theme.appearance) {
+                Picker("外观".t, selection: $theme.appearance) {
                     ForEach(AppearancePreference.allCases) { a in
                         Text(a.title.t).tag(a)
                     }
@@ -171,36 +178,36 @@ struct SettingsView: View {
                     Text(lang.title).tag(lang)
                 }
             } label: {
-                Label("语言", systemImage: "character.bubble")
+                Label("语言".t, systemImage: "character.bubble")
             }
         } header: {
-            Text("语言")
+            Text("语言".t)
         }
     }
 
     private var qualitySection: some View {
         Section {
-            Picker("流式音质", selection: $playback.quality) {
+            Picker("流式音质".t, selection: $playback.quality) {
                 ForEach(AudioQuality.allCases) { q in
                     Text(q.title).tag(q)
                 }
             }
         } header: {
-            Text("音质")
+            Text("音质".t)
         } footer: {
             Text("原始音质直接传输源文件（FLAC/WAV 等）。低带宽下选择压缩可降低卡顿概率。")
         }
     }
 
     private var cacheSection: some View {
-        Section("下载与缓存") {
+        Section("下载与缓存".t) {
             NavigationLink {
                 DownloadsListView()
             } label: {
                 HStack {
-                    Label("已下载歌曲", systemImage: "arrow.down.circle")
+                    Label("已下载歌曲".t, systemImage: "arrow.down.circle")
                     Spacer()
-                    Text("管理").foregroundStyle(.secondary)
+                    Text("管理".t).foregroundStyle(.secondary)
                 }
             }
         }
@@ -208,45 +215,53 @@ struct SettingsView: View {
 
     private var othersSection: some View {
         Section {
-            Toggle(isOn: .constant(true)) {
-                Label("锁屏控制", systemImage: "lock.open")
+            Toggle(isOn: $playbackSettings.backgroundPlaybackEnabled) {
+                Label("后台播放".t, systemImage: "play.circle")
             }
-            .disabled(true)
-            Toggle(isOn: .constant(true)) {
-                Label("AirPlay", systemImage: "airplayaudio")
+            Toggle(isOn: $playbackSettings.lockScreenControlsEnabled) {
+                Label("锁屏控制".t, systemImage: "lock.open")
             }
-            .disabled(true)
+            Toggle(isOn: $playbackSettings.airPlayEnabled) {
+                Label("AirPlay".t, systemImage: "airplayaudio")
+            }
         } header: {
-            Text("其它")
+            Text("播放".t)
         } footer: {
-            Text("系统已默认开启。需要在控制中心使用 AirPlay 选择目标设备。")
+            Text("关闭「后台播放」后，App 进入后台会自动暂停。AirPlay 关闭后，控制中心的路由选择仍可用但 SynoMusic 不会主动声明输出。".t)
         }
     }
 
     private var aboutSection: some View {
-        Section("关于") {
-            infoRow("版本", Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+        Section("关于".t) {
+            infoRow("版本".t, Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
             Button {
                 Haptics.tap()
                 showSponsors = true
             } label: {
-                Label {
-                    Text("赞助支持")
-                        .foregroundStyle(.primary)
-                } icon: {
-                    Image(systemName: "heart.circle.fill")
-                        .foregroundStyle(.pink)
+                HStack {
+                    Label {
+                        Text("赞助支持".t).foregroundStyle(.primary)
+                    } icon: {
+                        Image(systemName: "heart.circle.fill")
+                            .foregroundStyle(.pink)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
+                .contentShape(Rectangle())
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
+            .listRowSeparator(.visible)
             Link(destination: URL(string: "https://github.com/ZanwingMak/SynoMusic/issues")!) {
-                Label("反馈问题", systemImage: "exclamationmark.bubble.fill")
+                Label("反馈问题".t, systemImage: "exclamationmark.bubble.fill")
             }
             Link(destination: URL(string: "https://github.com/ZanwingMak/SynoMusic")!) {
-                Label("GitHub 仓库", systemImage: "chevron.left.forwardslash.chevron.right")
+                Label("GitHub 仓库".t, systemImage: "chevron.left.forwardslash.chevron.right")
             }
             Link(destination: URL(string: "https://github.com/ZanwingMak/SynoMusic/blob/main/CHANGELOG.md")!) {
-                Label("更新日志", systemImage: "list.bullet.rectangle")
+                Label("更新日志".t, systemImage: "list.bullet.rectangle")
             }
             Text("SynoMusic 是一个非官方的 Audio Station 客户端。Synology 商标与 Audio Station 名称归群晖科技所有。")
                 .font(.caption2)
