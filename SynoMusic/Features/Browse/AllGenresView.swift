@@ -11,7 +11,7 @@ struct AllGenresView: View {
             if isLoading && genres.isEmpty {
                 LoadingState()
             } else if let err = error {
-                ErrorStateView(title: "加载失败", message: err) { Task { await load() } }
+                ErrorStateView(title: "加载失败".t, message: err) { Task { await load() } }
             } else {
                 List(genres) { g in
                     NavigationLink(value: BrowseRoute.genre(g)) {
@@ -28,7 +28,7 @@ struct AllGenresView: View {
             }
         }
         .background(Color(.systemBackground).ignoresSafeArea())
-        .navigationTitle("流派")
+        .navigationTitle("流派".t)
         .task { await load() }
     }
 
@@ -53,7 +53,7 @@ struct GenreDetailView: View {
             if isLoading && albums.isEmpty {
                 LoadingState().frame(height: 240)
             } else if let err = error {
-                ErrorStateView(title: "加载失败", message: err) { Task { await load() } }.frame(height: 240)
+                ErrorStateView(title: "加载失败".t, message: err) { Task { await load() } }.frame(height: 240)
             } else {
                 LazyVGrid(columns: columns, spacing: Metrics.l) {
                     ForEach(albums) { a in

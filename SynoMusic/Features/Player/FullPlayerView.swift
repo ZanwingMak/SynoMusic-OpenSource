@@ -100,9 +100,9 @@ struct FullPlayerView: View {
                     .presentationDetents([.medium, .large])
             }
         }
-        .alert("删除文件", isPresented: $showDeleteConfirm) {
-            Button("删除", role: .destructive) { Task { await deleteCurrent() } }
-            Button("取消", role: .cancel) {}
+        .alert("删除文件".t, isPresented: $showDeleteConfirm) {
+            Button("删除".t, role: .destructive) { Task { await deleteCurrent() } }
+            Button("取消".t, role: .cancel) {}
         } message: {
             Text(deleteAlertMessage)
         }

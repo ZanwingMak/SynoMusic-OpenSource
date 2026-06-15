@@ -16,7 +16,7 @@ struct PlaylistDetailView: View {
                 if isLoading && songs.isEmpty {
                     LoadingState().frame(height: 200)
                 } else if let err = error {
-                    ErrorStateView(title: "加载失败", message: err) { Task { await load() } }.frame(height: 200)
+                    ErrorStateView(title: "加载失败".t, message: err) { Task { await load() } }.frame(height: 200)
                 } else {
                     SongListSection(songs: songs) { idx in
                         playback.play(queue: songs, startAt: idx)
@@ -63,13 +63,13 @@ struct PlaylistDetailView: View {
             Button {
                 playback.isShuffling = false
                 playback.play(queue: songs, startAt: 0)
-            } label: { Label("播放", systemImage: "play.fill") }
+            } label: { Label("播放".t, systemImage: "play.fill") }
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(songs.isEmpty)
             Button {
                 playback.isShuffling = true
                 playback.play(queue: songs.shuffled(), startAt: 0)
-            } label: { Label("随机", systemImage: "shuffle") }
+            } label: { Label("随机".t, systemImage: "shuffle") }
                 .buttonStyle(SecondaryButtonStyle())
                 .disabled(songs.isEmpty)
         }

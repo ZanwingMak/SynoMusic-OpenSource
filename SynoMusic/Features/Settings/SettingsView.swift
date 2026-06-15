@@ -57,7 +57,7 @@ struct SettingsView: View {
             Button("取消".t, role: .cancel) { pendingDelete = nil }
         } message: {
             if let p = pendingDelete {
-                Text("将移除「\(p.name)」与该服务器保存的密码。该操作不可撤销。")
+                Text("将移除「\(p.name)」与该服务器保存的密码。该操作不可撤销。".t)
             }
         }
     }
@@ -120,7 +120,7 @@ struct SettingsView: View {
         } header: {
             Text("服务器".t)
         } footer: {
-            Text("点击行设为默认；下次启动 App 会用默认服务器自动登录。点 ⓘ 编辑配置；左滑删除。")
+            Text("点击行设为默认；下次启动 App 会用默认服务器自动登录。点 ⓘ 编辑配置；左滑删除。".t)
         }
     }
 
@@ -167,7 +167,7 @@ struct SettingsView: View {
         } header: {
             Text("外观".t)
         } footer: {
-            Text("强调色与 Light/Dark 偏好；保存到本地。")
+            Text("强调色与 Light/Dark 偏好；保存到本地。".t)
         }
     }
 
@@ -195,7 +195,7 @@ struct SettingsView: View {
         } header: {
             Text("音质".t)
         } footer: {
-            Text("原始音质直接传输源文件（FLAC/WAV 等）。低带宽下选择压缩可降低卡顿概率。")
+            Text("原始音质直接传输源文件（FLAC/WAV 等）。低带宽下选择压缩可降低卡顿概率。".t)
         }
     }
 
@@ -263,7 +263,7 @@ struct SettingsView: View {
             Link(destination: URL(string: "https://github.com/ZanwingMak/SynoMusic/blob/main/CHANGELOG.md")!) {
                 Label("更新日志".t, systemImage: "list.bullet.rectangle")
             }
-            Text("SynoMusic 是一个非官方的 Audio Station 客户端。Synology 商标与 Audio Station 名称归群晖科技所有。")
+            Text("SynoMusic 是一个非官方的 Audio Station 客户端。Synology 商标与 Audio Station 名称归群晖科技所有。".t)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -343,11 +343,14 @@ private struct ServerRowItem: View {
                         Text(displayName)
                             .font(.nocBody.weight(.semibold))
                             .foregroundStyle(.primary)
+                        if profile.isQuickConnect {
+                            tagPill("QC", color: .blue)
+                        }
                         if isCurrentSession {
-                            tagPill("已登录", color: .green)
+                            tagPill("已登录".t, color: .green)
                         }
                         if isDefault {
-                            tagPill("默认", color: Theme.accent)
+                            tagPill("默认".t, color: Theme.accent)
                         }
                     }
                     Text("\(profile.username) @ \(profile.displayURL)")

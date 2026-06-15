@@ -54,11 +54,11 @@ struct LoginFlowView: View {
                                     }
                                     .buttonStyle(.plain)
                                     .contextMenu {
-                                        Button("编辑") { editingProfile = profile }
-                                        Button("用其他密码登录") { path.append(profile) }
+                                        Button("编辑".t) { editingProfile = profile }
+                                        Button("用其他密码登录".t) { path.append(profile) }
                                         Button(role: .destructive) {
                                             serverStore.remove(profile)
-                                        } label: { Text("移除") }
+                                        } label: { Text("移除".t) }
                                     }
                                 }
                             }
@@ -74,7 +74,7 @@ struct LoginFlowView: View {
                             Button {
                                 editingProfile = ServerProfile(host: "", username: "")
                             } label: {
-                                Label("添加服务器", systemImage: "plus")
+                                Label("添加服务器".t, systemImage: "plus")
                                     .foregroundStyle(.white)
                             }
                             .buttonStyle(SecondaryButtonStyle())
@@ -158,7 +158,7 @@ private struct BrandHeader: View {
             Text("SynoMusic")
                 .font(.system(size: 34, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
-            Text("你的群晖音乐，私人夜曲。")
+            Text("你的群晖音乐，私人夜曲。".t)
                 .font(.nocCaption)
                 .foregroundStyle(.white.opacity(0.7))
         }
@@ -173,14 +173,14 @@ private struct EmptyServerCard: View {
                 Image(systemName: "externaldrive.connected.to.line.below")
                     .font(.system(size: 36, weight: .light))
                     .foregroundStyle(.white.opacity(0.75))
-                Text("还没有连接的 NAS")
+                Text("还没有连接的 NAS".t)
                     .font(.nocSection)
                     .foregroundStyle(.white)
-                Text("添加你的群晖服务器，开始无限聆听。")
+                Text("添加你的群晖服务器，开始无限聆听。".t)
                     .font(.nocCaption)
                     .foregroundStyle(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
-                Button("添加服务器", action: onAdd)
+                Button("添加服务器".t, action: onAdd)
                     .buttonStyle(PrimaryButtonStyle())
                     .padding(.top, Metrics.s)
             }
@@ -211,11 +211,14 @@ private struct ServerRow: View {
                         Text(profile.name)
                             .font(.nocBody.weight(.semibold))
                             .foregroundStyle(.white)
+                        if profile.isQuickConnect {
+                            tagPill("QC", color: .cyan)
+                        }
                         if isDefault {
-                            tagPill("默认", color: Theme.accent)
+                            tagPill("默认".t, color: Theme.accent)
                         }
                         if isAutoLogin {
-                            tagPill("正在自动登录", color: .green)
+                            tagPill("正在自动登录".t, color: .green)
                         }
                     }
                     Text(profile.displayURL)

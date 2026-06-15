@@ -27,9 +27,9 @@ struct AllAlbumsView: View {
             if isLoading && albums.isEmpty {
                 LoadingState()
             } else if let err = error {
-                ErrorStateView(title: "加载失败", message: err) { Task { await load() } }
+                ErrorStateView(title: "加载失败".t, message: err) { Task { await load() } }
             } else if albums.isEmpty {
-                EmptyStateView(systemImage: "square.stack", title: "空空如也", message: "Audio Station 中没有专辑。")
+                EmptyStateView(systemImage: "square.stack", title: "空空如也".t, message: "Audio Station 中没有专辑。".t)
             } else {
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: Metrics.l) {
@@ -45,7 +45,7 @@ struct AllAlbumsView: View {
             }
         }
         .background(Color(.systemBackground).ignoresSafeArea())
-        .navigationTitle("专辑")
+        .navigationTitle("专辑".t)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {

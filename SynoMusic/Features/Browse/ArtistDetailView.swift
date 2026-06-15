@@ -16,7 +16,7 @@ struct ArtistDetailView: View {
                 if isLoading && albums.isEmpty {
                     LoadingState().frame(height: 200)
                 } else if let err = error {
-                    ErrorStateView(title: "加载失败", message: err) { Task { await load() } }
+                    ErrorStateView(title: "加载失败".t, message: err) { Task { await load() } }
                         .frame(height: 200)
                 } else {
                     LazyVGrid(columns: columns, spacing: Metrics.l) {

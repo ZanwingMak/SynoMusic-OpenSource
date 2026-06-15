@@ -11,9 +11,9 @@ struct AllPlaylistsView: View {
             if isLoading && playlists.isEmpty {
                 LoadingState()
             } else if let err = error {
-                ErrorStateView(title: "加载失败", message: err) { Task { await load() } }
+                ErrorStateView(title: "加载失败".t, message: err) { Task { await load() } }
             } else if playlists.isEmpty {
-                EmptyStateView(systemImage: "music.note.list", title: "暂无播放列表", message: "在 Audio Station 中创建播放列表，会出现在这里。")
+                EmptyStateView(systemImage: "music.note.list", title: "暂无播放列表".t, message: "在 Audio Station 中创建播放列表，会出现在这里。")
             } else {
                 List {
                     ForEach(playlists) { p in
@@ -39,7 +39,7 @@ struct AllPlaylistsView: View {
             }
         }
         .background(Color(.systemBackground).ignoresSafeArea())
-        .navigationTitle("播放列表")
+        .navigationTitle("播放列表".t)
         .task { await load() }
     }
 

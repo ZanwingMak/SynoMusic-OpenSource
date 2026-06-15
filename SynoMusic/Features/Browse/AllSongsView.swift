@@ -34,7 +34,7 @@ struct AllSongsView: View {
             if isInitialLoading && songs.isEmpty {
                 LoadingState()
             } else if let err = error, songs.isEmpty {
-                ErrorStateView(title: "加载失败", message: err) { Task { await reload() } }
+                ErrorStateView(title: "加载失败".t, message: err) { Task { await reload() } }
             } else if songs.isEmpty {
                 EmptyStateView(systemImage: "music.note", title: "没有歌曲", message: "Audio Station 中没有歌曲。")
             } else {
@@ -98,13 +98,13 @@ struct AllSongsView: View {
             Button {
                 playback.isShuffling = false
                 playback.play(queue: songs, startAt: 0)
-            } label: { Label("播放", systemImage: "play.fill") }
+            } label: { Label("播放".t, systemImage: "play.fill") }
             .buttonStyle(PrimaryButtonStyle())
 
             Button {
                 playback.isShuffling = true
                 playback.play(queue: songs.shuffled(), startAt: 0)
-            } label: { Label("随机", systemImage: "shuffle") }
+            } label: { Label("随机".t, systemImage: "shuffle") }
             .buttonStyle(SecondaryButtonStyle())
         }
         .padding(.vertical, Metrics.s)
@@ -113,11 +113,11 @@ struct AllSongsView: View {
 
     @ViewBuilder
     private func menu(for song: Song) -> some View {
-        Button { playback.appendNext(song) } label: { Label("接下来播放", systemImage: "text.line.first.and.arrowtriangle.forward") }
+        Button { playback.appendNext(song) } label: { Label("接下来播放".t, systemImage: "text.line.first.and.arrowtriangle.forward") }
         Button {
             if playback.queue.isEmpty { playback.play(queue: [song]) } else { playback.appendNext(song) }
-        } label: { Label("加入队列", systemImage: "list.bullet") }
-        Button { pickerSong = song } label: { Label("添加到歌单…", systemImage: "text.badge.plus") }
+        } label: { Label("加入队列".t, systemImage: "list.bullet") }
+        Button { pickerSong = song } label: { Label("添加到歌单…".t, systemImage: "text.badge.plus") }
         Button {
             playlists.toggleFavorite(song)
             Haptics.tap()

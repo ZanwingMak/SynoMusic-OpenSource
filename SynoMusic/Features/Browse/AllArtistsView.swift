@@ -13,7 +13,7 @@ struct AllArtistsView: View {
             if isLoading && artists.isEmpty {
                 LoadingState()
             } else if let err = error {
-                ErrorStateView(title: "加载失败", message: err) { Task { await load() } }
+                ErrorStateView(title: "加载失败".t, message: err) { Task { await load() } }
             } else {
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: Metrics.l) {
@@ -29,7 +29,7 @@ struct AllArtistsView: View {
             }
         }
         .background(Color(.systemBackground).ignoresSafeArea())
-        .navigationTitle("艺术家")
+        .navigationTitle("艺术家".t)
         .task { await load() }
     }
 

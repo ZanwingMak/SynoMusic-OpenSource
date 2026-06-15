@@ -16,7 +16,7 @@ struct AlbumDetailView: View {
                 header
                 actions
                 if let err = error {
-                    ErrorStateView(title: "加载失败", message: err) { Task { await load() } }
+                    ErrorStateView(title: "加载失败".t, message: err) { Task { await load() } }
                         .frame(height: 200)
                 } else if isLoading {
                     LoadingState().frame(height: 200)
@@ -67,7 +67,7 @@ struct AlbumDetailView: View {
                 playback.isShuffling = false
                 playback.play(queue: songs, startAt: 0)
             } label: {
-                Label("播放", systemImage: "play.fill")
+                Label("播放".t, systemImage: "play.fill")
             }
             .buttonStyle(PrimaryButtonStyle())
             .disabled(songs.isEmpty)
@@ -76,7 +76,7 @@ struct AlbumDetailView: View {
                 playback.isShuffling = true
                 playback.play(queue: songs.shuffled(), startAt: 0)
             } label: {
-                Label("随机", systemImage: "shuffle")
+                Label("随机".t, systemImage: "shuffle")
             }
             .buttonStyle(SecondaryButtonStyle())
             .disabled(songs.isEmpty)
@@ -117,10 +117,10 @@ struct SongListSection: View {
                 .contextMenu {
                     Button {
                         playback.appendNext(song)
-                    } label: { Label("接下来播放", systemImage: "text.line.first.and.arrowtriangle.forward") }
+                    } label: { Label("接下来播放".t, systemImage: "text.line.first.and.arrowtriangle.forward") }
                     Button {
                         pickerSong = song
-                    } label: { Label("添加到歌单…", systemImage: "text.badge.plus") }
+                    } label: { Label("添加到歌单…".t, systemImage: "text.badge.plus") }
                     Button {
                         playlists.toggleFavorite(song)
                         Haptics.tap()

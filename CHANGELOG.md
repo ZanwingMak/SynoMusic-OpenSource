@@ -5,6 +5,8 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-06-16
+
 ### 新增（四）
 - **灵动岛 + 锁屏 Live Activity**：新增 `NocturneLive` Widget Extension 实现 ActivityKit 三态：
   - **compactLeading**：曲目封面缩略图；**compactTrailing**：播放/暂停图标（playing 时 SF Symbol variable color 律动）；**minimal**：waveform/music note。

@@ -15,7 +15,7 @@ struct FolderBrowseView: View {
             if isLoading && items.isEmpty {
                 LoadingState()
             } else if let err = error {
-                ErrorStateView(title: "加载失败", message: err) { Task { await load() } }
+                ErrorStateView(title: "加载失败".t, message: err) { Task { await load() } }
             } else if items.isEmpty {
                 EmptyStateView(systemImage: "folder", title: "空目录", message: "这里还没有音频文件。")
             } else {
