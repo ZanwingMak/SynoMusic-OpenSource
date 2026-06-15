@@ -75,9 +75,9 @@ SynoMusic/
 
 If SynoMusic saves you a Spotify subscription, consider supporting development.
 
-- **PayPal** — paypal.me/zanwing
-- **Buy Me a Coffee** — buymeacoffee.com/zanwing
-- **Wise** — wise.com/pay/me/zhenyingm1
+- **PayPal** — [paypal.me/zanwing](https://paypal.me/zanwing)
+- **Buy Me a Coffee** — [buymeacoffee.com/zanwing](https://buymeacoffee.com/zanwing)
+- **Wise** — [wise.com/pay/me/zhenyingm1](https://wise.com/pay/me/zhenyingm1)
 - **WeChat / Alipay** — open Settings → Sponsor for QR codes
 
 ## License

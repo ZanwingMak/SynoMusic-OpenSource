@@ -76,7 +76,7 @@ struct QueueSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                Section(playback.isShuffling ? "随机播放队列" : "播放队列") {
+                Section(playback.isShuffling ? "随机播放队列".t : "播放队列".t) {
                     ForEach(Array(playback.queue.enumerated()), id: \.element.id) { idx, song in
                         Button {
                             Haptics.tap()
@@ -106,12 +106,12 @@ struct QueueSheet: View {
                     }
                 }
             }
-            .navigationTitle("队列")
+            .navigationTitle("队列".t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { EditButton() }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("完成") { dismiss() }
+                    Button("完成".t) { dismiss() }
                 }
             }
         }

@@ -355,9 +355,11 @@ final class PlaybackEngine: ObservableObject {
     /// 在 `interval` 秒后自动暂停；nil 取消。
     func setSleepTimer(_ interval: TimeInterval?) {
         sleepTask?.cancel()
+        sleepTask = nil
         stopAtTrackEnd = false
+        sleepRemaining = nil
         guard let interval, interval > 0 else {
-            sleepRemaining = nil
+            // 取消路径：sleepRemaining 已置 nil，直接返回让 UI 立刻刷新
             return
         }
         sleepRemaining = interval
@@ -365,6 +367,9 @@ final class PlaybackEngine: ObservableObject {
         sleepTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
+                // 关键修复：从 sleep 醒来时先确认任务未被取消，避免在 cancel 后
+                // 又跑一次 tick 把 sleepRemaining 又写回去，导致用户必须点两次取消。
+                if Task.isCancelled { return }
                 let remain = deadline.timeIntervalSinceNow
                 await MainActor.run {
                     guard let self else { return }
@@ -659,8 +664,14 @@ final class PlaybackEngine: ObservableObject {
     #endif
 
     /// 限流的 LA 更新：1 秒内最多一次。
+    ///
+    /// 注意：当前关闭 Live Activity 的"主动启动"——iOS 系统会用
+    /// `MPNowPlayingInfoCenter` 自动在锁屏与灵动岛展示当前播放信息。
+    /// 启动 Activity.request 会在锁屏出现"第二个播放器"，与系统 widget 重复。
+    /// 代码保留以便未来按需启用。
     private func updateLiveActivityThrottled() {
         #if canImport(ActivityKit)
+        guard liveActivityEnabled else { return }
         guard #available(iOS 16.2, *) else { return }
         let now = Date()
         guard now.timeIntervalSince(lastActivityUpdate) > 1.0 else { return }
@@ -673,6 +684,11 @@ final class PlaybackEngine: ObservableObject {
     /// 通用入口：切歌、暂停/播放时调用。
     private func refreshLiveActivity() {
         #if canImport(ActivityKit)
+        guard liveActivityEnabled else {
+            // 即便禁用，仍确保任何残留的 LA 被结束
+            Task { await LiveActivityCoordinator.shared.endActivity() }
+            return
+        }
         guard #available(iOS 16.2, *) else { return }
         if let state = buildLiveActivityState() {
             lastActivityUpdate = Date()
@@ -682,6 +698,10 @@ final class PlaybackEngine: ObservableObject {
         }
         #endif
     }
+
+    /// Live Activity 启动开关。默认 false：使用 iOS 系统的 MPNowPlayingInfo
+    /// 在锁屏 / 灵动岛展示，不重复一个我们自家的卡片。
+    private let liveActivityEnabled: Bool = false
 
     private func clearNowPlaying() {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil

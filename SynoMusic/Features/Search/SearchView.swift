@@ -19,9 +19,9 @@ struct SearchView: View {
             } else if isLoading {
                 LoadingState()
             } else if let err = error {
-                ErrorStateView(title: "搜索失败", message: err) { triggerSearch() }
+                ErrorStateView(title: "搜索失败".t, message: err) { triggerSearch() }
             } else if results.isEmpty {
-                EmptyStateView(systemImage: "magnifyingglass", title: "无结果", message: "试试别的关键词。")
+                EmptyStateView(systemImage: "magnifyingglass", title: "无结果".t, message: "试试别的关键词。".t)
             } else {
                 List {
                     ForEach(Array(results.enumerated()), id: \.element.id) { idx, song in
@@ -41,8 +41,8 @@ struct SearchView: View {
             }
         }
         .background(Color(.systemBackground).ignoresSafeArea())
-        .navigationTitle("搜索")
-        .searchable(text: $keyword, prompt: "歌曲、艺术家或专辑")
+        .navigationTitle("搜索".t)
+        .searchable(text: $keyword, prompt: "歌曲、艺术家或专辑".t)
         .onChange(of: keyword) { _, newValue in
             task?.cancel()
             guard !newValue.isEmpty else { results = []; return }
@@ -57,12 +57,12 @@ struct SearchView: View {
     private var historyView: some View {
         VStack(alignment: .leading, spacing: Metrics.m) {
             if history.isEmpty {
-                EmptyStateView(systemImage: "sparkles", title: "想听点什么？", message: "在上方输入歌曲、艺术家或专辑名。")
+                EmptyStateView(systemImage: "sparkles", title: "想听点什么？".t, message: "在上方输入歌曲、艺术家或专辑名。".t)
             } else {
                 HStack {
-                    Text("最近搜索").font(.nocSection)
+                    Text("最近搜索".t).font(.nocSection)
                     Spacer()
-                    Button("清除") {
+                    Button("清除".t) {
                         SearchHistory.clear()
                         history = []
                     }

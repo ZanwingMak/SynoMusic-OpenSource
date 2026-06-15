@@ -46,9 +46,9 @@ open SynoMusic.xcodeproj
 
 ## サポート
 
-- **PayPal** — paypal.me/zanwing
-- **Buy Me a Coffee** — buymeacoffee.com/zanwing
-- **Wise** — wise.com/pay/me/zhenyingm1
+- **PayPal** — [paypal.me/zanwing](https://paypal.me/zanwing)
+- **Buy Me a Coffee** — [buymeacoffee.com/zanwing](https://buymeacoffee.com/zanwing)
+- **Wise** — [wise.com/pay/me/zhenyingm1](https://wise.com/pay/me/zhenyingm1)
 - **WeChat / Alipay** — アプリ内の「設定 → サポートする」から QR
 
 ## ライセンス

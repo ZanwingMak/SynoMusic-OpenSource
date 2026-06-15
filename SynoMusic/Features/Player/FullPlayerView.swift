@@ -192,56 +192,81 @@ struct FullPlayerView: View {
             }
             Spacer()
             VStack(spacing: 2) {
-                Text("正在播放").font(.nocLabel).foregroundStyle(.white.opacity(0.6))
+                Text("正在播放".t).font(.nocLabel).foregroundStyle(.white.opacity(0.6))
                 Text(playback.currentSong?.album ?? "")
                     .font(.nocLabel.weight(.semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
             }
             Spacer()
-            Menu {
-                if let song = playback.currentSong {
-                    Button { playback.appendNext(song) } label: {
-                        Label("加入队列", systemImage: "text.line.first.and.arrowtriangle.forward")
-                    }
-                    Button { showAddToPlaylist = true } label: {
-                        Label("添加到歌单…", systemImage: "text.badge.plus")
-                    }
-                    Button { showSongInfo = true } label: {
-                        Label("歌曲信息", systemImage: "info.circle")
-                    }
-                    Button { showSongEdit = true } label: {
-                        Label("编辑歌曲信息", systemImage: "square.and.pencil")
-                    }
-                    Menu("评分") {
-                        ForEach(0...5, id: \.self) { r in
-                            Button {
-                                ratingPending = r
-                                Task { await applyRating(r) }
-                            } label: {
-                                Label("\(r) 星", systemImage: r == 0 ? "star.slash" : "star.fill")
-                            }
-                        }
-                    }
-                    Divider()
-                    Button(role: .destructive) {
-                        showDeleteConfirm = true
-                    } label: {
-                        Label("删除文件…", systemImage: "trash")
-                    }
-                    .disabled(song.id.hasPrefix("radio:") || (song.path ?? "").isEmpty)
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 38, height: 38)
-                    .background(.white.opacity(0.12), in: Circle())
-            }
+            // 把 Menu 抽到一个独立视图，仅依赖 currentSong 的 id；
+            // 这样 0.5s 一次的 currentTime 更新不会让 Menu 跟着 body 重建闪烁。
+            TopBarMenu(
+                song: playback.currentSong,
+                onAppendNext: { if let s = playback.currentSong { playback.appendNext(s) } },
+                onAddToPlaylist: { showAddToPlaylist = true },
+                onShowInfo: { showSongInfo = true },
+                onShowEdit: { showSongEdit = true },
+                onRate: { stars in Task { await applyRating(stars) } },
+                onDelete: { showDeleteConfirm = true }
+            )
+            .id(playback.currentSong?.id ?? "none")
         }
         .padding(.horizontal, Metrics.l)
     }
+}
 
+/// 全屏播放器右上的 Menu，单独建模避免随 currentTime 高频刷新一起重建。
+private struct TopBarMenu: View {
+    let song: Song?
+    let onAppendNext: () -> Void
+    let onAddToPlaylist: () -> Void
+    let onShowInfo: () -> Void
+    let onShowEdit: () -> Void
+    let onRate: (Int) -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        Menu {
+            if let song {
+                Button(action: onAppendNext) {
+                    Label("加入队列".t, systemImage: "text.line.first.and.arrowtriangle.forward")
+                }
+                Button(action: onAddToPlaylist) {
+                    Label("添加到歌单…".t, systemImage: "text.badge.plus")
+                }
+                Button(action: onShowInfo) {
+                    Label("歌曲信息".t, systemImage: "info.circle")
+                }
+                Button(action: onShowEdit) {
+                    Label("编辑歌曲信息".t, systemImage: "square.and.pencil")
+                }
+                Menu("评分".t) {
+                    ForEach(0...5, id: \.self) { r in
+                        Button {
+                            onRate(r)
+                        } label: {
+                            Label("\(r) 星", systemImage: r == 0 ? "star.slash" : "star.fill")
+                        }
+                    }
+                }
+                Divider()
+                Button(role: .destructive, action: onDelete) {
+                    Label("删除文件…".t, systemImage: "trash")
+                }
+                .disabled(song.id.hasPrefix("radio:") || (song.path ?? "").isEmpty)
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 38, height: 38)
+                .background(.white.opacity(0.12), in: Circle())
+        }
+    }
+}
+
+extension FullPlayerView {
     private var trackInfo: some View {
         HStack(alignment: .center, spacing: Metrics.m) {
             VStack(alignment: .leading, spacing: 6) {

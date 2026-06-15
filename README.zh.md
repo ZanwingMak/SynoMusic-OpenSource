@@ -51,9 +51,9 @@ open SynoMusic.xcodeproj
 
 ## 赞助
 
-- **PayPal** — paypal.me/zanwing
-- **Buy Me a Coffee** — buymeacoffee.com/zanwing
-- **Wise** — wise.com/pay/me/zhenyingm1
+- **PayPal** — [paypal.me/zanwing](https://paypal.me/zanwing)
+- **Buy Me a Coffee** — [buymeacoffee.com/zanwing](https://buymeacoffee.com/zanwing)
+- **Wise** — [wise.com/pay/me/zhenyingm1](https://wise.com/pay/me/zhenyingm1)
 - **微信 / 支付宝** — 在设置 → 赞助支持中扫码
 
 ## 协议

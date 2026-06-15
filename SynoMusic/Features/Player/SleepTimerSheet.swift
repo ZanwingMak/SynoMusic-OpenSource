@@ -21,11 +21,11 @@ struct SleepTimerSheet: View {
                 customSection
                 stopAtTrackEndSection
             }
-            .navigationTitle("定时停止")
+            .navigationTitle("定时停止".t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("完成") { isPresented = false }
+                    Button("完成".t) { isPresented = false }
                 }
             }
             .sheet(isPresented: $showCustomDuration) { customDurationPicker }
@@ -48,19 +48,19 @@ struct SleepTimerSheet: View {
             } else if playback.stopAtTrackEnd {
                 HStack(spacing: 12) {
                     Image(systemName: "stop.circle.fill").foregroundStyle(Theme.accent)
-                    Text("本曲结束后停止")
+                    Text("本曲结束后停止".t)
                     Spacer()
                     cancelButton
                 }
             } else {
-                Label("当前未设置", systemImage: "moon.zzz")
+                Label("当前未设置".t, systemImage: "moon.zzz")
                     .foregroundStyle(.secondary)
             }
         }
     }
 
     private var presetsSection: some View {
-        Section("倒计时") {
+        Section("倒计时".t) {
             ForEach(Self.presets, id: \.self) { mins in
                 Button {
                     apply(seconds: TimeInterval(mins * 60))
@@ -77,7 +77,7 @@ struct SleepTimerSheet: View {
             } label: {
                 HStack {
                     Image(systemName: "slider.horizontal.3").foregroundStyle(Theme.accent)
-                    Text("自定义时长…")
+                    Text("自定义时长…".t)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.caption)
@@ -88,14 +88,14 @@ struct SleepTimerSheet: View {
     }
 
     private var customSection: some View {
-        Section("时间点停止") {
+        Section("时间点停止".t) {
             Button {
                 showDeadline = true
             } label: {
                 HStack {
                     Image(systemName: "alarm.waves.left.and.right.fill")
                         .foregroundStyle(Theme.accent)
-                    Text("选择停止时间…")
+                    Text("选择停止时间…".t)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.caption)
@@ -106,7 +106,7 @@ struct SleepTimerSheet: View {
     }
 
     private var stopAtTrackEndSection: some View {
-        Section("按曲结束") {
+        Section("按曲结束".t) {
             Button {
                 Haptics.soft()
                 playback.enableStopAtTrackEnd()
@@ -114,7 +114,7 @@ struct SleepTimerSheet: View {
             } label: {
                 HStack {
                     Image(systemName: "stop.circle").foregroundStyle(Theme.accent)
-                    Text("本曲结束后停止")
+                    Text("本曲结束后停止".t)
                     Spacer()
                 }
             }
@@ -127,7 +127,7 @@ struct SleepTimerSheet: View {
         NavigationStack {
             VStack {
                 HStack(spacing: 0) {
-                    Picker("小时", selection: $customHours) {
+                    Picker("小时".t, selection: $customHours) {
                         ForEach(0...23, id: \.self) { h in
                             Text("\(h) 小时").tag(h)
                         }
@@ -135,7 +135,7 @@ struct SleepTimerSheet: View {
                     .pickerStyle(.wheel)
                     .frame(maxWidth: .infinity)
 
-                    Picker("分钟", selection: $customMinutes) {
+                    Picker("分钟".t, selection: $customMinutes) {
                         ForEach(0...59, id: \.self) { m in
                             Text("\(m) 分钟").tag(m)
                         }
@@ -152,18 +152,18 @@ struct SleepTimerSheet: View {
                         showCustomDuration = false
                     }
                 } label: {
-                    Text("开始倒计时")
+                    Text("开始倒计时".t)
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .padding(.horizontal, Metrics.l)
                 .padding(.bottom, Metrics.l)
                 .disabled(customHours == 0 && customMinutes == 0)
             }
-            .navigationTitle("自定义倒计时")
+            .navigationTitle("自定义倒计时".t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { showCustomDuration = false }
+                    Button("取消".t) { showCustomDuration = false }
                 }
             }
         }
@@ -207,7 +207,7 @@ struct SleepTimerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { showDeadline = false }
+                    Button("取消".t) { showDeadline = false }
                 }
             }
         }

@@ -14,19 +14,19 @@ struct LibraryHomeView: View {
                 if vm.isLoading && vm.recentAlbums.isEmpty {
                     LoadingState().frame(height: 280)
                 } else if let err = vm.error {
-                    ErrorStateView(title: "加载失败", message: err) { Task { await vm.load(client: session.client) } }
+                    ErrorStateView(title: "加载失败".t, message: err) { Task { await vm.load(client: session.client) } }
                         .frame(height: 280)
                 } else {
                     if !vm.recentAlbums.isEmpty {
-                        SectionTitle("最近添加")
+                        SectionTitle("最近添加".t)
                         FeaturedAlbumScroller(albums: vm.recentAlbums)
                     }
                     if !vm.albums.isEmpty {
-                        SectionTitle("全部专辑")
+                        SectionTitle("全部专辑".t)
                         AlbumGrid(albums: vm.albums)
                     }
                     if !vm.artists.isEmpty {
-                        SectionTitle("艺术家")
+                        SectionTitle("艺术家".t)
                         ArtistRail(artists: vm.artists)
                     }
                 }
@@ -42,15 +42,15 @@ struct LibraryHomeView: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 NavigationLink(value: BrowseRoute.localPlaylists) {
                     Image(systemName: "music.note.list")
-                        .accessibilityLabel("我的歌单")
+                        .accessibilityLabel("我的歌单".t)
                 }
                 NavigationLink(value: BrowseRoute.radio) {
                     Image(systemName: "antenna.radiowaves.left.and.right")
-                        .accessibilityLabel("电台")
+                        .accessibilityLabel("电台".t)
                 }
                 NavigationLink(value: BrowseRoute.settings) {
                     Image(systemName: "gearshape")
-                        .accessibilityLabel("设置")
+                        .accessibilityLabel("设置".t)
                 }
             }
         }
@@ -66,7 +66,7 @@ private struct Header: View {
             Text(timeGreeting())
                 .font(.nocCaption)
                 .foregroundStyle(.secondary)
-            Text("听听今天该听的")
+            Text("听听今天该听的".t)
                 .font(.system(.title, design: .rounded).weight(.bold))
         }
         .padding(.top, Metrics.s)
@@ -74,11 +74,11 @@ private struct Header: View {
     private func timeGreeting() -> String {
         let h = Calendar.current.component(.hour, from: Date())
         switch h {
-        case 5..<11: return "早安"
-        case 11..<14: return "中午好"
-        case 14..<18: return "下午好"
-        case 18..<23: return "晚上好"
-        default: return "夜深了"
+        case 5..<11: return "早安".t
+        case 11..<14: return "中午好".t
+        case 14..<18: return "下午好".t
+        case 18..<23: return "晚上好".t
+        default: return "夜深了".t
         }
     }
 }
@@ -94,8 +94,8 @@ private struct QuickActions: View {
             HStack(spacing: Metrics.m) {
                 Button { Task { await randomShuffleAll() } } label: {
                     ActionCard(
-                        title: "随机歌单",
-                        subtitle: isShuffling ? "正在抓取…" : "从全库抽 100 首",
+                        title: "随机歌单".t,
+                        subtitle: isShuffling ? "正在抓取…".t : "从全库抽 100 首".t,
                         icon: "shuffle",
                         gradient: [Color(red: 0.95, green: 0.42, blue: 0.65), Color(red: 0.55, green: 0.20, blue: 0.95)]
                     )
@@ -104,8 +104,8 @@ private struct QuickActions: View {
 
                 NavigationLink(value: BrowseRoute.favorites) {
                     ActionCard(
-                        title: "我喜欢的",
-                        subtitle: "本地收藏",
+                        title: "我喜欢的".t,
+                        subtitle: "本地收藏".t,
                         icon: "heart.fill",
                         gradient: [Color(red: 0.99, green: 0.4, blue: 0.55), Color(red: 0.85, green: 0.15, blue: 0.45)]
                     )
@@ -114,8 +114,8 @@ private struct QuickActions: View {
 
                 NavigationLink(value: BrowseRoute.allSongs) {
                     ActionCard(
-                        title: "所有歌曲",
-                        subtitle: "整库浏览",
+                        title: "所有歌曲".t,
+                        subtitle: "整库浏览".t,
                         icon: "music.note",
                         gradient: [Color(red: 0.55, green: 0.4, blue: 0.95), Color(red: 0.25, green: 0.25, blue: 0.65)]
                     )
@@ -124,8 +124,8 @@ private struct QuickActions: View {
 
                 NavigationLink(value: BrowseRoute.radio) {
                     ActionCard(
-                        title: "电台",
-                        subtitle: "全球电台",
+                        title: "电台".t,
+                        subtitle: "全球电台".t,
                         icon: "antenna.radiowaves.left.and.right",
                         gradient: [Color(red: 0.4, green: 0.85, blue: 0.7), Color(red: 0.1, green: 0.55, blue: 0.55)]
                     )
@@ -134,8 +134,8 @@ private struct QuickActions: View {
 
                 NavigationLink(value: BrowseRoute.allAlbums) {
                     ActionCard(
-                        title: "全部专辑",
-                        subtitle: "整库浏览",
+                        title: "全部专辑".t,
+                        subtitle: "整库浏览".t,
                         icon: "square.stack.fill",
                         gradient: [Color(red: 0.95, green: 0.6, blue: 0.3), Color(red: 0.85, green: 0.3, blue: 0.3)]
                     )
