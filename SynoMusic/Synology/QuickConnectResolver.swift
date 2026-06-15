@@ -24,7 +24,13 @@ final class QuickConnectResolver: @unchecked Sendable {
         return trimmed.unicodeScalars.allSatisfy { allowed.contains($0) }
     }
 
-    func resolve(_ id: String) async throws -> Resolved {
+    /// 解析 QuickConnect ID。`preferred` 决定通道：
+    /// - `.https` → 用 `dsm_portal_https`，读 `ext_port_https`；
+    /// - `.http`  → 用 `dsm_portal`，读 `ext_port`。
+    /// 即用户在编辑器里的 HTTP/HTTPS 选择会真实影响解析结果（端口与 scheme）。
+    func resolve(_ id: String, preferred: ServerProfile.Scheme = .https) async throws -> Resolved {
+        let portalID = preferred == .https ? "dsm_portal_https" : "dsm_portal"
+
         let url = URL(string: "https://global.quickconnect.to/Serv.php")!
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
@@ -38,7 +44,7 @@ final class QuickConnectResolver: @unchecked Sendable {
             "command": "get_server_info",
             "stop_when_error": false,
             "stop_when_success": false,
-            "id": "dsm_portal_https",
+            "id": portalID,
             "serverID": id,
             "server_id": id,
             "is_gofile": false
@@ -62,11 +68,19 @@ final class QuickConnectResolver: @unchecked Sendable {
         let server = (obj["server"] as? [String: Any]) ?? [:]
         let service = (server["service"] as? [String: Any]) ?? [:]
 
-        var port = service["ext_port_https"] as? Int
-            ?? service["ext_port"] as? Int
-            ?? service["port"] as? Int
-            ?? 5001
-        let scheme: ServerProfile.Scheme = (service["https_port"] as? Int).map { _ in .https } ?? .https
+        // 端口按用户选择的通道读，缺失则在两者间互相兜底
+        let httpsPort = service["ext_port_https"] as? Int ?? service["port"] as? Int
+        let httpPort = service["ext_port"] as? Int ?? service["port"] as? Int
+        var port: Int
+        let scheme: ServerProfile.Scheme
+        switch preferred {
+        case .https:
+            port = httpsPort ?? httpPort ?? 5001
+            scheme = .https
+        case .http:
+            port = httpPort ?? httpsPort ?? 5000
+            scheme = .http
+        }
 
         // 优先级：external.ipv6 → external.ip → fqdn → interface[i].ip
         let external = (server["external"] as? [String: Any]) ?? [:]

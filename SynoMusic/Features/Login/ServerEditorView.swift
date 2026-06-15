@@ -228,11 +228,12 @@ struct ServerEditorView: View {
         if QuickConnectResolver.looksLikeID(p.host) {
             playback.setStatus("正在解析 QuickConnect ID…")
             do {
-                let resolved = try await QuickConnectResolver().resolve(p.host)
+                // 用户在 picker 选择的 HTTP/HTTPS 决定 QuickConnect 使用的通道
+                let resolved = try await QuickConnectResolver().resolve(p.host, preferred: p.scheme)
                 p.host = resolved.host
                 p.port = resolved.port
                 p.scheme = resolved.scheme
-                playback.setStatus("QuickConnect 已解析为 \(resolved.host):\(resolved.port)")
+                playback.setStatus("QuickConnect 已解析：\(resolved.scheme.rawValue.uppercased()) \(resolved.host):\(resolved.port)")
             } catch {
                 self.error = "QuickConnect 解析失败：\(error.localizedDescription)\n\n请改用 IP 或 DDNS 域名，或检查 NAS 上 QuickConnect 是否启用。"
                 Haptics.warning()
