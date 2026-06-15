@@ -7,6 +7,7 @@ import SwiftUI
 struct ServerEditorView: View {
     @EnvironmentObject private var serverStore: ServerStore
     @EnvironmentObject private var session: AppSession
+    @EnvironmentObject private var playback: PlaybackEngine
     @Environment(\.dismiss) private var dismiss
 
     @State var profile: ServerProfile
@@ -222,6 +223,22 @@ struct ServerEditorView: View {
 
         var p = profile
         if p.name.trimmingCharacters(in: .whitespaces).isEmpty { p.name = p.host }
+
+        // QuickConnect 解析：host 像 ID（无点无冒号）时，先到 global.quickconnect.to 换真实地址
+        if QuickConnectResolver.looksLikeID(p.host) {
+            playback.setStatus("正在解析 QuickConnect ID…")
+            do {
+                let resolved = try await QuickConnectResolver().resolve(p.host)
+                p.host = resolved.host
+                p.port = resolved.port
+                p.scheme = resolved.scheme
+                playback.setStatus("QuickConnect 已解析为 \(resolved.host):\(resolved.port)")
+            } catch {
+                self.error = "QuickConnect 解析失败：\(error.localizedDescription)\n\n请改用 IP 或 DDNS 域名，或检查 NAS 上 QuickConnect 是否启用。"
+                Haptics.warning()
+                return
+            }
+        }
 
         // 第一步：立刻持久化基础配置（不含密码、不设默认），避免"连不上就什么都没留下"。
         serverStore.upsert(p)
