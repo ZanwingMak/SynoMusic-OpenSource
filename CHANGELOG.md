@@ -5,12 +5,9 @@
 
 ## [Unreleased]
 
-## [1.2.2] - 2026-06-16
+## [1.2.3] - 2026-06-16
 
 ### 修复
-- 修复英文启动页已保存服务器行的排版：服务器名、状态徽章与地址改为分层显示，避免 `Default` / 自动登录徽章把主机名挤断。
-- 补齐设置页语言菜单、流式音质选项、服务器编辑器、队列编辑按钮、加载/重试/清除控件、播放列表空态等路径的多语言文案。
-- 扩充 `zh-Hant` / `en` / `ja` / `ko` / `de` / `fr` 字典，减少非中文语言下的中文回落。
 - 修复设置里切换强调色后 Tab、播放器、队列、定时停止、AirPlay 激活色等界面需要重启才完全生效的问题。
 - 修复专辑/歌曲列表点播时顶部「正在加载」提示过快消失且未翻译的问题；加载提示现在至少可见一小段时间。
 - 修复随机播放开启时，在「所有歌曲」里点某一首可能播放到随机队列中另一首的问题。
@@ -20,6 +17,16 @@
 - 修复首页与「全部专辑」专辑封面网格尺寸不稳定、加载后可能撑开的布局问题。
 - 增强 QuickConnect ID 解析与登录兼容性：兼容多种 `Serv.php` 请求字段/返回结构，HTTPS 模式也可启用自签名证书信任。
 - 调整首页顶部快捷入口宽度，让首屏能看到约 2 个完整入口并露出第三个入口，提示可横向滑动。
+
+### 版本
+- 发布版本号更新为 `1.2.3`。
+
+## [1.2.2] - 2026-06-16
+
+### 修复
+- 修复英文启动页已保存服务器行的排版：服务器名、状态徽章与地址改为分层显示，避免 `Default` / 自动登录徽章把主机名挤断。
+- 补齐设置页语言菜单、流式音质选项、服务器编辑器、队列编辑按钮、加载/重试/清除控件、播放列表空态等路径的多语言文案。
+- 扩充 `zh-Hant` / `en` / `ja` / `ko` / `de` / `fr` 字典，减少非中文语言下的中文回落。
 
 ### 版本
 - 发布版本号更新为 `1.2.2`。
@@ -193,7 +200,8 @@
 - Swift 6 严格并发：`SynologyClient` / `AudioStationAPI` 标记 `@unchecked Sendable` 并加锁保护 `sid`
 - iOS 17.0 起；以 Xcode 26 / Swift 6.3 通过编译
 
-[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.2...HEAD
+[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.3...HEAD
+[1.2.3]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.0...v1.2.1
 [1.0.0]: https://github.com/ZanwingMak/SynoMusic/releases/tag/v1.0.0

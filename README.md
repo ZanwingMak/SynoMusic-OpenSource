@@ -16,11 +16,10 @@ SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a 
 | :---: | :---: |
 | ![Player](docs/screenshots/04-player.png) | ![Editor](docs/screenshots/05-editor.png) |
 
-## Latest release: 1.2.2
+## Latest release: 1.2.3
 
-- Polished the English login screen layout for saved NAS profiles: status badges and URLs no longer squeeze the server name.
-- Filled missing localization around Settings, server editing, queue controls, playlists, loading/retry states, and language/audio quality pickers.
 - Fixed accent color refresh, QuickConnect compatibility, shuffle selection, album grid sizing, the loading toast, and player/queue interaction polish.
+- The home shortcut rail now reveals part of the third item so horizontal scrolling is discoverable.
 - See [`CHANGELOG.md`](CHANGELOG.md) for the full release notes.
 
 ## Features
