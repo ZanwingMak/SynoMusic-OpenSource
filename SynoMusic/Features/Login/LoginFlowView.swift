@@ -207,10 +207,13 @@ private struct ServerRow: View {
                         in: Circle()
                     )
                 VStack(alignment: .leading, spacing: 4) {
+                    Text(profile.name)
+                        .font(.nocBody.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+
                     HStack(spacing: 6) {
-                        Text(profile.name)
-                            .font(.nocBody.weight(.semibold))
-                            .foregroundStyle(.white)
                         if profile.isQuickConnect {
                             tagPill("QC", color: .cyan)
                         }
@@ -224,6 +227,7 @@ private struct ServerRow: View {
                     Text(profile.displayURL)
                         .font(.nocLabel)
                         .foregroundStyle(.white.opacity(0.6))
+                        .lineLimit(1)
                 }
                 Spacer()
                 if isConnecting || isAutoLogin {

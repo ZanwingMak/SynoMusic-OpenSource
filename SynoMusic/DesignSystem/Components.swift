@@ -89,12 +89,12 @@ struct LoadingState: View {
             ProgressView()
                 .progressViewStyle(.circular)
                 .tint(Theme.accent)
-            Text("加载中...")
+            Text("正在加载".t)
                 .font(.nocCaption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityLabel("正在加载")
+        .accessibilityLabel("正在加载".t)
     }
 }
 
@@ -170,7 +170,7 @@ private struct RetryButton: View {
             HStack(spacing: 8) {
                 Image(systemName: "arrow.clockwise")
                     .rotationEffect(.degrees(rotation))
-                Text("重试")
+                Text("重试".t)
             }
         }
         .buttonStyle(SecondaryButtonStyle())

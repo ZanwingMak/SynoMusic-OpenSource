@@ -16,6 +16,12 @@ SynoMusic 通过 DSM 的 Audio Station Web API 工作，提供干净流畅的 iO
 | :---: | :---: |
 | ![播放器](docs/screenshots/04-player.png) | ![编辑器](docs/screenshots/05-editor.png) |
 
+## 最新版本：1.2.2
+
+- 优化英文启动页已保存服务器行排版：状态徽章和地址不再挤断服务器名。
+- 补齐设置、服务器编辑、队列控制、播放列表、加载/重试状态、语言与音质选择等路径的多语言文案。
+- 完整更新见 [`CHANGELOG.md`](CHANGELOG.md)。
+
 ## 功能
 
 - **NAS 优先**：多服务器档案、Keychain 凭证、双重验证（OTP）、自签名证书信任、HTTPS / QuickConnect

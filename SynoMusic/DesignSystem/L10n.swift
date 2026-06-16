@@ -20,6 +20,12 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         }
     }
 
+    /// 设置页语言菜单展示名；系统项跟随 App 内置语言，其它语言保留原生名称。
+    @MainActor var localizedTitle: String {
+        if self == .system { return "跟随系统".t }
+        return title
+    }
+
     /// 用于查表的实际 locale code（system 时根据 Locale.preferred）。
     var lookupCode: String {
         if self == .system {
@@ -78,6 +84,18 @@ enum L10n {
             "用户": "使用者",
             "还没有添加任何服务器。": "尚未新增任何伺服器。",
             "服务器": "伺服器",
+            "语言": "語言",
+            "播放列表": "播放列表",
+            "专辑": "專輯",
+            "编辑": "編輯",
+            "协议": "協定",
+            "端口": "連接埠",
+            "账号": "帳號",
+            "备注名（家里的 DS220+）": "備註名（家裡的 DS220+）",
+            "二步验证码（OTP）": "二步驗證碼（OTP）",
+            "信任自签名证书": "信任自簽名憑證",
+            "仅保存配置，不立即登录": "僅儲存設定，不立即登入",
+            "正在加载": "正在載入",
             "后台播放": "背景播放",
             "AirPlay": "AirPlay",
             "歌曲信息": "歌曲資訊",
@@ -105,6 +123,7 @@ enum L10n {
             "Audio Station 中没有专辑。": "Audio Station 中沒有專輯。",
             "无歌曲": "沒有歌曲",
             "暂无播放列表": "暫無播放列表",
+            "在 Audio Station 中创建播放列表，会出现在这里。": "在 Audio Station 中建立播放列表後，會出現在這裡。",
             "你的群晖音乐，私人夜曲。": "你的群暉音樂，私人夜曲。",
             "还没有连接的 NAS": "尚未連接的 NAS",
             "添加你的群晖服务器，开始无限聆听。": "新增你的群暉伺服器，開始無限聆聽。",
@@ -117,6 +136,7 @@ enum L10n {
             "点击行设为默认；下次启动 App 会用默认服务器自动登录。点 ⓘ 编辑配置；左滑删除。": "點擊列設為預設；下次啟動 App 會用預設伺服器自動登入。點 ⓘ 編輯設定；左滑刪除。",
             "强调色与 Light/Dark 偏好；保存到本地。": "強調色與 Light/Dark 偏好；儲存於本機。",
             "原始音质直接传输源文件（FLAC/WAV 等）。低带宽下选择压缩可降低卡顿概率。": "原始音質直接傳輸源檔案（FLAC/WAV 等）。低頻寬下選擇壓縮可降低卡頓機率。",
+            "关闭「后台播放」后，App 进入后台会自动暂停。AirPlay 关闭后，控制中心的路由选择仍可用但 SynoMusic 不会主动声明输出。": "關閉「背景播放」後，App 進入背景會自動暫停。AirPlay 關閉後，控制中心的路由選擇仍可用，但 SynoMusic 不會主動宣告輸出。",
             "SynoMusic 是一个非官方的 Audio Station 客户端。Synology 商标与 Audio Station 名称归群晖科技所有。": "SynoMusic 是一個非官方的 Audio Station 客戶端。Synology 商標與 Audio Station 名稱歸群暉科技所有。",
             "听听今天该听的": "今天聽點什麼",
             "早安": "早安",
@@ -396,6 +416,16 @@ enum L10n {
             "用户": "User",
             "还没有添加任何服务器。": "No server added yet.",
             "服务器": "Servers",
+            "语言": "Language",
+            "播放列表": "Playlists",
+            "编辑": "Edit",
+            "协议": "Protocol",
+            "端口": "Port",
+            "账号": "Account",
+            "备注名（家里的 DS220+）": "Display name (home DS220+)",
+            "二步验证码（OTP）": "Two-step code (OTP)",
+            "信任自签名证书": "Trust self-signed certificate",
+            "仅保存配置，不立即登录": "Save configuration only",
             "后台播放": "Background Playback",
             "歌曲信息": "Song Info",
             "编辑歌曲信息": "Edit Song Info",
@@ -424,6 +454,7 @@ enum L10n {
             "Audio Station 中没有专辑。": "No albums in Audio Station.",
             "无歌曲": "No songs",
             "暂无播放列表": "No playlists",
+            "在 Audio Station 中创建播放列表，会出现在这里。": "Create playlists in Audio Station and they will appear here.",
             "你的群晖音乐，私人夜曲。": "Your Synology music, private nocturne.",
             "还没有连接的 NAS": "No NAS connected yet",
             "添加你的群晖服务器，开始无限聆听。": "Add your Synology server to start listening.",
@@ -434,6 +465,7 @@ enum L10n {
             "启用了二步验证的账号需在「高级」填入 OTP。密码加密保存于 Keychain。": "For 2-step verification, fill the OTP in Advanced. Passwords are stored in Keychain.",
             "强调色与 Light/Dark 偏好；保存到本地。": "Accent color + Light/Dark preference; saved locally.",
             "原始音质直接传输源文件（FLAC/WAV 等）。低带宽下选择压缩可降低卡顿概率。": "Original quality streams the source file (FLAC/WAV, etc.). Pick a compressed format on low bandwidth.",
+            "关闭「后台播放」后，App 进入后台会自动暂停。AirPlay 关闭后，控制中心的路由选择仍可用但 SynoMusic 不会主动声明输出。": "When Background Playback is off, SynoMusic pauses after entering the background. When AirPlay is off, Control Center route selection still works, but SynoMusic will not actively advertise AirPlay output.",
             "SynoMusic 是一个非官方的 Audio Station 客户端。Synology 商标与 Audio Station 名称归群晖科技所有。": "SynoMusic is an unofficial Audio Station client. Synology and Audio Station are trademarks of Synology Inc.",
             "点击行设为默认；下次启动 App 会用默认服务器自动登录。点 ⓘ 编辑配置；左滑删除。": "Tap a row to set default; the next launch auto-signs in to it. Tap ⓘ to edit; swipe left to delete.",
             "听听今天该听的": "What are we listening to today?",
@@ -667,6 +699,18 @@ enum L10n {
             "用户": "ユーザー",
             "还没有添加任何服务器。": "サーバーはまだ追加されていません。",
             "服务器": "サーバー",
+            "语言": "言語",
+            "播放列表": "プレイリスト",
+            "专辑": "アルバム",
+            "编辑": "編集",
+            "协议": "プロトコル",
+            "端口": "ポート",
+            "账号": "アカウント",
+            "备注名（家里的 DS220+）": "表示名（自宅の DS220+）",
+            "二步验证码（OTP）": "2 段階認証コード（OTP）",
+            "信任自签名证书": "自己署名証明書を信頼",
+            "仅保存配置，不立即登录": "設定のみ保存してログインしない",
+            "正在加载": "読み込み中",
             "后台播放": "バックグラウンド再生",
             "歌曲信息": "曲情報",
             "编辑歌曲信息": "曲情報を編集",
@@ -676,6 +720,9 @@ enum L10n {
             "正在自动登录": "自動ログイン中",
             "默认": "デフォルト",
             "已登录": "ログイン済み",
+            "无歌曲": "曲がありません",
+            "暂无播放列表": "プレイリストがありません",
+            "在 Audio Station 中创建播放列表，会出现在这里。": "Audio Station でプレイリストを作成すると、ここに表示されます。",
             "听听今天该听的": "今日は何を聴く？",
             "早安": "おはよう",
             "中午好": "こんにちは",
@@ -810,7 +857,8 @@ enum L10n {
             "个人备注": "メモ",
             "写点什么…": "メモを入力…",
             "保存修改？": "変更を保存しますか？",
-            "加载更多失败": "追加読み込みに失敗"
+            "加载更多失败": "追加読み込みに失敗",
+            "关闭「后台播放」后，App 进入后台会自动暂停。AirPlay 关闭后，控制中心的路由选择仍可用但 SynoMusic 不会主动声明输出。": "「バックグラウンド再生」をオフにすると、App がバックグラウンドに入った時に自動停止します。AirPlay をオフにしてもコントロールセンターの出力先選択は使えますが、SynoMusic からは AirPlay 出力を積極的に通知しません。"
         ],
 
         // MARK: 한국어
@@ -879,6 +927,18 @@ enum L10n {
             "用户": "사용자",
             "还没有添加任何服务器。": "추가된 서버가 없습니다.",
             "服务器": "서버",
+            "语言": "언어",
+            "播放列表": "플레이리스트",
+            "专辑": "앨범",
+            "编辑": "편집",
+            "协议": "프로토콜",
+            "端口": "포트",
+            "账号": "계정",
+            "备注名（家里的 DS220+）": "표시 이름(집 DS220+)",
+            "二步验证码（OTP）": "2단계 인증 코드(OTP)",
+            "信任自签名证书": "자체 서명 인증서 신뢰",
+            "仅保存配置，不立即登录": "설정만 저장",
+            "正在加载": "로딩 중",
             "后台播放": "백그라운드 재생",
             "歌曲信息": "노래 정보",
             "编辑歌曲信息": "노래 정보 편집",
@@ -888,6 +948,9 @@ enum L10n {
             "正在自动登录": "자동 로그인 중",
             "默认": "기본",
             "已登录": "로그인됨",
+            "无歌曲": "곡이 없습니다",
+            "暂无播放列表": "플레이리스트가 없습니다",
+            "在 Audio Station 中创建播放列表，会出现在这里。": "Audio Station에서 플레이리스트를 만들면 여기에 표시됩니다.",
             "听听今天该听的": "오늘은 어떤 음악?",
             "早安": "좋은 아침",
             "中午好": "안녕하세요",
@@ -1022,7 +1085,8 @@ enum L10n {
             "个人备注": "개인 메모",
             "写点什么…": "메모 입력…",
             "保存修改？": "변경 사항을 저장할까요?",
-            "加载更多失败": "더 불러오기 실패"
+            "加载更多失败": "더 불러오기 실패",
+            "关闭「后台播放」后，App 进入后台会自动暂停。AirPlay 关闭后，控制中心的路由选择仍可用但 SynoMusic 不会主动声明输出。": "백그라운드 재생을 끄면 App이 백그라운드로 전환될 때 자동으로 일시정지됩니다. AirPlay를 꺼도 제어 센터의 출력 선택은 사용할 수 있지만, SynoMusic이 AirPlay 출력을 적극적으로 알리지는 않습니다."
         ],
 
         // MARK: Deutsch
@@ -1041,6 +1105,20 @@ enum L10n {
             "流派": "Genres",
             "服务器歌单": "Server-Playlists",
             "文件夹": "Ordner",
+            "语言": "Sprache",
+            "播放列表": "Playlists",
+            "暂无播放列表": "Keine Playlists",
+            "在 Audio Station 中创建播放列表，会出现在这里。": "Erstelle Playlists in Audio Station, dann erscheinen sie hier.",
+            "专辑": "Alben",
+            "编辑": "Bearbeiten",
+            "协议": "Protokoll",
+            "端口": "Port",
+            "账号": "Konto",
+            "备注名（家里的 DS220+）": "Anzeigename (DS220+ zuhause)",
+            "二步验证码（OTP）": "Zwei-Faktor-Code (OTP)",
+            "信任自签名证书": "Selbstsigniertem Zertifikat vertrauen",
+            "仅保存配置，不立即登录": "Nur Konfiguration speichern",
+            "正在加载": "Lädt",
             "添加服务器": "Server hinzufügen",
             "连接并保存": "Verbinden & Speichern",
             "正在连接...": "Wird verbunden…",
@@ -1083,7 +1161,8 @@ enum L10n {
             "删除": "Löschen",
             "重命名": "Umbenennen",
             "全选": "Alle auswählen",
-            "全不选": "Auswahl aufheben"
+            "全不选": "Auswahl aufheben",
+            "关闭「后台播放」后，App 进入后台会自动暂停。AirPlay 关闭后，控制中心的路由选择仍可用但 SynoMusic 不会主动声明输出。": "Wenn die Hintergrundwiedergabe deaktiviert ist, pausiert die App beim Wechsel in den Hintergrund. Wenn AirPlay deaktiviert ist, bleibt die Routenauswahl im Kontrollzentrum verfügbar, aber SynoMusic bewirbt AirPlay-Ausgabe nicht aktiv."
         ],
 
         // MARK: Français
@@ -1102,6 +1181,20 @@ enum L10n {
             "流派": "Genres",
             "服务器歌单": "Playlists serveur",
             "文件夹": "Dossiers",
+            "语言": "Langue",
+            "播放列表": "Playlists",
+            "暂无播放列表": "Aucune playlist",
+            "在 Audio Station 中创建播放列表，会出现在这里。": "Créez des playlists dans Audio Station, elles apparaîtront ici.",
+            "专辑": "Albums",
+            "编辑": "Modifier",
+            "协议": "Protocole",
+            "端口": "Port",
+            "账号": "Compte",
+            "备注名（家里的 DS220+）": "Nom affiché (DS220+ maison)",
+            "二步验证码（OTP）": "Code 2FA (OTP)",
+            "信任自签名证书": "Faire confiance au certificat autosigné",
+            "仅保存配置，不立即登录": "Enregistrer la configuration uniquement",
+            "正在加载": "Chargement",
             "添加服务器": "Ajouter un serveur",
             "连接并保存": "Connecter et enregistrer",
             "正在连接...": "Connexion…",
@@ -1144,7 +1237,8 @@ enum L10n {
             "删除": "Supprimer",
             "重命名": "Renommer",
             "全选": "Tout sélectionner",
-            "全不选": "Tout désélectionner"
+            "全不选": "Tout désélectionner",
+            "关闭「后台播放」后，App 进入后台会自动暂停。AirPlay 关闭后，控制中心的路由选择仍可用但 SynoMusic 不会主动声明输出。": "Lorsque la lecture en arrière-plan est désactivée, l’app se met en pause en arrière-plan. Lorsque AirPlay est désactivé, le choix de sortie du Centre de contrôle reste disponible, mais SynoMusic n’annonce pas activement la sortie AirPlay."
         ]
     ]
 }

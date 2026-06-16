@@ -73,6 +73,13 @@ struct MainShellView: View {
 struct QueueSheet: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.editMode) private var editMode
+
+    /// 当前队列列表是否处于编辑模式。
+    private var isEditingQueue: Bool {
+        editMode?.wrappedValue.isEditing == true
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -109,11 +116,22 @@ struct QueueSheet: View {
             .navigationTitle("队列".t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { EditButton() }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(isEditingQueue ? "完成".t : "编辑".t) {
+                        toggleQueueEditing()
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("完成".t) { dismiss() }
                 }
             }
+        }
+    }
+
+    /// 切换队列的编辑状态，并用动画同步列表移动/删除控件。
+    private func toggleQueueEditing() {
+        withAnimation {
+            editMode?.wrappedValue = isEditingQueue ? .inactive : .active
         }
     }
 }

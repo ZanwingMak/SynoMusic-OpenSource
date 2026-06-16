@@ -175,7 +175,7 @@ struct SettingsView: View {
         Section {
             Picker(selection: $lm.current) {
                 ForEach(AppLanguage.allCases) { lang in
-                    Text(lang.title).tag(lang)
+                    Text(lang.localizedTitle).tag(lang)
                 }
             } label: {
                 Label("语言".t, systemImage: "character.bubble")
@@ -189,7 +189,7 @@ struct SettingsView: View {
         Section {
             Picker("流式音质".t, selection: $playback.quality) {
                 ForEach(AudioQuality.allCases) { q in
-                    Text(q.title).tag(q)
+                    Text(q.titleKey.t).tag(q)
                 }
             }
         } header: {

@@ -23,7 +23,7 @@ struct ClearableTextField: View {
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("清除")
+                .accessibilityLabel("清除".t)
             }
         }
     }
@@ -57,7 +57,7 @@ struct ClearableSecureField: View {
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("清除")
+                .accessibilityLabel("清除".t)
             }
             Button {
                 visible.toggle()

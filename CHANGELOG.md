@@ -1,9 +1,19 @@
 # Changelog
 
-本文档记录 Nocturne 的所有显著变更。
+本文档记录 SynoMusic 的所有显著变更。
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
 ## [Unreleased]
+
+## [1.2.2] - 2026-06-16
+
+### 修复
+- 修复英文启动页已保存服务器行的排版：服务器名、状态徽章与地址改为分层显示，避免 `Default` / 自动登录徽章把主机名挤断。
+- 补齐设置页语言菜单、流式音质选项、服务器编辑器、队列编辑按钮、加载/重试/清除控件、播放列表空态等路径的多语言文案。
+- 扩充 `zh-Hant` / `en` / `ja` / `ko` / `de` / `fr` 字典，减少非中文语言下的中文回落。
+
+### 版本
+- 发布版本号更新为 `1.2.2`。
 
 ## [1.2.1] - 2026-06-16
 
@@ -26,7 +36,7 @@
 
 
 ### 新增（四）
-- **灵动岛 + 锁屏 Live Activity**：新增 `NocturneLive` Widget Extension 实现 ActivityKit 三态：
+- **灵动岛 + 锁屏 Live Activity**：新增 `SynoMusicLive` Widget Extension 实现 ActivityKit 三态：
   - **compactLeading**：曲目封面缩略图；**compactTrailing**：播放/暂停图标（playing 时 SF Symbol variable color 律动）；**minimal**：waveform/music note。
   - **expanded**：左侧 56pt 封面、中间标题+艺术家、右侧大播放图标、底部渐变进度条。
   - **锁屏**：与展开形态类似，黑色背景胶囊，跟随 NowPlaying 数据。
@@ -174,5 +184,7 @@
 - Swift 6 严格并发：`SynologyClient` / `AudioStationAPI` 标记 `@unchecked Sendable` 并加锁保护 `sid`
 - iOS 17.0 起；以 Xcode 26 / Swift 6.3 通过编译
 
-[Unreleased]: https://github.com/ZanwingMak/Nocturne/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/ZanwingMak/Nocturne/releases/tag/v1.0.0
+[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.2...HEAD
+[1.2.2]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.1...v1.2.2
+[1.2.1]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.0...v1.2.1
+[1.0.0]: https://github.com/ZanwingMak/SynoMusic/releases/tag/v1.0.0

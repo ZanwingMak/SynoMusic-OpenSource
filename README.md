@@ -16,6 +16,12 @@ SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a 
 | :---: | :---: |
 | ![Player](docs/screenshots/04-player.png) | ![Editor](docs/screenshots/05-editor.png) |
 
+## Latest release: 1.2.2
+
+- Polished the English login screen layout for saved NAS profiles: status badges and URLs no longer squeeze the server name.
+- Filled missing localization around Settings, server editing, queue controls, playlists, loading/retry states, and language/audio quality pickers.
+- See [`CHANGELOG.md`](CHANGELOG.md) for the full release notes.
+
 ## Features
 
 - **NAS first**: Multi-server profiles with Keychain credentials, 2FA (OTP), self-signed certificate trust, HTTPS/QuickConnect
