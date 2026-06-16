@@ -46,7 +46,7 @@ struct ClearableSecureField: View {
                     SecureField(title, text: $text)
                 }
             }
-            .textContentType(.password)
+            .textContentType(.oneTimeCode)
 
             if !text.isEmpty {
                 Button {

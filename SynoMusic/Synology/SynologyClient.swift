@@ -177,3 +177,64 @@ private final class PermissiveCertDelegate: NSObject, URLSessionDelegate {
         }
     }
 }
+
+/// 登录辅助：统一处理 QuickConnect 解析、证书域名不匹配重试与普通登录。
+enum SynologyLoginHelper {
+    typealias ProgressReporter = @MainActor @Sendable (String) -> Void
+
+    /// 准备档案并登录，成功时返回已认证 client 和可能更新过的档案。
+    static func login(
+        profile: ServerProfile,
+        password: String,
+        otp: String? = nil,
+        report: ProgressReporter? = nil
+    ) async throws -> (client: SynologyClient, profile: ServerProfile) {
+        var loginProfile = try await resolvedProfile(for: profile, report: report)
+        let client = SynologyClient(profile: loginProfile)
+        do {
+            try await client.login(password: password, otp: otp)
+            return (client, loginProfile)
+        } catch let error as SynologyError where shouldRetryTrustingCertificate(error, profile: loginProfile) {
+            loginProfile.ignoreInvalidCertificate = true
+            if let report { await report("正在连接...") }
+            let retryClient = SynologyClient(profile: loginProfile)
+            try await retryClient.login(password: password, otp: otp)
+            return (retryClient, loginProfile)
+        }
+    }
+
+    /// QuickConnect 档案每次登录前重新解析，直连档案原样返回。
+    private static func resolvedProfile(
+        for profile: ServerProfile,
+        report: ProgressReporter?
+    ) async throws -> ServerProfile {
+        guard profile.isQuickConnect else { return profile }
+        var copy = profile
+        let rawID = copy.quickConnectID.isEmpty ? copy.host : copy.quickConnectID
+        let id = QuickConnectResolver.strip(rawID)
+        let resolved = try await QuickConnectResolver().resolve(
+            id,
+            preferred: copy.scheme,
+            report: report
+        )
+        copy.quickConnectID = id
+        copy.host = resolved.host
+        copy.port = resolved.port
+        copy.scheme = resolved.scheme
+        if copy.scheme == .https {
+            copy.ignoreInvalidCertificate = true
+        }
+        return copy
+    }
+
+    /// 仅 QuickConnect HTTPS 在证书信任/域名不匹配时自动重试一次。
+    private static func shouldRetryTrustingCertificate(_ error: SynologyError, profile: ServerProfile) -> Bool {
+        guard profile.isQuickConnect,
+              profile.scheme == .https,
+              !profile.ignoreInvalidCertificate,
+              case .network = error else {
+            return false
+        }
+        return true
+    }
+}

@@ -7,6 +7,7 @@ struct RootView: View {
     @EnvironmentObject private var serverStore: ServerStore
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showFullPlayer: Bool = false
     @State private var isAutoLogging: Bool = false
 
@@ -42,7 +43,7 @@ struct RootView: View {
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: session.isLoggedIn)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: playback.statusMessage)
         .animation(.easeInOut(duration: 0.18), value: theme.currentID)
-        .tint(theme.current.accent(in: .dark))
+        .tint(theme.current.accent(in: colorScheme))
         .background(Theme.background.ignoresSafeArea())
         .sheet(isPresented: $showFullPlayer) {
             FullPlayerView(isPresented: $showFullPlayer)
@@ -80,13 +81,16 @@ struct RootView: View {
             isAutoLogging = false
             if session.client == nil { session.autoLoginProfileID = nil }
         }
-        let client = SynologyClient(profile: p)
         do {
-            try await client.login(password: pwd)
-            var updated = p
+            let result = try await SynologyLoginHelper.login(
+                profile: p,
+                password: pwd,
+                report: { [weak playback] key in playback?.setStatus(key.t) }
+            )
+            var updated = result.profile
             updated.lastConnectedAt = Date()
             serverStore.upsert(updated)
-            session.sign(in: client)
+            session.sign(in: result.client)
             Haptics.success()
         } catch {
             // 静默失败：用户进入 LoginFlowView 手动处理

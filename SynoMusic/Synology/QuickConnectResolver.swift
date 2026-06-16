@@ -135,8 +135,9 @@ final class QuickConnectResolver: @unchecked Sendable {
         let session = URLSession(configuration: cfg)
 
         let bodyStrings = [
-            #"{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(id)","serverID":"\#(id)","server_id":"\#(id)","service":"\#(portalID)","is_gofile":false}"#,
             #"{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(portalID)","serverID":"\#(id)","server_id":"\#(id)","is_gofile":false}"#,
+            #"{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(portalID)","serverID":"\#(id)","is_gofile":false}"#,
+            #"{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(id)","serverID":"\#(id)","server_id":"\#(id)","service":"\#(portalID)","is_gofile":false}"#,
             #"{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(id)","serverID":"\#(id)","server_id":"\#(id)","is_gofile":false}"#
         ]
 
@@ -175,6 +176,7 @@ final class QuickConnectResolver: @unchecked Sendable {
         if let dict = value as? [String: Any] {
             if let direct = dict[portalID] as? [String: Any] { return direct }
             if (dict["id"] as? String) == portalID || (dict["service"] as? String) == portalID { return dict }
+            if looksLikeService(dict) { return dict }
             for item in dict.values {
                 if let found = serviceDict(from: item, portalID: portalID) { return found }
             }
@@ -185,6 +187,12 @@ final class QuickConnectResolver: @unchecked Sendable {
             }
         }
         return nil
+    }
+
+    /// 判断一个字典是否就是 QuickConnect 返回的 service 对象。
+    private func looksLikeService(_ dict: [String: Any]) -> Bool {
+        let serviceKeys = ["port", "ext_port", "ext_port_https", "pingpong", "pingpong_desc"]
+        return serviceKeys.contains { dict[$0] != nil }
     }
 
     /// 按可达性优先级从 server/service 字段里挑出最终连接地址。

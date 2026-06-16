@@ -8,6 +8,7 @@ struct SettingsView: View {
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var lm: LanguageManager
     @EnvironmentObject private var playbackSettings: PlaybackSettings
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var serverInfo: [String: String] = [:]
     @State private var editingProfile: ServerProfile?
@@ -25,6 +26,8 @@ struct SettingsView: View {
             othersSection
             aboutSection
         }
+        .tint(theme.current.accent(in: colorScheme))
+        .id("settings-\(theme.currentID)-\(theme.appearance.rawValue)")
         .navigationTitle("设置".t)
         .task { await loadServerInfo() }
         .sheet(item: $editingProfile) { profile in
@@ -304,13 +307,17 @@ struct SettingsView: View {
         }
         playback.stop()
         await session.signOut()
-        let client = SynologyClient(profile: p)
         do {
-            try await client.login(password: pwd)
-            var updated = p
+            let result = try await SynologyLoginHelper.login(
+                profile: p,
+                password: pwd,
+                report: { [weak playback] key in playback?.setStatus(key.t) }
+            )
+            var updated = result.profile
             updated.lastConnectedAt = Date()
             serverStore.upsert(updated)
-            session.sign(in: client)
+            serverStore.setActive(updated)
+            session.sign(in: result.client)
             playback.setStatus("已切换到".t + "「\(p.name)」")
             Haptics.success()
         } catch {

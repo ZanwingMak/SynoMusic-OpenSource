@@ -281,39 +281,24 @@ struct ServerEditorView: View {
         var p = applyMode(to: profile)
         if p.name.trimmingCharacters(in: .whitespaces).isEmpty { p.name = displayName(of: p) }
 
-        // QuickConnect 模式：通过 resolver 把 ID 换成真实 host:port
-        if p.isQuickConnect {
-            playback.setStatus("正在解析 QuickConnect ID…".t)
-            do {
-                let resolved = try await QuickConnectResolver().resolve(
-                    p.quickConnectID,
-                    preferred: p.scheme,
-                    report: { [weak playback] msg in playback?.setStatus(msg) }
-                )
-                p.host = resolved.host
-                p.port = resolved.port
-                p.scheme = resolved.scheme
-                playback.setStatus("已解析为".t + " \(resolved.scheme.rawValue.uppercased()) \(resolved.host):\(resolved.port)")
-            } catch {
-                self.error = "QuickConnect 解析失败".t + "：\(error.localizedDescription)\n\n" + "注：iOS 模拟器对 QuickConnect 端点有网络栈限制，真机/Mac 上可正常解析。也可改用直连模式输入 IP 或 DDNS。".t
-                Haptics.warning()
-                return
-            }
-        }
-
         // 立即 upsert 一份基础配置，登录成败都留得下
         serverStore.upsert(p)
 
-        let client = SynologyClient(profile: p)
         do {
-            try await client.login(password: password, otp: otp.isEmpty ? nil : otp)
-            p.lastConnectedAt = Date()
-            serverStore.upsert(p)
-            serverStore.setActive(p)
+            let result = try await SynologyLoginHelper.login(
+                profile: p,
+                password: password,
+                otp: otp.isEmpty ? nil : otp,
+                report: { [weak playback] key in playback?.setStatus(key.t) }
+            )
+            var updated = result.profile
+            updated.lastConnectedAt = Date()
+            serverStore.upsert(updated)
+            serverStore.setActive(updated)
             if rememberPassword {
-                try? serverStore.savePassword(password, for: p)
+                try? serverStore.savePassword(password, for: updated)
             }
-            session.sign(in: client)
+            session.sign(in: result.client)
             Haptics.success()
             dismiss()
         } catch let SynologyError.api(code, _) where code == 403 {

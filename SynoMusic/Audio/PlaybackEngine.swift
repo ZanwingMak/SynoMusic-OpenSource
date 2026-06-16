@@ -94,7 +94,7 @@ final class PlaybackEngine: ObservableObject {
     private var demoTicker: Task<Void, Never>?
     private var statusClearTask: Task<Void, Never>?
     /// 加载提示至少停留的时间，避免缓存命中时 Toast 一闪而过。
-    private let loadingStatusMinimumDuration: TimeInterval = 1.2
+    private let loadingStatusMinimumDuration: TimeInterval = 2.4
     /// 当前加载提示文本，用来区分可自动延迟清理的 loading Toast。
     private var loadingStatusMessage: String?
     /// 当前状态提示开始显示的时间，用于计算 loading Toast 的最短展示时间。
@@ -122,14 +122,15 @@ final class PlaybackEngine: ObservableObject {
 
     // MARK: 公开操作
 
-    /// 替换队列并从指定下标开始播放。
-    func play(queue songs: [Song], startAt index: Int = 0) {
+    /// 替换队列并从指定下标开始播放；可选择是否沿用当前随机播放开关来重排队列。
+    func play(queue songs: [Song], startAt index: Int = 0, honoringShuffle: Bool = true) {
         guard !songs.isEmpty else { return }
         self.originalQueue = songs
         var ordered = songs
-        if isShuffling { ordered = shuffledKeepingHead(songs, head: index) }
+        let shouldShuffle = honoringShuffle && isShuffling
+        if shouldShuffle { ordered = shuffledKeepingHead(songs, head: index) }
         self.queue = ordered
-        self.currentIndex = isShuffling ? 0 : (ordered.indices.contains(index) ? index : 0)
+        self.currentIndex = shouldShuffle ? 0 : (ordered.indices.contains(index) ? index : 0)
         // 新曲：清空临时转码状态
         transcodeOverride = nil
         fallbackTried = false
@@ -651,7 +652,7 @@ final class PlaybackEngine: ObservableObject {
         guard let song = currentSong else { clearNowPlaying(); return }
         // 同步 like 状态到锁屏 ★
         MPRemoteCommandCenter.shared().likeCommand.isActive = playlistStore?.isFavorite(song) ?? false
-        var info: [String: Any] = [
+        let info: [String: Any] = [
             MPMediaItemPropertyTitle: song.title,
             MPMediaItemPropertyArtist: song.artist ?? "",
             MPMediaItemPropertyAlbumTitle: song.album ?? "",

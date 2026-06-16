@@ -124,14 +124,16 @@ struct LoginFlowView: View {
         connectingProfileID = profile.id
         quickConnectError = nil
         Task {
-            let client = SynologyClient(profile: profile)
             do {
-                try await client.login(password: saved)
-                var p = profile
+                let result = try await SynologyLoginHelper.login(
+                    profile: profile,
+                    password: saved
+                )
+                var p = result.profile
                 p.lastConnectedAt = Date()
                 serverStore.upsert(p)
                 serverStore.setActive(p)
-                session.sign(in: client)
+                session.sign(in: result.client)
                 Haptics.success()
             } catch {
                 // 已存密码失败：清掉 connecting 状态，转入手动登录页

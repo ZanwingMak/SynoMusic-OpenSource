@@ -202,6 +202,8 @@ struct CoverArt: View {
                     }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 

@@ -40,21 +40,21 @@ struct LibraryHomeView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                NavigationLink(value: BrowseRoute.localPlaylists) {
-                    Image(systemName: "music.note.list")
-                        .accessibilityLabel("我的歌单".t)
-                }
-                NavigationLink(value: BrowseRoute.radio) {
-                    Image(systemName: "antenna.radiowaves.left.and.right")
-                        .accessibilityLabel("电台".t)
-                }
-                NavigationLink(value: BrowseRoute.settings) {
-                    Image(systemName: "gearshape")
-                        .accessibilityLabel("设置".t)
-                }
+                toolbarLink(value: BrowseRoute.localPlaylists, systemImage: "music.note.list", label: "我的歌单".t)
+                toolbarLink(value: BrowseRoute.radio, systemImage: "antenna.radiowaves.left.and.right", label: "电台".t)
+                toolbarLink(value: BrowseRoute.settings, systemImage: "gearshape", label: "设置".t)
             }
         }
         .task { await vm.load(client: session.client) }
+    }
+
+    /// 带轻触反馈的导航栏图标入口。
+    private func toolbarLink(value: BrowseRoute, systemImage: String, label: String) -> some View {
+        NavigationLink(value: value) {
+            Image(systemName: systemImage)
+                .accessibilityLabel(label)
+        }
+        .simultaneousGesture(TapGesture().onEnded { Haptics.tap() })
     }
 }
 
@@ -159,8 +159,7 @@ private struct QuickActions: View {
                 playback.setStatus("没有可播放的歌曲".t)
                 return
             }
-            playback.isShuffling = true
-            playback.play(queue: songs, startAt: 0)
+            playback.play(queue: songs, startAt: 0, honoringShuffle: false)
         } catch {
             playback.setStatus("随机抓取失败".t + "：\(error.localizedDescription)")
         }
@@ -187,7 +186,7 @@ private struct ActionCard: View {
             }
             .padding(Metrics.m)
         }
-        .frame(width: 136, height: 104)
+        .frame(width: 146, height: 104)
         .clipShape(RoundedRectangle(cornerRadius: Theme.cornerCard, style: .continuous))
         .shadow(color: gradient.first?.opacity(0.3) ?? .clear, radius: 12, y: 6)
     }
@@ -251,7 +250,11 @@ private struct FeaturedAlbumCard: View {
 private struct AlbumGrid: View {
     let albums: [Album]
     @EnvironmentObject private var session: AppSession
-    private let columns = [GridItem(.adaptive(minimum: 148, maximum: 180), spacing: Metrics.m)]
+    private let columns = [
+        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: Metrics.m),
+        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: Metrics.m)
+    ]
+
     var body: some View {
         LazyVGrid(columns: columns, spacing: Metrics.l) {
             ForEach(albums) { album in
@@ -269,24 +272,34 @@ struct AlbumCell: View {
     let album: Album
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            GeometryReader { proxy in
-                CoverArt(
-                    url: session.client?.audioStation.albumCoverURL(album: album.name, albumArtist: album.artist),
-                    cornerRadius: 10,
-                    fallbackSeed: album.id
-                )
-                .frame(width: proxy.size.width, height: proxy.size.width)
-            }
-            .aspectRatio(1, contentMode: .fit)
+            Color.clear
+                .aspectRatio(1, contentMode: .fit)
+                .overlay {
+                    albumCover
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             Text(album.name)
                 .font(.nocBody.weight(.semibold))
                 .lineLimit(1)
+                .frame(maxWidth: .infinity, minHeight: 20, alignment: .leading)
             Text(album.displayArtist)
                 .font(.nocLabel)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+                .frame(maxWidth: .infinity, minHeight: 16, alignment: .leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// 专辑封面固定填满方形容器，避免异步图片按原始尺寸撑开网格。
+    private var albumCover: some View {
+        CoverArt(
+            url: session.client?.audioStation.albumCoverURL(album: album.name, albumArtist: album.artist),
+            cornerRadius: 10,
+            fallbackSeed: album.id
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
     }
 }
 

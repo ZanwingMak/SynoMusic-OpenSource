@@ -7,7 +7,10 @@ struct AllAlbumsView: View {
     @State private var isLoading: Bool = false
     @State private var error: String?
     @State private var sortBy: SortOption = .name
-    private let columns = [GridItem(.adaptive(minimum: 148, maximum: 180), spacing: Metrics.m)]
+    private let columns = [
+        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: Metrics.m),
+        GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: Metrics.m)
+    ]
 
     enum SortOption: String, CaseIterable, Identifiable {
         case name, recently_added, artist, year

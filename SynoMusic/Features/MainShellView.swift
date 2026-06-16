@@ -6,6 +6,7 @@ struct MainShellView: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var playlists: PlaylistStore
     @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var showFullPlayer: Bool
     @State private var selectedTab: Tab = {
         #if DEBUG
@@ -42,7 +43,7 @@ struct MainShellView: View {
                     .tabItem { Label("设置".t, systemImage: "gearshape.fill") }
                     .tag(Tab.settings)
             }
-            .tint(theme.current.accent(in: .dark))
+            .tint(theme.current.accent(in: colorScheme))
 
             // 迷你播放器悬浮在 TabBar 之上：用 ZStack 浮，避免被 TabBar 覆盖；
             // 让位通过 .reserveMiniPlayer modifier 在每个 NavigationStack 内做。
@@ -75,6 +76,7 @@ struct MainShellView: View {
 struct QueueSheet: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var theme: ThemeManager
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     @Environment(\.editMode) private var editMode
 
@@ -118,7 +120,7 @@ struct QueueSheet: View {
             }
             .navigationTitle("队列".t)
             .navigationBarTitleDisplayMode(.inline)
-            .tint(theme.current.accent(in: .dark))
+            .tint(theme.current.accent(in: colorScheme))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(isEditingQueue ? "完成".t : "编辑".t) {

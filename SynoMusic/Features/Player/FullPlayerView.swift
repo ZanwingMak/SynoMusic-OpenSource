@@ -19,48 +19,31 @@ struct FullPlayerView: View {
     @State private var dominantColor: Color = Color(red: 0.18, green: 0.10, blue: 0.25)
 
     var body: some View {
-        ZStack(alignment: .top) {
-            background
-            VStack(spacing: Metrics.l) {
-                topBar
-                Spacer(minLength: 0)
-                Group {
-                    if showLyrics {
-                        LyricsPanel(lines: playback.lyrics, currentIndex: playback.currentLyricIndex)
-                            .transition(.opacity)
-                    } else {
-                        CoverHero(songID: playback.currentSong?.id, seed: playback.currentSong?.id ?? "")
-                            .padding(.horizontal, Metrics.l)
-                            .transition(.opacity)
-                    }
+        GeometryReader { geo in
+            let visualHeight = min(max(geo.size.height * 0.34, 250), 330)
+            let artSide = min(geo.size.width - Metrics.xl * 2, visualHeight)
+            ZStack(alignment: .top) {
+                background
+                VStack(spacing: 0) {
+                    topBar
+                        .frame(height: 52)
+                        .zIndex(10)
+                    Spacer(minLength: 8)
+                    playbackVisual(artSide: artSide)
+                        .frame(height: visualHeight)
+                    Spacer(minLength: 10)
+                    trackInfo
+                        .frame(height: 86, alignment: .center)
+                    progressSection
+                        .frame(height: 56)
+                    controlBar
+                        .frame(height: 92)
+                    bottomTools
+                        .frame(height: 48)
+                        .padding(.bottom, max(Metrics.s, geo.safeAreaInsets.bottom))
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    Haptics.tap()
-                    withAnimation(.easeInOut(duration: 0.28)) { showLyrics.toggle() }
-                }
-                Spacer(minLength: 0)
-                trackInfo
-                Slider(
-                    value: Binding(get: { playback.currentTime }, set: { playback.seek(to: $0) }),
-                    in: 0...max(playback.duration, 0.01)
-                )
-                .tint(.white)
-                .padding(.horizontal, Metrics.l)
-                HStack {
-                    Text(format(playback.currentTime))
-                    Spacer()
-                    Text(format(max(0, playback.duration - playback.currentTime)).withMinus)
-                }
-                .font(.nocLabel.monospacedDigit())
-                .foregroundStyle(.white.opacity(0.65))
-                .padding(.horizontal, Metrics.l)
-
-                controlBar.padding(.top, Metrics.s)
-
-                bottomTools.padding(.bottom, Metrics.m)
+                .padding(.top, Metrics.l)
             }
-            .padding(.top, Metrics.l)
         }
         .preferredColorScheme(.dark)
         .animation(.easeInOut(duration: 0.18), value: theme.currentID)
@@ -218,7 +201,7 @@ struct FullPlayerView: View {
     }
 }
 
-/// 全屏播放器右上的 Menu，单独建模避免随 currentTime 高频刷新一起重建。
+/// 全屏播放器右上的自定义玻璃菜单，单独建模避免随 currentTime 高频刷新一起重建。
 private struct TopBarMenu: View {
     let song: Song?
     let onAppendNext: () -> Void
@@ -230,9 +213,26 @@ private struct TopBarMenu: View {
     @State private var showActions = false
     @State private var showRating = false
 
+    private let menuWidth: CGFloat = 268
+
+    /// 当前歌曲是否允许删除文件。
+    private var canDeleteCurrentSong: Bool {
+        guard let song else { return false }
+        return !song.id.hasPrefix("radio:") && !(song.path ?? "").isEmpty
+    }
+
+    /// 是否正在展示任一菜单面板。
+    private var isShowingMenu: Bool {
+        showActions || showRating
+    }
+
     var body: some View {
         Button {
-            showActions = true
+            Haptics.tap()
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+                showActions.toggle()
+                showRating = false
+            }
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 18, weight: .bold))
@@ -241,28 +241,223 @@ private struct TopBarMenu: View {
                 .background(.white.opacity(0.12), in: Circle())
         }
         .buttonStyle(.plain)
-        .confirmationDialog("更多操作".t, isPresented: $showActions, titleVisibility: .hidden) {
-            if let song {
-                Button("加入队列".t, action: onAppendNext)
-                Button("添加到歌单…".t, action: onAddToPlaylist)
-                Button("歌曲信息".t, action: onShowInfo)
-                Button("编辑歌曲信息".t, action: onShowEdit)
-                Button("评分".t) { showRating = true }
-                Button("删除文件…".t, role: .destructive, action: onDelete)
-                    .disabled(song.id.hasPrefix("radio:") || (song.path ?? "").isEmpty)
+        .overlay(alignment: .topTrailing) {
+            if isShowingMenu {
+                Color.black.opacity(0.001)
+                    .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
+                    .contentShape(Rectangle())
+                    .onTapGesture { closeMenu() }
+                    .zIndex(0)
+
+                Group {
+                    if showRating {
+                        ratingPanel
+                    } else {
+                        actionsPanel
+                    }
+                }
+                .frame(width: menuWidth)
+                .offset(y: 48)
+                .transition(.scale(scale: 0.96, anchor: .topTrailing).combined(with: .opacity))
+                .zIndex(1)
             }
         }
-        .confirmationDialog("评分".t, isPresented: $showRating, titleVisibility: .visible) {
-            ForEach(0...5, id: \.self) { r in
-                Button(r == 0 ? "清除评分".t : "\(r) \("星".t)") {
-                    onRate(r)
+    }
+
+    /// 主要操作面板。
+    private var actionsPanel: some View {
+        PlayerGlassMenu {
+            VStack(spacing: 4) {
+                PlayerMenuRow(icon: "text.line.first.and.arrowtriangle.forward", title: "加入队列".t) {
+                    perform(onAppendNext)
+                }
+                PlayerMenuRow(icon: "text.badge.plus", title: "添加到歌单…".t) {
+                    perform(onAddToPlaylist)
+                }
+                PlayerMenuRow(icon: "info.circle", title: "歌曲信息".t) {
+                    perform(onShowInfo)
+                }
+                PlayerMenuRow(icon: "square.and.pencil", title: "编辑歌曲信息".t) {
+                    perform(onShowEdit)
+                }
+                PlayerMenuRow(icon: nil, title: "评分".t, showsChevron: true) {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+                        showRating = true
+                    }
+                }
+                Divider()
+                    .overlay(Color.white.opacity(0.12))
+                    .padding(.vertical, 10)
+                PlayerMenuRow(
+                    icon: "trash",
+                    title: "删除文件…".t,
+                    role: .destructive,
+                    isEnabled: canDeleteCurrentSong
+                ) {
+                    perform(onDelete)
                 }
             }
         }
     }
+
+    /// 评分选择面板。
+    private var ratingPanel: some View {
+        PlayerGlassMenu {
+            VStack(spacing: 4) {
+                PlayerMenuRow(icon: "chevron.left", title: "评分".t) {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+                        showRating = false
+                    }
+                }
+                Divider()
+                    .overlay(Color.white.opacity(0.12))
+                    .padding(.vertical, 6)
+                PlayerMenuRow(icon: "star.slash", title: "清除评分".t) {
+                    perform { onRate(0) }
+                }
+                ForEach(1...5, id: \.self) { rating in
+                    PlayerMenuRow(icon: "star.fill", title: "\(rating) \("星".t)") {
+                        perform { onRate(rating) }
+                    }
+                }
+            }
+        }
+    }
+
+    /// 收起菜单。
+    private func closeMenu() {
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+            showActions = false
+            showRating = false
+        }
+    }
+
+    /// 执行动作并收起菜单。
+    private func perform(_ action: @escaping () -> Void) {
+        closeMenu()
+        action()
+    }
+}
+
+/// 播放器菜单玻璃容器。
+private struct PlayerGlassMenu<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        content()
+            .padding(.horizontal, 20)
+            .padding(.vertical, 18)
+            .background {
+                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                    .fill(Color.black.opacity(0.34))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                    .stroke(Color.white.opacity(0.16), lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(0.35), radius: 24, y: 12)
+    }
+}
+
+/// 播放器菜单行。
+private struct PlayerMenuRow: View {
+    enum Role {
+        case normal
+        case destructive
+    }
+
+    let icon: String?
+    let title: String
+    var role: Role = .normal
+    var showsChevron: Bool = false
+    var isEnabled: Bool = true
+    let action: () -> Void
+
+    private let iconColor = Color(red: 0.70, green: 0.50, blue: 1.0)
+    private let destructiveColor = Color(red: 1.0, green: 0.43, blue: 0.38)
+
+    var body: some View {
+        Button {
+            guard isEnabled else { return }
+            Haptics.tap()
+            action()
+        } label: {
+            HStack(spacing: 18) {
+                Group {
+                    if let icon {
+                        Image(systemName: icon)
+                    } else {
+                        Color.clear
+                    }
+                }
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(iconColor)
+                .frame(width: 28, height: 28)
+
+                Text(title)
+                    .font(.nocSection)
+                    .foregroundStyle(role == .destructive ? destructiveColor : .white.opacity(0.92))
+                    .lineLimit(1)
+
+                Spacer(minLength: 0)
+
+                if showsChevron {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+            }
+            .frame(height: 46)
+            .contentShape(Rectangle())
+            .opacity(isEnabled ? 1 : 0.42)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+    }
 }
 
 extension FullPlayerView {
+    /// 播放器中部视觉区域；封面和歌词共用同一个固定槽位，避免切换时挤压控件。
+    @ViewBuilder
+    private func playbackVisual(artSide: CGFloat) -> some View {
+        ZStack {
+            if showLyrics {
+                LyricsPanel(lines: playback.lyrics, currentIndex: playback.currentLyricIndex)
+                    .transition(.opacity)
+            } else {
+                CoverHero(songID: playback.currentSong?.id, seed: playback.currentSong?.id ?? "", side: artSide)
+                    .transition(.opacity)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            Haptics.tap()
+            withAnimation(.easeInOut(duration: 0.28)) { showLyrics.toggle() }
+        }
+    }
+
+    /// 播放进度区域；固定时间标签高度，避免时长变化影响控制按钮位置。
+    private var progressSection: some View {
+        VStack(spacing: 6) {
+            Slider(
+                value: Binding(get: { playback.currentTime }, set: { playback.seek(to: $0) }),
+                in: 0...max(playback.duration, 0.01)
+            )
+            .tint(.white)
+            HStack {
+                Text(format(playback.currentTime))
+                Spacer()
+                Text(format(max(0, playback.duration - playback.currentTime)).withMinus)
+            }
+            .font(.nocLabel.monospacedDigit())
+            .foregroundStyle(.white.opacity(0.65))
+        }
+        .padding(.horizontal, Metrics.l)
+    }
+
     private var trackInfo: some View {
         HStack(alignment: .center, spacing: Metrics.m) {
             VStack(alignment: .leading, spacing: 6) {
@@ -275,31 +470,34 @@ extension FullPlayerView {
                     .foregroundStyle(.white.opacity(0.75))
                     .lineLimit(1)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             Spacer()
             if let song = playback.currentSong {
-                Button {
-                    showAddToPlaylist = true
-                } label: {
-                    Image(systemName: "text.badge.plus")
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.75))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("加入歌单".t)
-                .padding(.trailing, 8)
+                HStack(spacing: 14) {
+                    Button {
+                        showAddToPlaylist = true
+                    } label: {
+                        Image(systemName: "text.badge.plus")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.75))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("加入歌单".t)
 
-                Button {
-                    Haptics.soft()
-                    playlists.toggleFavorite(song)
-                } label: {
-                    Image(systemName: playlists.isFavorite(song) ? "heart.fill" : "heart")
-                        .font(.system(size: 26, weight: .semibold))
-                        .foregroundStyle(playlists.isFavorite(song) ? Color(red: 1, green: 0.32, blue: 0.45) : .white.opacity(0.75))
-                        .scaleEffect(playlists.isFavorite(song) ? 1.1 : 1.0)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.55), value: playlists.isFavorite(song))
+                    Button {
+                        Haptics.soft()
+                        playlists.toggleFavorite(song)
+                    } label: {
+                        Image(systemName: playlists.isFavorite(song) ? "heart.fill" : "heart")
+                            .font(.system(size: 26, weight: .semibold))
+                            .foregroundStyle(playlists.isFavorite(song) ? Color(red: 1, green: 0.32, blue: 0.45) : .white.opacity(0.75))
+                            .scaleEffect(playlists.isFavorite(song) ? 1.1 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.55), value: playlists.isFavorite(song))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(playlists.isFavorite(song) ? "取消喜欢".t : "喜欢".t)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(playlists.isFavorite(song) ? "取消喜欢".t : "喜欢".t)
+                .frame(width: 82)
             }
         }
         .padding(.horizontal, Metrics.l)
@@ -328,13 +526,16 @@ extension FullPlayerView {
     }
 
     private var bottomTools: some View {
-        HStack {
-            Button { playback.toggleShuffle() } label: {
+        HStack(spacing: 0) {
+            bottomToolButton {
+                playback.toggleShuffle()
+            } label: {
                 Image(systemName: "shuffle")
                     .foregroundStyle(playback.isShuffling ? Theme.accent : .white.opacity(0.75))
             }
-            Spacer()
-            Button { showSleep = true } label: {
+            bottomToolButton {
+                showSleep = true
+            } label: {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: "moon.zzz")
                         .foregroundStyle(sleepActive ? Theme.accent : .white.opacity(0.85))
@@ -343,27 +544,47 @@ extension FullPlayerView {
                     }
                 }
             }
-            Spacer()
-            Button { withAnimation { showLyrics.toggle() } } label: {
+            bottomToolButton {
+                withAnimation(.easeInOut(duration: 0.2)) { showLyrics.toggle() }
+            } label: {
                 Image(systemName: showLyrics ? "music.note" : "quote.bubble.fill")
                     .foregroundStyle(.white.opacity(0.85))
+                    .frame(width: 28, height: 28)
             }
-            Spacer()
             AirPlayButton()
                 .frame(width: 36, height: 36)
-            Spacer()
-            Button { showQueue = true } label: {
+                .frame(maxWidth: .infinity)
+            bottomToolButton {
+                showQueue = true
+            } label: {
                 Image(systemName: "list.bullet")
                     .foregroundStyle(.white.opacity(0.85))
             }
-            Spacer()
-            Button { playback.cycleRepeatMode() } label: {
+            bottomToolButton {
+                playback.cycleRepeatMode()
+            } label: {
                 Image(systemName: repeatIcon)
                     .foregroundStyle(playback.repeatMode == .off ? .white.opacity(0.75) : Theme.accent)
             }
         }
         .font(.system(size: 18, weight: .semibold))
         .padding(.horizontal, Metrics.xl)
+    }
+
+    /// 底部工具栏的等宽按钮容器，保证图标切换时其它按钮不横向跳动。
+    private func bottomToolButton<Content: View>(
+        action: @escaping () -> Void,
+        @ViewBuilder label: @escaping () -> Content
+    ) -> some View {
+        Button {
+            Haptics.tap()
+            action()
+        } label: {
+            label()
+                .frame(width: 36, height: 36)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
     }
 
     private var repeatIcon: String {
@@ -391,15 +612,15 @@ private struct CoverHero: View {
     @EnvironmentObject private var session: AppSession
     let songID: String?
     let seed: String
+    let side: CGFloat
     var body: some View {
         CoverArt(
             url: songID.flatMap { session.client?.audioStation.songCoverURL(songID: $0) },
             cornerRadius: Theme.cornerHero,
             fallbackSeed: seed
         )
-        .aspectRatio(1, contentMode: .fit)
+        .frame(width: side, height: side)
         .shadow(color: .black.opacity(0.35), radius: 40, y: 16)
-        .padding(.horizontal, 12)
     }
 }
 

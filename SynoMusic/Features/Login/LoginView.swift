@@ -47,10 +47,25 @@ struct LoginView: View {
                             SecureFieldRow(title: "密码".t, text: $password)
                             Divider().background(Color.white.opacity(0.08))
                             FieldRow(title: "OTP（可选）".t, value: nil, system: "key.fill", trailing: {
-                                TextField("6 位数字".t, text: $otp)
-                                    .keyboardType(.numberPad)
-                                    .multilineTextAlignment(.trailing)
-                                    .foregroundStyle(.white)
+                                HStack(spacing: 6) {
+                                    TextField("6 位数字".t, text: $otp)
+                                        .keyboardType(.numberPad)
+                                        .textContentType(.oneTimeCode)
+                                        .multilineTextAlignment(.trailing)
+                                        .foregroundStyle(.white)
+                                    if !otp.isEmpty {
+                                        Button {
+                                            Haptics.tap()
+                                            otp = ""
+                                        } label: {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .foregroundStyle(.white.opacity(0.45))
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel("清除".t)
+                                    }
+                                }
+                                .frame(maxWidth: 128)
                             })
                             Divider().background(Color.white.opacity(0.08))
                             Toggle("记住密码".t, isOn: $rememberPassword)
@@ -99,17 +114,20 @@ struct LoginView: View {
         isLoading = true
         defer { isLoading = false }
         error = nil
-        let client = SynologyClient(profile: profile)
         do {
-            try await client.login(password: password, otp: otp.isEmpty ? nil : otp)
+            let result = try await SynologyLoginHelper.login(
+                profile: profile,
+                password: password,
+                otp: otp.isEmpty ? nil : otp
+            )
             if rememberPassword {
-                try? serverStore.savePassword(password, for: profile)
+                try? serverStore.savePassword(password, for: result.profile)
             }
-            var updated = profile
+            var updated = result.profile
             updated.lastConnectedAt = Date()
             serverStore.upsert(updated)
             serverStore.setActive(updated)
-            session.sign(in: client)
+            session.sign(in: result.client)
             Haptics.success()
         } catch let SynologyError.api(code, _) where code == 403 {
             self.error = "需要双重验证，请输入 OTP。".t
@@ -172,8 +190,20 @@ private struct SecureFieldRow: View {
                 }
                 .font(.nocBody)
                 .foregroundStyle(.white)
+                .textContentType(.oneTimeCode)
             }
             Spacer()
+            if !text.isEmpty {
+                Button {
+                    Haptics.tap()
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.white.opacity(0.45))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("清除".t)
+            }
             Button { visible.toggle() } label: {
                 Image(systemName: visible ? "eye.slash" : "eye")
                     .foregroundStyle(.white.opacity(0.6))
