@@ -22,6 +22,30 @@ struct Song: Identifiable, Hashable, Codable {
     let rating: Int?          // 0-5
 }
 
+extension Song {
+    /// 返回只更新评分的新歌曲快照，用于接口成功后刷新本地队列状态。
+    func withRating(_ newRating: Int?) -> Song {
+        Song(
+            id: id,
+            title: title,
+            album: album,
+            artist: artist,
+            albumArtist: albumArtist,
+            genre: genre,
+            composer: composer,
+            trackNumber: trackNumber,
+            discNumber: discNumber,
+            year: year,
+            duration: duration,
+            bitrate: bitrate,
+            codec: codec,
+            filesize: filesize,
+            path: path,
+            rating: newRating
+        )
+    }
+}
+
 /// 专辑。
 struct Album: Identifiable, Hashable, Codable {
     /// 拼接 ID（"album_name|artist"），群晖 Album 没有原生 id。

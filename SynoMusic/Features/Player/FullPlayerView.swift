@@ -1,5 +1,6 @@
 import SwiftUI
 import AVKit
+import UIKit
 
 /// 全屏播放器：封面、波形进度条、控制条、歌词面板、队列面板。
 struct FullPlayerView: View {
@@ -118,6 +119,8 @@ struct FullPlayerView: View {
               let api = session.client?.audioStation else { return }
         do {
             try await api.setRating(songID: song.id, rating: stars)
+            ratingPending = stars
+            playback.updateRating(forSongID: song.id, rating: stars)
             playback.setStatus(stars == 0 ? "已清除评分".t : "已设为".t + " \(stars) " + "星".t)
             Haptics.success()
         } catch {
@@ -192,12 +195,16 @@ struct FullPlayerView: View {
                 onAddToPlaylist: { showAddToPlaylist = true },
                 onShowInfo: { showSongInfo = true },
                 onShowEdit: { showSongEdit = true },
+                currentRating: ratingPending ?? playback.currentSong?.rating,
                 onRate: { stars in Task { await applyRating(stars) } },
                 onDelete: { showDeleteConfirm = true }
             )
             .id(playback.currentSong?.id ?? "none")
         }
         .padding(.horizontal, Metrics.l)
+        .onChange(of: playback.currentSong?.id) { _, _ in
+            ratingPending = nil
+        }
     }
 }
 
@@ -208,12 +215,19 @@ private struct TopBarMenu: View {
     let onAddToPlaylist: () -> Void
     let onShowInfo: () -> Void
     let onShowEdit: () -> Void
+    let currentRating: Int?
     let onRate: (Int) -> Void
     let onDelete: () -> Void
-    @State private var showMenu = false
+    @State private var showMenu: Bool = {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-show-player-menu")
+        #else
+        return false
+        #endif
+    }()
     @State private var showRating = false
 
-    private let menuWidth: CGFloat = 220
+    private let menuWidth: CGFloat = 252
 
     /// 当前歌曲是否允许删除文件。
     private var canDeleteCurrentSong: Bool {
@@ -234,12 +248,20 @@ private struct TopBarMenu: View {
                 .background(.white.opacity(0.12), in: Circle())
         }
         .buttonStyle(.plain)
-        .popover(isPresented: $showMenu, arrowEdge: .top) {
-            menuContent
+        .overlay(alignment: .topTrailing) {
+            if showMenu {
+                PlayerGlassMenu {
+                    menuContent
+                }
                 .frame(width: menuWidth)
-                .presentationCompactAdaptation(.popover)
-                .presentationBackground(.thinMaterial)
+                .offset(y: 48)
+                .transition(.scale(scale: 0.96, anchor: .topTrailing).combined(with: .opacity))
+                .zIndex(200)
+            }
         }
+        .animation(.spring(response: 0.28, dampingFraction: 0.84), value: showMenu)
+        .animation(.easeInOut(duration: 0.16), value: showRating)
+        .zIndex(200)
     }
 
     /// popover 内的两种面板切换。
@@ -270,6 +292,7 @@ private struct TopBarMenu: View {
                 perform(onShowEdit)
             }
             PlayerMenuRow(icon: "star", title: "评分".t, showsChevron: true) {
+                Haptics.tap()
                 withAnimation(.easeInOut(duration: 0.18)) { showRating = true }
             }
             Divider().padding(.vertical, 4)
@@ -289,14 +312,16 @@ private struct TopBarMenu: View {
     private var ratingPanel: some View {
         VStack(spacing: 0) {
             PlayerMenuRow(icon: "chevron.left", title: "评分".t) {
+                Haptics.tap()
                 withAnimation(.easeInOut(duration: 0.18)) { showRating = false }
             }
             Divider().padding(.vertical, 4)
-            PlayerMenuRow(icon: "star.slash", title: "清除评分".t) {
+            PlayerMenuRow(icon: currentRating == 0 ? "star.slash.fill" : "star.slash", title: "清除评分".t) {
                 perform { onRate(0) }
             }
             ForEach(1...5, id: \.self) { rating in
-                PlayerMenuRow(icon: "star.fill", title: "\(rating) \("星".t)") {
+                let isSelected = currentRating == rating
+                PlayerMenuRow(icon: isSelected ? "star.fill" : "star", title: "\(rating) \("星".t)") {
                     perform { onRate(rating) }
                 }
             }
@@ -306,12 +331,54 @@ private struct TopBarMenu: View {
 
     /// 执行动作并关闭 popover。
     private func perform(_ action: @escaping () -> Void) {
-        showMenu = false
+        Haptics.tap()
+        withAnimation(.spring(response: 0.24, dampingFraction: 0.86)) {
+            showMenu = false
+        }
         action()
     }
 }
 
-/// 播放器菜单单行：紧凑布局 + 标准 Label 风格，依赖 popover 系统背景。
+/// 播放器菜单玻璃容器：iOS 26 使用系统 glassEffect，旧系统退回稳定材质。
+private struct PlayerGlassMenu<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        Group {
+            if #available(iOS 26.0, *) {
+                GlassEffectContainer(spacing: 0) {
+                    content()
+                        .background {
+                            RoundedRectangle(cornerRadius: 34, style: .continuous)
+                                .fill(Color.black.opacity(0.18))
+                        }
+                        .glassEffect(
+                            .regular.tint(Color.white.opacity(0.08)).interactive(),
+                            in: RoundedRectangle(cornerRadius: 34, style: .continuous)
+                        )
+                }
+            } else {
+                content()
+                    .background {
+                        RoundedRectangle(cornerRadius: 34, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 34, style: .continuous)
+                                    .fill(Color.black.opacity(0.18))
+                            }
+                    }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 34, style: .continuous)
+                .stroke(Color.white.opacity(0.16), lineWidth: 0.8)
+        }
+        .shadow(color: .black.opacity(0.35), radius: 24, x: 0, y: 12)
+    }
+}
+
+/// 播放器菜单单行：紧凑布局 + 按压反馈。
 private struct PlayerMenuRow: View {
     enum Role {
         case normal
@@ -325,12 +392,11 @@ private struct PlayerMenuRow: View {
     var isEnabled: Bool = true
     let action: () -> Void
 
-    private let iconColor = Color(red: 0.55, green: 0.36, blue: 0.95)
+    private let iconColor = Color(red: 0.68, green: 0.48, blue: 1.0)
 
     var body: some View {
         Button {
             guard isEnabled else { return }
-            Haptics.tap()
             action()
         } label: {
             HStack(spacing: 12) {
@@ -341,23 +407,36 @@ private struct PlayerMenuRow: View {
                         .frame(width: 20, height: 20)
                 }
                 Text(title)
-                    .font(.system(size: 15))
-                    .foregroundStyle(role == .destructive ? .red : .primary)
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundStyle(role == .destructive ? Color(red: 1, green: 0.42, blue: 0.38) : .white.opacity(0.92))
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 if showsChevron {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.8))
                 }
             }
             .padding(.horizontal, 14)
-            .frame(height: 38)
-            .contentShape(Rectangle())
+            .frame(height: 44)
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .opacity(isEnabled ? 1 : 0.4)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PlayerMenuRowButtonStyle())
         .disabled(!isEnabled)
+    }
+}
+
+/// 播放器菜单行按钮样式：按下时给出缩放与玻璃高光反馈。
+private struct PlayerMenuRowButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(configuration.isPressed ? Color.white.opacity(0.14) : Color.clear)
+            }
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .animation(.spring(response: 0.22, dampingFraction: 0.78), value: configuration.isPressed)
     }
 }
 
@@ -408,12 +487,29 @@ extension FullPlayerView {
                     .font(.nocTitleHero)
                     .foregroundStyle(.white)
                     .lineLimit(2)
-                Text(playback.currentSong?.artist ?? "")
-                    .font(.nocBody)
-                    .foregroundStyle(.white.opacity(0.75))
-                    .lineLimit(1)
+                HStack(spacing: 8) {
+                    Text(playback.currentSong?.artist ?? "")
+                        .font(.nocBody)
+                        .foregroundStyle(.white.opacity(0.75))
+                        .lineLimit(1)
+                    qualityBadge
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .contextMenu {
+                Button {
+                    copyToPasteboard(playback.currentSong?.title ?? "")
+                } label: {
+                    Label("复制歌曲名".t, systemImage: "doc.on.doc")
+                }
+                if let artist = playback.currentSong?.artist, !artist.isEmpty {
+                    Button {
+                        copyToPasteboard(artist)
+                    } label: {
+                        Label("复制作者".t, systemImage: "person.text.rectangle")
+                    }
+                }
+            }
             Spacer()
             if let song = playback.currentSong {
                 HStack(spacing: 14) {
@@ -444,6 +540,17 @@ extension FullPlayerView {
             }
         }
         .padding(.horizontal, Metrics.l)
+    }
+
+    /// 当前播放音质徽标。
+    private var qualityBadge: some View {
+        Text(playback.quality.titleKey.t)
+            .font(.system(size: 11, weight: .semibold, design: .rounded))
+            .foregroundStyle(.white.opacity(0.88))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.white.opacity(0.12), in: Capsule(style: .continuous))
+            .lineLimit(1)
     }
 
     private var controlBar: some View {
@@ -541,6 +648,14 @@ extension FullPlayerView {
     private func format(_ s: TimeInterval) -> String {
         let total = max(0, Int(s))
         return String(format: "%d:%02d", total / 60, total % 60)
+    }
+
+    /// 复制非空文本到剪贴板并提示用户。
+    private func copyToPasteboard(_ text: String) {
+        guard !text.isEmpty else { return }
+        UIPasteboard.general.string = text
+        playback.setStatus("已复制".t)
+        Haptics.success()
     }
 }
 

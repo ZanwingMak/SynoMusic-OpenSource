@@ -195,7 +195,7 @@ final class AudioStationAPI: @unchecked Sendable {
         let items: [URLQueryItem] = [
             .init(name: "api", value: "SYNO.FileStation.Delete"),
             .init(name: "version", value: "2"),
-            .init(name: "method", value: "delete"),
+            .init(name: "method", value: "start"),
             .init(name: "path", value: joined),
             .init(name: "recursive", value: "true")
         ]

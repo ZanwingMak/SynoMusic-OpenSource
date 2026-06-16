@@ -136,13 +136,13 @@ struct LocalPlaylistDetailView: View {
         HStack(spacing: Metrics.m) {
             Button {
                 playback.isShuffling = false
-                playback.play(queue: snapshots, startAt: 0)
+                playback.play(queue: snapshots, startAt: 0, honoringShuffle: false)
             } label: { Label("播放".t, systemImage: "play.fill") }
             .buttonStyle(PrimaryButtonStyle())
 
             Button {
                 playback.isShuffling = true
-                playback.play(queue: snapshots.shuffled(), startAt: 0)
+                playback.play(queue: snapshots.shuffled(), startAt: 0, honoringShuffle: false)
             } label: { Label("随机".t, systemImage: "shuffle") }
             .buttonStyle(SecondaryButtonStyle())
         }
@@ -190,7 +190,7 @@ struct LocalPlaylistDetailView: View {
             else { selected.insert(song.id) }
             Haptics.tap()
         } else if let idx = snapshots.firstIndex(of: song) {
-            playback.play(queue: snapshots, startAt: idx)
+            playback.play(queue: snapshots, startAt: idx, honoringShuffle: false)
         }
     }
     private func enterEdit() { isEditing = true; selected.removeAll(); Haptics.tap() }
@@ -198,7 +198,7 @@ struct LocalPlaylistDetailView: View {
     private func playSelected() {
         let songs = snapshots.filter { selected.contains($0.id) }
         guard !songs.isEmpty else { return }
-        playback.play(queue: songs, startAt: 0)
+        playback.play(queue: songs, startAt: 0, honoringShuffle: false)
         exitEdit()
     }
     private func removeSelected() {

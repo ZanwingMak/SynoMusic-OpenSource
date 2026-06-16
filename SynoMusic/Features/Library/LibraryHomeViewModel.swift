@@ -38,6 +38,10 @@ final class LibraryHomeViewModel: ObservableObject {
             self.albums = a
             self.artists = ar
             self.loaded = true
+        } catch SynologyError.cancelled {
+            // 刷新过程中旧请求被系统取消属于正常路径，不展示错误态。
+        } catch is CancellationError {
+            // Swift 并发取消同样不应该污染首页。
         } catch {
             self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }

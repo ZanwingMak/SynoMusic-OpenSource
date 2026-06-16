@@ -22,7 +22,7 @@ struct AlbumDetailView: View {
                     LoadingState().frame(height: 200)
                 } else {
                     SongListSection(songs: songs) { idx in
-                        playback.play(queue: songs, startAt: idx)
+                        playback.play(queue: songs, startAt: idx, honoringShuffle: false)
                     }
                 }
             }
@@ -65,7 +65,7 @@ struct AlbumDetailView: View {
         HStack(spacing: Metrics.m) {
             Button {
                 playback.isShuffling = false
-                playback.play(queue: songs, startAt: 0)
+                playback.play(queue: songs, startAt: 0, honoringShuffle: false)
             } label: {
                 Label("播放".t, systemImage: "play.fill")
             }
@@ -74,7 +74,7 @@ struct AlbumDetailView: View {
 
             Button {
                 playback.isShuffling = true
-                playback.play(queue: songs.shuffled(), startAt: 0)
+                playback.play(queue: songs.shuffled(), startAt: 0, honoringShuffle: false)
             } label: {
                 Label("随机".t, systemImage: "shuffle")
             }

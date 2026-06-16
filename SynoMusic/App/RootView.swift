@@ -49,6 +49,10 @@ struct RootView: View {
             FullPlayerView(isPresented: $showFullPlayer)
                 .presentationDragIndicator(.visible)
         }
+        .onChange(of: playback.currentSong?.id) { oldID, newID in
+            guard oldID == nil, newID != nil else { return }
+            showFullPlayer = true
+        }
         .task { await attemptAutoLogin() }
         #if DEBUG
         .onAppear {

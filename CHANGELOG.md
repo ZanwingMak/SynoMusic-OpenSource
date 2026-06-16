@@ -5,14 +5,29 @@
 
 ## [Unreleased]
 
-## [1.2.5] - 2026-06-16
+## [1.2.4] - 2026-06-16
+
+### 新增
+- 新增 10 个自行生成的二次元耳机音乐主题 App 图标，并可在设置里自由切换。
+- 浏览页新增「历史记录」，可查看最近播放歌曲与被替换前的播放队列，并可恢复历史队列。
+- 首次开始播放且未显示迷你播放器时，自动弹出全屏播放页。
+- 播放页新增当前音质显示，歌曲名和作者支持复制。
+
+### 变更
+- 播放页右上更多菜单改为 iOS 26 液态玻璃风格，优化圆角、点击反馈、评分星标空心/实心状态，并避免播放背景下闪烁。
+- 设置里的锁屏控制和 AirPlay 改为始终开启，避免系统播放路由与锁屏卡片状态不一致。
+- 随机入口只随机生成 100 首播放队列，不再改变播放器当前随机播放开关状态。
 
 ### 修复
-- **播放页右上更多菜单重做**：旧实现用 `.overlay` 套全屏遮罩 + 自绘 RoundedRectangle，把 layout 容器撑大导致弹层锚点漂移、且尺寸过大。改用系统 `popover(arrowEdge: .top)` + `presentationCompactAdaptation(.popover)` + `presentationBackground(.thinMaterial)`：
-  - 位置由系统从 `ellipsis` 按钮自动锚定，不会再脱锚。
-  - 背景使用 iOS 系统液态玻璃材质（`.thinMaterial`），随播放器背景自然透出。
-  - 宽度由 268 缩到 220，行高 46 → 38，图标 28 → 20，字号 nocSection → 15，去掉冗余的内层圆角描边和阴影。
-  - 评分子面板复用同一 popover，仅切换内容，动画平滑无闪烁。
+- 修复 QuickConnect ID 登录：支持 QuickConnect 区域站点跳转、数组/对象返回结构、`smartdns` 与 `pingpong_desc` 候选地址。
+- 修复评分、删除文件请求服务器后没有实际效果的问题；删除文件改用 File Station Delete 的 `start` 方法。
+- 修复加入队列可重复加入同一首歌的问题，并增加重复提示。
+- 修复首页下拉刷新取消请求时显示「加载失败，请求已取消」的问题。
+- 修复开启随机播放后，在「所有歌曲」点播指定歌曲可能没有播放对应歌曲的问题。
+- 修复空成功响应的 API 解析，避免服务器返回成功但无 `data` 时被误判失败。
+
+### 版本
+- 发布版本号更新为 `1.2.4`。
 
 ## [1.2.3] - 2026-06-16
 
@@ -209,7 +224,8 @@
 - Swift 6 严格并发：`SynologyClient` / `AudioStationAPI` 标记 `@unchecked Sendable` 并加锁保护 `sid`
 - iOS 17.0 起；以 Xcode 26 / Swift 6.3 通过编译
 
-[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.3...HEAD
+[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.4...HEAD
+[1.2.4]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.0...v1.2.1

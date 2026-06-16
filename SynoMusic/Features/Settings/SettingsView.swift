@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// 设置：服务器、音质、下载、关于。
 struct SettingsView: View {
@@ -14,11 +15,14 @@ struct SettingsView: View {
     @State private var editingProfile: ServerProfile?
     @State private var pendingDelete: ServerProfile?
     @State private var showSponsors: Bool = false
+    @State private var selectedIconName: String? = UIApplication.shared.alternateIconName
+    @State private var isChangingIcon: Bool = false
 
     var body: some View {
         Form {
             currentServerSection
             serversSection
+            appIconSection
             themeSection
             languageSection
             qualitySection
@@ -188,6 +192,37 @@ struct SettingsView: View {
         }
     }
 
+    private var appIconSection: some View {
+        Section {
+            if UIApplication.shared.supportsAlternateIcons {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 14) {
+                        ForEach(AppIconChoice.all) { choice in
+                            Button {
+                                applyAppIcon(choice)
+                            } label: {
+                                AppIconChoiceView(
+                                    choice: choice,
+                                    isSelected: selectedIconName == choice.alternateName
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(isChangingIcon)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            } else {
+                Text("当前设备不支持切换 App 图标".t)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("App 图标".t)
+        } footer: {
+            Text("选择后系统会立即替换主屏幕图标。".t)
+        }
+    }
+
     private var qualitySection: some View {
         Section {
             Picker("流式音质".t, selection: $playback.quality) {
@@ -221,16 +256,12 @@ struct SettingsView: View {
             Toggle(isOn: $playbackSettings.backgroundPlaybackEnabled) {
                 Label("后台播放".t, systemImage: "play.circle")
             }
-            Toggle(isOn: $playbackSettings.lockScreenControlsEnabled) {
-                Label("锁屏控制".t, systemImage: "lock.open")
-            }
-            Toggle(isOn: $playbackSettings.airPlayEnabled) {
-                Label("AirPlay".t, systemImage: "airplayaudio")
-            }
+            fixedPlaybackFeatureRow("锁屏控制".t, systemImage: "lock.open")
+            fixedPlaybackFeatureRow("AirPlay".t, systemImage: "airplayaudio")
         } header: {
             Text("播放".t)
         } footer: {
-            Text("关闭「后台播放」后，App 进入后台会自动暂停。AirPlay 关闭后，控制中心的路由选择仍可用但 SynoMusic 不会主动声明输出。".t)
+            Text("锁屏控制与 AirPlay 始终启用，避免系统播放路由与锁屏卡片状态不一致。关闭「后台播放」后，App 进入后台会自动暂停。".t)
         }
     }
 
@@ -282,14 +313,48 @@ struct SettingsView: View {
         }
     }
 
+    /// 加载当前 Audio Station 服务信息，用于设置页展示会话状态。
     private func loadServerInfo() async {
         guard let api = session.client?.audioStation else { return }
         if let info = try? await api.getInfo() { self.serverInfo = info }
     }
 
+    /// 展示不可关闭的播放能力行，右侧固定为开启状态。
+    private func fixedPlaybackFeatureRow(_ title: String, systemImage: String) -> some View {
+        HStack {
+            Label(title, systemImage: systemImage)
+            Spacer()
+            Text("始终开启".t)
+                .font(.nocLabel)
+                .foregroundStyle(.secondary)
+        }
+        .contentShape(Rectangle())
+    }
+
+    /// 停止播放并退出当前服务器会话。
     private func signOut() async {
         playback.stop()
         await session.signOut()
+    }
+
+    /// 切换系统 App 图标，并同步设置页的选中状态。
+    private func applyAppIcon(_ choice: AppIconChoice) {
+        guard selectedIconName != choice.alternateName else { return }
+        Haptics.tap()
+        isChangingIcon = true
+        UIApplication.shared.setAlternateIconName(choice.alternateName) { error in
+            Task { @MainActor in
+                isChangingIcon = false
+                if let error {
+                    playback.setStatus("图标切换失败".t + "：\(error.localizedDescription)")
+                    Haptics.warning()
+                } else {
+                    selectedIconName = choice.alternateName
+                    playback.setStatus("图标已切换".t)
+                    Haptics.success()
+                }
+            }
+        }
     }
 
     /// 切换会话到指定档案：设为默认 + 用 Keychain 密码 silent login。
@@ -323,6 +388,82 @@ struct SettingsView: View {
         } catch {
             playback.setStatus("切换失败".t + "：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
             Haptics.warning()
+        }
+    }
+}
+
+/// 可切换的 App 图标选项；nil 表示主图标。
+private struct AppIconChoice: Identifiable {
+    let alternateName: String?
+    let assetName: String
+    let previewName: String
+    let title: String
+
+    var id: String { alternateName ?? "AppIcon" }
+
+    static let all: [AppIconChoice] = [
+        AppIconChoice(alternateName: nil, assetName: "AppIcon", previewName: "AppIconPreview01", title: "图标 1"),
+        AppIconChoice(alternateName: "AppIconAlt02", assetName: "AppIconAlt02", previewName: "AppIconPreview02", title: "图标 2"),
+        AppIconChoice(alternateName: "AppIconAlt03", assetName: "AppIconAlt03", previewName: "AppIconPreview03", title: "图标 3"),
+        AppIconChoice(alternateName: "AppIconAlt04", assetName: "AppIconAlt04", previewName: "AppIconPreview04", title: "图标 4"),
+        AppIconChoice(alternateName: "AppIconAlt05", assetName: "AppIconAlt05", previewName: "AppIconPreview05", title: "图标 5"),
+        AppIconChoice(alternateName: "AppIconAlt06", assetName: "AppIconAlt06", previewName: "AppIconPreview06", title: "图标 6"),
+        AppIconChoice(alternateName: "AppIconAlt07", assetName: "AppIconAlt07", previewName: "AppIconPreview07", title: "图标 7"),
+        AppIconChoice(alternateName: "AppIconAlt08", assetName: "AppIconAlt08", previewName: "AppIconPreview08", title: "图标 8"),
+        AppIconChoice(alternateName: "AppIconAlt09", assetName: "AppIconAlt09", previewName: "AppIconPreview09", title: "图标 9"),
+        AppIconChoice(alternateName: "AppIconAlt10", assetName: "AppIconAlt10", previewName: "AppIconPreview10", title: "图标 10")
+    ]
+}
+
+/// 设置页里的图标选择器单元。
+private struct AppIconChoiceView: View {
+    let choice: AppIconChoice
+    let isSelected: Bool
+
+    var body: some View {
+        VStack(spacing: 6) {
+            iconPreview
+                .frame(width: 62, height: 62)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(isSelected ? Theme.accent : Color.clear, lineWidth: 3)
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(.white, Theme.accent)
+                            .offset(x: 5, y: 5)
+                    }
+                }
+            Text(choice.title.t)
+                .font(.nocLabel)
+                .foregroundStyle(isSelected ? Theme.accent : .secondary)
+        }
+        .frame(width: 76)
+        .contentShape(Rectangle())
+    }
+
+    /// 图标预览；系统 AppIconSet 不作为普通图片暴露，因此使用专门的预览 imageset。
+    private var iconPreview: some View {
+        Group {
+            if let image = UIImage(named: choice.previewName) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                LinearGradient(
+                    colors: [Theme.accent.opacity(0.95), Color.pink.opacity(0.8)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .overlay {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+            }
         }
     }
 }

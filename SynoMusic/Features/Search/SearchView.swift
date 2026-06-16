@@ -27,7 +27,7 @@ struct SearchView: View {
                     ForEach(Array(results.enumerated()), id: \.element.id) { idx, song in
                         Button {
                             Haptics.tap()
-                            playback.play(queue: results, startAt: idx)
+                            playback.play(queue: results, startAt: idx, honoringShuffle: false)
                             SearchHistory.add(keyword)
                             history = SearchHistory.load()
                         } label: {

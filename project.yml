@@ -12,7 +12,7 @@ settings:
     SWIFT_VERSION: "6.0"
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-    MARKETING_VERSION: "1.2.5"
+    MARKETING_VERSION: "1.2.4"
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
@@ -57,11 +57,64 @@ targets:
           - _http._tcp
           - _https._tcp
         ITSAppUsesNonExemptEncryption: false
+        CFBundleIcons:
+          CFBundlePrimaryIcon:
+            CFBundleIconName: AppIcon
+            CFBundleIconFiles:
+              - AppIcon
+            UIPrerenderedIcon: false
+          CFBundleAlternateIcons:
+            AppIconAlt02:
+              CFBundleIconName: AppIconAlt02
+              CFBundleIconFiles:
+                - AppIconAlt02
+              UIPrerenderedIcon: false
+            AppIconAlt03:
+              CFBundleIconName: AppIconAlt03
+              CFBundleIconFiles:
+                - AppIconAlt03
+              UIPrerenderedIcon: false
+            AppIconAlt04:
+              CFBundleIconName: AppIconAlt04
+              CFBundleIconFiles:
+                - AppIconAlt04
+              UIPrerenderedIcon: false
+            AppIconAlt05:
+              CFBundleIconName: AppIconAlt05
+              CFBundleIconFiles:
+                - AppIconAlt05
+              UIPrerenderedIcon: false
+            AppIconAlt06:
+              CFBundleIconName: AppIconAlt06
+              CFBundleIconFiles:
+                - AppIconAlt06
+              UIPrerenderedIcon: false
+            AppIconAlt07:
+              CFBundleIconName: AppIconAlt07
+              CFBundleIconFiles:
+                - AppIconAlt07
+              UIPrerenderedIcon: false
+            AppIconAlt08:
+              CFBundleIconName: AppIconAlt08
+              CFBundleIconFiles:
+                - AppIconAlt08
+              UIPrerenderedIcon: false
+            AppIconAlt09:
+              CFBundleIconName: AppIconAlt09
+              CFBundleIconFiles:
+                - AppIconAlt09
+              UIPrerenderedIcon: false
+            AppIconAlt10:
+              CFBundleIconName: AppIconAlt10
+              CFBundleIconFiles:
+                - AppIconAlt10
+              UIPrerenderedIcon: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.synomusic.SynoMusic
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIconAlt02 AppIconAlt03 AppIconAlt04 AppIconAlt05 AppIconAlt06 AppIconAlt07 AppIconAlt08 AppIconAlt09 AppIconAlt10"
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: NO
         SUPPORTS_MACCATALYST: NO

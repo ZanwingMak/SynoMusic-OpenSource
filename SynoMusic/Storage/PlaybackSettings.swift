@@ -13,13 +13,13 @@ final class PlaybackSettings: ObservableObject {
             applyAudioSession()
         }
     }
-    @Published var lockScreenControlsEnabled: Bool {
+    @Published private(set) var lockScreenControlsEnabled: Bool {
         didSet {
             UserDefaults.standard.set(lockScreenControlsEnabled, forKey: lockKey)
             UserDefaults.standard.synchronize()
         }
     }
-    @Published var airPlayEnabled: Bool {
+    @Published private(set) var airPlayEnabled: Bool {
         didSet {
             UserDefaults.standard.set(airPlayEnabled, forKey: airKey)
             UserDefaults.standard.synchronize()
@@ -34,15 +34,17 @@ final class PlaybackSettings: ObservableObject {
     init() {
         let defaults = UserDefaults.standard
         self.backgroundPlaybackEnabled = defaults.object(forKey: bgKey) as? Bool ?? true
-        self.lockScreenControlsEnabled = defaults.object(forKey: lockKey) as? Bool ?? true
-        self.airPlayEnabled = defaults.object(forKey: airKey) as? Bool ?? true
+        self.lockScreenControlsEnabled = true
+        self.airPlayEnabled = true
+        defaults.set(true, forKey: lockKey)
+        defaults.set(true, forKey: airKey)
     }
 
     /// 根据当前开关重新配置 AVAudioSession。
     func applyAudioSession() {
         let session = AVAudioSession.sharedInstance()
         var options: AVAudioSession.CategoryOptions = []
-        if airPlayEnabled { options.insert(.allowAirPlay) }
+        options.insert(.allowAirPlay)
         options.insert(.allowBluetoothA2DP)
         do {
             try session.setCategory(

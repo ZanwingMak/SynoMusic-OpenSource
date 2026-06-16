@@ -98,8 +98,13 @@ final class SynologyClient: @unchecked Sendable, Equatable {
             throw SynologyError.decoding(error.localizedDescription)
         }
 
-        if envelope.success, let payload = envelope.data {
-            return payload
+        if envelope.success {
+            if let payload = envelope.data {
+                return payload
+            }
+            if Payload.self == EmptyPayload.self {
+                return EmptyPayload() as! Payload
+            }
         }
         if let err = envelope.error {
             // 通过 query item 中 api=SYNO.API.Auth 判断是否走认证码表

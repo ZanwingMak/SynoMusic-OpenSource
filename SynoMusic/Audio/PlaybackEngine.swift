@@ -43,6 +43,23 @@ enum AudioQuality: String, CaseIterable, Identifiable {
     }
 }
 
+/// 一次队列替换前的快照，用于在浏览页回看之前的播放上下文。
+struct PlaybackQueueSnapshot: Identifiable, Hashable, Codable {
+    let id: UUID
+    let createdAt: Date
+    let title: String
+    let songs: [Song]
+    let currentSongID: String?
+
+    init(id: UUID = UUID(), createdAt: Date = Date(), title: String, songs: [Song], currentSongID: String?) {
+        self.id = id
+        self.createdAt = createdAt
+        self.title = title
+        self.songs = songs
+        self.currentSongID = currentSongID
+    }
+}
+
 /// 全局播放引擎：单例式注入到 SwiftUI 环境，掌管队列、时间、Now Playing、远程命令。
 @MainActor
 final class PlaybackEngine: ObservableObject {
@@ -65,6 +82,10 @@ final class PlaybackEngine: ObservableObject {
     @Published private(set) var sleepRemaining: TimeInterval?
     /// 是否在"本曲结束后停止"模式。
     @Published private(set) var stopAtTrackEnd: Bool = false
+    /// 最近播放过的歌曲，按最近时间倒序。
+    @Published private(set) var playedHistory: [Song] = []
+    /// 被新播放列表替换掉的队列历史，按最近时间倒序。
+    @Published private(set) var queueHistory: [PlaybackQueueSnapshot] = []
 
     /// 当前歌曲。
     var currentSong: Song? {
@@ -104,6 +125,10 @@ final class PlaybackEngine: ObservableObject {
     private var transcodeOverride: AudioQuality?
     /// 当前曲目是否已尝试过 raw→mp3 兜底重试，避免无限循环。
     private var fallbackTried: Bool = false
+    private let playedHistoryKey = "syno.playback.history.songs"
+    private let queueHistoryKey = "syno.playback.history.queues"
+    private let maxPlayedHistoryCount = 200
+    private let maxQueueHistoryCount = 50
 
     /// 限流：避免 timeObserver 每 0.5s 都调 LA update（系统对 LA 更新频率有上限）。
     private var lastActivityUpdate: Date = .distantPast
@@ -111,6 +136,7 @@ final class PlaybackEngine: ObservableObject {
     private var isDemoPlayback: Bool = false
 
     init() {
+        loadHistories()
         setupAudioSession()
         setupRemoteCommands()
         setupTimeObserver()
@@ -125,6 +151,7 @@ final class PlaybackEngine: ObservableObject {
     /// 替换队列并从指定下标开始播放；可选择是否沿用当前随机播放开关来重排队列。
     func play(queue songs: [Song], startAt index: Int = 0, honoringShuffle: Bool = true) {
         guard !songs.isEmpty else { return }
+        recordQueueSnapshotIfNeeded(replacingWith: songs)
         self.originalQueue = songs
         var ordered = songs
         let shouldShuffle = honoringShuffle && isShuffling
@@ -144,9 +171,12 @@ final class PlaybackEngine: ObservableObject {
     /// 添加单曲到队尾（"接下来播放"）。
     func appendNext(_ song: Song) {
         if queue.isEmpty {
-            play(queue: [song])
+            play(queue: [song], honoringShuffle: false)
+        } else if queue.contains(where: { $0.id == song.id }) {
+            setStatus("已在队列中".t + "：\(song.title)")
         } else {
             queue.insert(song, at: min(currentIndex + 1, queue.count))
+            setStatus("已加入队列".t + "：\(song.title)")
         }
     }
 
@@ -286,10 +316,49 @@ final class PlaybackEngine: ObservableObject {
         if let cur, let idx = queue.firstIndex(of: cur) { currentIndex = idx }
     }
 
+    /// 清空播放历史和队列历史。
+    func clearPlaybackHistory() {
+        playedHistory = []
+        queueHistory = []
+        persistHistories()
+    }
+
+    /// 用最新评分替换队列和历史里的歌曲快照。
+    func updateRating(forSongID id: String, rating: Int) {
+        let normalized = max(0, min(rating, 5))
+        queue = queue.map { song in
+            guard song.id == id else { return song }
+            return song.withRating(normalized)
+        }
+        originalQueue = originalQueue.map { song in
+            guard song.id == id else { return song }
+            return song.withRating(normalized)
+        }
+        playedHistory = playedHistory.map { song in
+            guard song.id == id else { return song }
+            return song.withRating(normalized)
+        }
+        queueHistory = queueHistory.map { snapshot in
+            let songs = snapshot.songs.map { song in
+                guard song.id == id else { return song }
+                return song.withRating(normalized)
+            }
+            return PlaybackQueueSnapshot(
+                id: snapshot.id,
+                createdAt: snapshot.createdAt,
+                title: snapshot.title,
+                songs: songs,
+                currentSongID: snapshot.currentSongID
+            )
+        }
+        persistHistories()
+    }
+
     // MARK: 内部加载
 
     private func loadCurrent(autoPlay: Bool) {
         guard let song = currentSong else { return }
+        recordPlayedSong(song)
         // 1. 电台：song.id 以 "radio:" 开头，直接用 song.path 作为 stream URL
         // 2. 已登录：走 Audio Station streamURL
         // 3. 未登录：走 Demo 模拟
@@ -528,6 +597,60 @@ final class PlaybackEngine: ObservableObject {
         } catch {
             self.lyrics = []
         }
+    }
+
+    // MARK: 历史记录
+
+    /// 从 UserDefaults 恢复播放历史，失败时安全回落为空列表。
+    private func loadHistories() {
+        let decoder = JSONDecoder()
+        if let data = UserDefaults.standard.data(forKey: playedHistoryKey),
+           let songs = try? decoder.decode([Song].self, from: data) {
+            playedHistory = songs
+        }
+        if let data = UserDefaults.standard.data(forKey: queueHistoryKey),
+           let snapshots = try? decoder.decode([PlaybackQueueSnapshot].self, from: data) {
+            queueHistory = snapshots
+        }
+    }
+
+    /// 将播放历史写入 UserDefaults，保持重启后可查看。
+    private func persistHistories() {
+        let encoder = JSONEncoder()
+        if let data = try? encoder.encode(playedHistory) {
+            UserDefaults.standard.set(data, forKey: playedHistoryKey)
+        }
+        if let data = try? encoder.encode(queueHistory) {
+            UserDefaults.standard.set(data, forKey: queueHistoryKey)
+        }
+    }
+
+    /// 记录单曲播放历史；同一首歌只保留最近一次位置。
+    private func recordPlayedSong(_ song: Song) {
+        playedHistory.removeAll { $0.id == song.id }
+        playedHistory.insert(song, at: 0)
+        if playedHistory.count > maxPlayedHistoryCount {
+            playedHistory = Array(playedHistory.prefix(maxPlayedHistoryCount))
+        }
+        persistHistories()
+    }
+
+    /// 在替换当前队列前保存旧队列，避免用户点另一个专辑后丢失上下文。
+    private func recordQueueSnapshotIfNeeded(replacingWith songs: [Song]) {
+        guard !queue.isEmpty else { return }
+        guard queue.map(\.id) != songs.map(\.id) else { return }
+        let title = currentSong?.album ?? currentSong?.title ?? "播放队列".t
+        let snapshot = PlaybackQueueSnapshot(
+            title: title,
+            songs: queue,
+            currentSongID: currentSong?.id
+        )
+        queueHistory.removeAll { $0.songs.map(\.id) == snapshot.songs.map(\.id) }
+        queueHistory.insert(snapshot, at: 0)
+        if queueHistory.count > maxQueueHistoryCount {
+            queueHistory = Array(queueHistory.prefix(maxQueueHistoryCount))
+        }
+        persistHistories()
     }
 
     // MARK: Audio Session / Remote / Observers

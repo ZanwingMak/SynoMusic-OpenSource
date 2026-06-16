@@ -12,6 +12,7 @@ struct BrowseRootView: View {
         ("专辑".t, "square.stack.fill", .allAlbums, [Color(red: 0.95, green: 0.42, blue: 0.65), Color(red: 0.7, green: 0.3, blue: 0.9)]),
         ("艺术家".t, "person.2.fill", .allArtists, [Color(red: 0.4, green: 0.5, blue: 0.95), Color(red: 0.2, green: 0.3, blue: 0.7)]),
         ("服务器歌单".t, "server.rack", .allPlaylists, [Color(red: 0.4, green: 0.85, blue: 0.7), Color(red: 0.1, green: 0.55, blue: 0.55)]),
+        ("历史记录".t, "clock.arrow.circlepath", .playbackHistory, [Color(red: 0.35, green: 0.7, blue: 0.95), Color(red: 0.15, green: 0.35, blue: 0.75)]),
         ("流派".t, "guitars.fill", .allGenres, [Color(red: 0.3, green: 0.8, blue: 0.7), Color(red: 0.1, green: 0.5, blue: 0.5)]),
         ("文件夹".t, "folder.fill", .allFolders, [Color(red: 0.6, green: 0.6, blue: 0.6), Color(red: 0.35, green: 0.35, blue: 0.4)])
     ]
