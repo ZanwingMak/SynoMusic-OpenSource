@@ -26,9 +26,17 @@ git rev-parse "$TAG" >/dev/null 2>&1 || {
 # 删除可能存在的旧 release（保留 tag）
 gh release delete "$TAG" --yes 2>/dev/null || true
 
-# 用 CHANGELOG.md 的 [Unreleased] 段作为 release notes
+# release notes 优先取 `[<version>]` 段；缺则回落 `[Unreleased]`
 NOTES_FILE=$(mktemp)
-awk '/^## \[Unreleased\]/{p=1;next} p && /^## \[/{exit} p' CHANGELOG.md > "$NOTES_FILE" || true
+VER="${TAG#v}"
+awk -v ver="$VER" '
+  $0 ~ "^## \\[" ver "\\]" {p=1;next}
+  p && /^## \[/{exit}
+  p
+' CHANGELOG.md > "$NOTES_FILE" || true
+if [ ! -s "$NOTES_FILE" ]; then
+  awk '/^## \[Unreleased\]/{p=1;next} p && /^## \[/{exit} p' CHANGELOG.md > "$NOTES_FILE" || true
+fi
 [ -s "$NOTES_FILE" ] || echo "See CHANGELOG.md" > "$NOTES_FILE"
 
 mv build/SynoMusic-unsigned.ipa "build/SynoMusic-${TAG#v}-unsigned.ipa"

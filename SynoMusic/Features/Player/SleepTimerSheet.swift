@@ -41,7 +41,7 @@ struct SleepTimerSheet: View {
             if let remain = playback.sleepRemaining {
                 HStack(spacing: 12) {
                     Image(systemName: "moon.zzz.fill").foregroundStyle(Theme.accent)
-                    Text("剩余 \(format(remain))").monospacedDigit()
+                    Text("剩余".t + " \(format(remain))").monospacedDigit()
                     Spacer()
                     cancelButton
                 }
@@ -67,7 +67,7 @@ struct SleepTimerSheet: View {
                 } label: {
                     HStack {
                         Image(systemName: "timer").foregroundStyle(Theme.accent)
-                        Text("\(mins) 分钟")
+                        Text("\(mins) \("分钟".t)")
                         Spacer()
                     }
                 }
@@ -129,7 +129,7 @@ struct SleepTimerSheet: View {
                 HStack(spacing: 0) {
                     Picker("小时".t, selection: $customHours) {
                         ForEach(0...23, id: \.self) { h in
-                            Text("\(h) 小时").tag(h)
+                            Text("\(h) \("小时".t)").tag(h)
                         }
                     }
                     .pickerStyle(.wheel)
@@ -137,7 +137,7 @@ struct SleepTimerSheet: View {
 
                     Picker("分钟".t, selection: $customMinutes) {
                         ForEach(0...59, id: \.self) { m in
-                            Text("\(m) 分钟").tag(m)
+                            Text("\(m) \("分钟".t)").tag(m)
                         }
                     }
                     .pickerStyle(.wheel)
@@ -176,7 +176,7 @@ struct SleepTimerSheet: View {
         NavigationStack {
             VStack(spacing: Metrics.l) {
                 DatePicker(
-                    "停止时间",
+                    "停止时间".t,
                     selection: $deadline,
                     in: Date()...Date().addingTimeInterval(24 * 3600),
                     displayedComponents: [.hourAndMinute]
@@ -185,7 +185,7 @@ struct SleepTimerSheet: View {
                 .labelsHidden()
                 .padding(.top, Metrics.s)
 
-                Text("将在 \(format(deadline.timeIntervalSinceNow)) 后停止播放")
+                Text("将在".t + " \(format(deadline.timeIntervalSinceNow)) " + "后停止播放".t)
                     .font(.nocCaption)
                     .foregroundStyle(.secondary)
 
@@ -196,14 +196,14 @@ struct SleepTimerSheet: View {
                         showDeadline = false
                     }
                 } label: {
-                    Text("设置")
+                    Text("设置".t)
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .padding(.horizontal, Metrics.l)
                 .padding(.bottom, Metrics.l)
                 .disabled(deadline.timeIntervalSinceNow <= 0)
             }
-            .navigationTitle("时间点停止")
+            .navigationTitle("时间点停止".t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -232,7 +232,7 @@ struct SleepTimerSheet: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "xmark.circle.fill")
-                Text("取消")
+                Text("取消".t)
             }
             .foregroundStyle(.red)
             .padding(.horizontal, 10)

@@ -148,7 +148,7 @@ private struct QuickActions: View {
 
     private func randomShuffleAll() async {
         guard let api = session.client?.audioStation else {
-            playback.setStatus("请先连接服务器再随机播放")
+            playback.setStatus("请先连接服务器再随机播放".t)
             return
         }
         isShuffling = true
@@ -156,13 +156,13 @@ private struct QuickActions: View {
         do {
             let songs = try await api.randomSongs(count: 100)
             guard !songs.isEmpty else {
-                playback.setStatus("没有可播放的歌曲")
+                playback.setStatus("没有可播放的歌曲".t)
                 return
             }
             playback.isShuffling = true
             playback.play(queue: songs, startAt: 0)
         } catch {
-            playback.setStatus("随机抓取失败：\(error.localizedDescription)")
+            playback.setStatus("随机抓取失败".t + "：\(error.localizedDescription)")
         }
     }
 }

@@ -50,7 +50,7 @@ struct PlaylistDetailView: View {
             VStack(spacing: 4) {
                 Text(playlist.name).font(.nocTitle)
                 if let c = playlist.songCount {
-                    Text("\(c) 首歌 · \(playlist.isSmart ? "智能列表" : "普通列表")")
+                    Text("\(c) " + "首歌".t + " · " + (playlist.isSmart ? "智能列表".t : "普通列表".t))
                         .font(.nocCaption)
                         .foregroundStyle(.secondary)
                 }

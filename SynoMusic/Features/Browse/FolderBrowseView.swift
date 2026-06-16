@@ -17,7 +17,7 @@ struct FolderBrowseView: View {
             } else if let err = error {
                 ErrorStateView(title: "加载失败".t, message: err) { Task { await load() } }
             } else if items.isEmpty {
-                EmptyStateView(systemImage: "folder", title: "空目录", message: "这里还没有音频文件。")
+                EmptyStateView(systemImage: "folder", title: "空目录".t, message: "这里还没有音频文件。".t)
             } else {
                 List {
                     ForEach(items) { node in
@@ -39,7 +39,7 @@ struct FolderBrowseView: View {
             }
         }
         .background(Color(.systemBackground).ignoresSafeArea())
-        .navigationTitle(folder?.title ?? "文件夹")
+        .navigationTitle(folder?.title ?? "文件夹".t)
         .task { await load() }
     }
 
@@ -55,7 +55,7 @@ struct FolderBrowseView: View {
         // 要么直接把 node.id 当 song_id。两种都试。
         let songID = node.songID ?? node.id
         guard !songID.isEmpty else {
-            playback.setStatus("无法播放：未能解析歌曲 ID")
+            playback.setStatus("无法播放：未能解析歌曲 ID".t)
             return
         }
         let song = Song(

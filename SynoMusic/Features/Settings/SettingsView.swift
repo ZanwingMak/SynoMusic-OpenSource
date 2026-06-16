@@ -298,7 +298,7 @@ struct SettingsView: View {
         // 已经是当前会话则只更新默认标记
         if p.id == session.client?.profile.id { return }
         guard let pwd = serverStore.password(for: p), !pwd.isEmpty else {
-            playback.setStatus("「\(p.name)」未保存密码，请在登录页输入")
+            playback.setStatus("「\(p.name)」" + "未保存密码，请在登录页输入".t)
             await signOut()
             return
         }
@@ -311,10 +311,10 @@ struct SettingsView: View {
             updated.lastConnectedAt = Date()
             serverStore.upsert(updated)
             session.sign(in: client)
-            playback.setStatus("已切换到「\(p.name)」")
+            playback.setStatus("已切换到".t + "「\(p.name)」")
             Haptics.success()
         } catch {
-            playback.setStatus("切换失败：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
+            playback.setStatus("切换失败".t + "：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
             Haptics.warning()
         }
     }
@@ -367,7 +367,7 @@ private struct ServerRowItem: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel("编辑服务器")
+                .accessibilityLabel("编辑服务器".t)
             }
             .padding(.vertical, 6)
             .contentShape(Rectangle())
@@ -397,21 +397,21 @@ struct DownloadsListView: View {
     var body: some View {
         Group {
             if downloads.entries.isEmpty {
-                EmptyStateView(systemImage: "arrow.down.circle", title: "尚无下载", message: "在歌曲长按菜单选择「下载」。")
+                EmptyStateView(systemImage: "arrow.down.circle", title: "尚无下载".t, message: "在歌曲长按菜单选择「下载」。".t)
             } else {
                 List {
                     Section {
                         HStack {
-                            Text("已用空间")
+                            Text("已用空间".t)
                             Spacer()
                             Text(downloads.totalBytes.humanSize)
                                 .foregroundStyle(.secondary)
                         }
                         Button(role: .destructive) { downloads.clearAll() } label: {
-                            Text("清空全部下载")
+                            Text("清空全部下载".t)
                         }
                     }
-                    Section("歌曲") {
+                    Section("歌曲".t) {
                         ForEach(downloads.entries) { e in
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(e.title).font(.nocBody)
@@ -422,13 +422,13 @@ struct DownloadsListView: View {
                                 }
                             }
                             .swipeActions {
-                                Button(role: .destructive) { downloads.remove(songID: e.id) } label: { Label("删除", systemImage: "trash") }
+                                Button(role: .destructive) { downloads.remove(songID: e.id) } label: { Label("删除".t, systemImage: "trash") }
                             }
                         }
                     }
                 }
             }
         }
-        .navigationTitle("下载管理")
+        .navigationTitle("下载管理".t)
     }
 }

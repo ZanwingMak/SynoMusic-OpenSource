@@ -42,18 +42,18 @@ struct LoginView: View {
 
                     GlassPanel(cornerRadius: Theme.cornerCard) {
                         VStack(spacing: Metrics.m) {
-                            FieldRow(title: "用户名", value: profile.username, system: "person.fill", trailing: nil)
+                            FieldRow(title: "用户名".t, value: profile.username, system: "person.fill", trailing: nil)
                             Divider().background(Color.white.opacity(0.08))
-                            SecureFieldRow(title: "密码", text: $password)
+                            SecureFieldRow(title: "密码".t, text: $password)
                             Divider().background(Color.white.opacity(0.08))
-                            FieldRow(title: "OTP（可选）", value: nil, system: "key.fill", trailing: {
-                                TextField("6 位数字", text: $otp)
+                            FieldRow(title: "OTP（可选）".t, value: nil, system: "key.fill", trailing: {
+                                TextField("6 位数字".t, text: $otp)
                                     .keyboardType(.numberPad)
                                     .multilineTextAlignment(.trailing)
                                     .foregroundStyle(.white)
                             })
                             Divider().background(Color.white.opacity(0.08))
-                            Toggle("记住密码", isOn: $rememberPassword)
+                            Toggle("记住密码".t, isOn: $rememberPassword)
                                 .tint(Theme.accent)
                                 .foregroundStyle(.white)
                                 .font(.nocBody)
@@ -75,7 +75,7 @@ struct LoginView: View {
                     } label: {
                         HStack {
                             if isLoading { ProgressView().tint(.white) }
-                            Text(isLoading ? "正在连接..." : "连接")
+                            Text(isLoading ? "正在连接...".t : "连接".t)
                         }
                     }
                     .buttonStyle(PrimaryButtonStyle())
@@ -85,7 +85,7 @@ struct LoginView: View {
                 .padding(.bottom, Metrics.xxl)
             }
         }
-        .navigationTitle("登录")
+        .navigationTitle("登录".t)
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(.dark)
         .onAppear { restoreSaved() }
@@ -112,7 +112,7 @@ struct LoginView: View {
             session.sign(in: client)
             Haptics.success()
         } catch let SynologyError.api(code, _) where code == 403 {
-            self.error = "需要双重验证，请输入 OTP。"
+            self.error = "需要双重验证，请输入 OTP。".t
             Haptics.warning()
         } catch let err as SynologyError {
             self.error = err.errorDescription

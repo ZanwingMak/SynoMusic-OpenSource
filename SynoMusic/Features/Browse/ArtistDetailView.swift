@@ -52,7 +52,7 @@ struct ArtistDetailView: View {
                 )
                 .padding(.top, Metrics.l)
             if let count = artist.albumCount, count > 0 {
-                Text("\(count) 张专辑")
+                Text("\(count) " + "张专辑".t)
                     .font(.nocCaption)
                     .foregroundStyle(.secondary)
             }

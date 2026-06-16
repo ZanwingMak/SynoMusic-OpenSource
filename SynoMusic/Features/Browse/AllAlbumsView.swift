@@ -12,7 +12,8 @@ struct AllAlbumsView: View {
     enum SortOption: String, CaseIterable, Identifiable {
         case name, recently_added, artist, year
         var id: String { rawValue }
-        var label: String {
+        /// 返回中文 key；调用处使用 `.t` 翻译。
+        var labelKey: String {
             switch self {
             case .name: return "按名称"
             case .recently_added: return "最近添加"
@@ -49,9 +50,9 @@ struct AllAlbumsView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Picker("排序", selection: $sortBy) {
+                    Picker("排序".t, selection: $sortBy) {
                         ForEach(SortOption.allCases) { o in
-                            Text(o.label).tag(o)
+                            Text(o.labelKey.t).tag(o)
                         }
                     }
                 } label: {

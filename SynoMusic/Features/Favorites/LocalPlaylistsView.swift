@@ -22,7 +22,7 @@ struct LocalPlaylistsView: View {
                                 .font(.system(size: 22, weight: .semibold))
                                 .foregroundStyle(Theme.accent)
                         }
-                        Text("新建歌单")
+                        Text("新建歌单".t)
                             .font(.nocBody.weight(.medium))
                         Spacer()
                     }
@@ -40,7 +40,7 @@ struct LocalPlaylistsView: View {
                         if !p.isBuiltin {
                             Button(role: .destructive) {
                                 playlists.delete(p.id)
-                            } label: { Label("删除", systemImage: "trash") }
+                            } label: { Label("删除".t, systemImage: "trash") }
                         }
                     }
                 }
@@ -48,7 +48,7 @@ struct LocalPlaylistsView: View {
         }
         .listStyle(.insetGrouped)
         .background(Color(.systemBackground).ignoresSafeArea())
-        .navigationTitle("我的歌单")
+        .navigationTitle("我的歌单".t)
         .sheet(isPresented: $showCreate) {
             createSheet.presentationDetents([.medium])
         }
@@ -57,11 +57,11 @@ struct LocalPlaylistsView: View {
     private var createSheet: some View {
         NavigationStack {
             Form {
-                Section("名称") {
-                    TextField("歌单名", text: $newName)
+                Section("名称".t) {
+                    TextField("歌单名".t, text: $newName)
                         .textInputAutocapitalization(.sentences)
                 }
-                Section("封面颜色") {
+                Section("封面颜色".t) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 14) {
                             ForEach(0..<PlaylistPalette.colors.count, id: \.self) { i in
@@ -82,14 +82,14 @@ struct LocalPlaylistsView: View {
                     }
                 }
             }
-            .navigationTitle("新建歌单")
+            .navigationTitle("新建歌单".t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { reset() }
+                    Button("取消".t) { reset() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("创建") {
+                    Button("创建".t) {
                         playlists.create(name: newName, colorIndex: newColor)
                         Haptics.success()
                         reset()
@@ -124,14 +124,14 @@ struct PlaylistRow: View {
                 HStack(spacing: 6) {
                     Text(playlist.name).font(.nocBody.weight(.semibold))
                     if playlist.isBuiltin {
-                        Text("内置")
+                        Text("内置".t)
                             .font(.caption2.weight(.semibold))
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(Theme.accent.opacity(0.15), in: Capsule())
                             .foregroundStyle(Theme.accent)
                     }
                 }
-                Text("\(playlist.songCount) 首")
+                Text("\(playlist.songCount) " + "首".t)
                     .font(.nocLabel)
                     .foregroundStyle(.secondary)
             }

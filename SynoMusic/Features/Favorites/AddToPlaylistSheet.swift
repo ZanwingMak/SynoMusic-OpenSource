@@ -29,7 +29,7 @@ struct AddToPlaylistSheet: View {
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundStyle(Theme.accent)
                             }
-                            Text("新建歌单…")
+                            Text("新建歌单…".t)
                                 .foregroundStyle(.primary)
                             Spacer()
                         }
@@ -37,7 +37,7 @@ struct AddToPlaylistSheet: View {
                     .buttonStyle(.plain)
                 }
 
-                Section("选择歌单") {
+                Section("选择歌单".t) {
                     ForEach(playlists.playlists) { p in
                         Button {
                             toggle(p.id)
@@ -54,14 +54,14 @@ struct AddToPlaylistSheet: View {
                                     HStack(spacing: 6) {
                                         Text(p.name).font(.nocBody.weight(.medium))
                                         if p.contains(song.id) {
-                                            Text("已包含")
+                                            Text("已包含".t)
                                                 .font(.caption2)
                                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                                 .background(Color.gray.opacity(0.15), in: Capsule())
                                                 .foregroundStyle(.secondary)
                                         }
                                     }
-                                    Text("\(p.songCount) 首").font(.nocLabel).foregroundStyle(.secondary)
+                                    Text("\(p.songCount) " + "首".t).font(.nocLabel).foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Image(systemName: selected.contains(p.id) ? "checkmark.circle.fill" : "circle")
@@ -74,14 +74,14 @@ struct AddToPlaylistSheet: View {
                     }
                 }
             }
-            .navigationTitle("加入歌单")
+            .navigationTitle("加入歌单".t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { dismiss() }
+                    Button("取消".t) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("加入") { apply() }.disabled(selected.isEmpty)
+                    Button("加入".t) { apply() }.disabled(selected.isEmpty)
                 }
             }
             .onAppear {
@@ -98,10 +98,10 @@ struct AddToPlaylistSheet: View {
     private var createPlaylistSheet: some View {
         NavigationStack {
             Form {
-                Section("名称") {
-                    TextField("歌单名", text: $newName)
+                Section("名称".t) {
+                    TextField("歌单名".t, text: $newName)
                 }
-                Section("封面颜色") {
+                Section("封面颜色".t) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 14) {
                             ForEach(0..<PlaylistPalette.colors.count, id: \.self) { i in
@@ -121,14 +121,14 @@ struct AddToPlaylistSheet: View {
                     }
                 }
             }
-            .navigationTitle("新建歌单")
+            .navigationTitle("新建歌单".t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { showCreate = false }
+                    Button("取消".t) { showCreate = false }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("创建并选择") {
+                    Button("创建并选择".t) {
                         let p = playlists.create(name: newName, colorIndex: newColor)
                         selected.insert(p.id)
                         newName = ""

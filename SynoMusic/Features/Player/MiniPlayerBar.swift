@@ -62,7 +62,7 @@ struct MiniPlayerBar: View {
                                     .frame(width: 36, height: 36)
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel("队列")
+                            .accessibilityLabel("队列".t)
                         }
                     }
                     .padding(.horizontal, Metrics.m)

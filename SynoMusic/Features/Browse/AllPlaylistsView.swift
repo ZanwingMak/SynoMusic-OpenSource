@@ -27,7 +27,7 @@ struct AllPlaylistsView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(p.name).font(.nocBody.weight(.medium))
                                     if let c = p.songCount {
-                                        Text("\(c) 首歌").font(.nocLabel).foregroundStyle(.secondary)
+                                        Text("\(c) " + "首歌".t).font(.nocLabel).foregroundStyle(.secondary)
                                     }
                                 }
                             }

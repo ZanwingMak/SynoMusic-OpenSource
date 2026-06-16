@@ -122,8 +122,8 @@ struct FullPlayerView: View {
 
     /// 删除确认提示文案，避免内联插值让 SwiftUI 编译器超时。
     private var deleteAlertMessage: String {
-        let title = playback.currentSong?.title ?? "该歌曲"
-        return "将通过 File Station 永久删除「\(title)」对应的文件。该操作不可撤销。"
+        let title = playback.currentSong?.title ?? "该歌曲".t
+        return "将通过 File Station 永久删除".t + "「\(title)」" + "对应的文件。该操作不可撤销。".t
     }
 
     /// 调用 setrating 接口。
@@ -132,10 +132,10 @@ struct FullPlayerView: View {
               let api = session.client?.audioStation else { return }
         do {
             try await api.setRating(songID: song.id, rating: stars)
-            playback.setStatus(stars == 0 ? "已清除评分" : "已设为 \(stars) 星")
+            playback.setStatus(stars == 0 ? "已清除评分".t : "已设为".t + " \(stars) " + "星".t)
             Haptics.success()
         } catch {
-            playback.setStatus("评分失败：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
+            playback.setStatus("评分失败".t + "：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
             Haptics.warning()
         }
     }
@@ -145,19 +145,19 @@ struct FullPlayerView: View {
         guard let song = playback.currentSong,
               let api = session.client?.audioStation,
               let path = song.path, !path.isEmpty else {
-            playback.setStatus("没有可删除的文件路径")
+            playback.setStatus("没有可删除的文件路径".t)
             return
         }
         do {
             _ = try await api.deleteFiles(paths: [path])
-            playback.setStatus("删除任务已提交")
+            playback.setStatus("删除任务已提交".t)
             // 从本地队列移除当前曲并尝试播放下一首
             if let idx = playback.queue.firstIndex(of: song) {
                 playback.removeFromQueue(at: idx)
             }
             Haptics.success()
         } catch {
-            playback.setStatus("删除失败：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
+            playback.setStatus("删除失败".t + "：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
             Haptics.warning()
         }
     }
@@ -246,7 +246,7 @@ private struct TopBarMenu: View {
                         Button {
                             onRate(r)
                         } label: {
-                            Label("\(r) 星", systemImage: r == 0 ? "star.slash" : "star.fill")
+                            Label("\(r) \("星".t)", systemImage: r == 0 ? "star.slash" : "star.fill")
                         }
                     }
                 }
@@ -289,7 +289,7 @@ extension FullPlayerView {
                         .foregroundStyle(.white.opacity(0.75))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("加入歌单")
+                .accessibilityLabel("加入歌单".t)
                 .padding(.trailing, 8)
 
                 Button {
@@ -303,7 +303,7 @@ extension FullPlayerView {
                         .animation(.spring(response: 0.3, dampingFraction: 0.55), value: playlists.isFavorite(song))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(playlists.isFavorite(song) ? "取消喜欢" : "喜欢")
+                .accessibilityLabel(playlists.isFavorite(song) ? "取消喜欢".t : "喜欢".t)
             }
         }
         .padding(.horizontal, Metrics.l)
@@ -420,7 +420,7 @@ private struct LyricsPanel: View {
                     Image(systemName: "music.note.list")
                         .font(.system(size: 28))
                         .foregroundStyle(.white.opacity(0.5))
-                    Text("暂无歌词").font(.nocBody).foregroundStyle(.white.opacity(0.6))
+                    Text("暂无歌词".t).font(.nocBody).foregroundStyle(.white.opacity(0.6))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -459,7 +459,7 @@ private struct QueuePanel: View {
     var body: some View {
         NavigationStack {
             List {
-                Section(playback.isShuffling ? "随机播放队列" : "播放队列") {
+                Section(playback.isShuffling ? "随机播放队列".t : "播放队列".t) {
                     ForEach(Array(playback.queue.enumerated()), id: \.element.id) { idx, song in
                         Button {
                             Haptics.tap()
@@ -489,7 +489,7 @@ private struct QueuePanel: View {
                     }
                 }
             }
-            .navigationTitle("队列")
+            .navigationTitle("队列".t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { EditButton() }

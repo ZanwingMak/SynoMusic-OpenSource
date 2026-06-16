@@ -12,10 +12,10 @@ struct RadioBrowseView: View {
 
     /// 常用快捷过滤项。
     private static let countries: [(code: String, label: String)] = [
-        ("CN", "中国"), ("HK", "香港"), ("TW", "台湾"),
-        ("JP", "日本"), ("KR", "韩国"),
-        ("US", "美国"), ("GB", "英国"), ("FR", "法国"), ("DE", "德国"),
-        ("BR", "巴西"), ("IN", "印度"), ("AU", "澳大利亚")
+        ("CN", "中国".t), ("HK", "香港".t), ("TW", "台湾".t),
+        ("JP", "日本".t), ("KR", "韩国".t),
+        ("US", "美国".t), ("GB", "英国".t), ("FR", "法国".t), ("DE", "德国".t),
+        ("BR", "巴西".t), ("IN", "印度".t), ("AU", "澳大利亚".t)
     ]
     private static let tags: [String] = [
         "pop", "rock", "jazz", "classical", "news",
@@ -37,12 +37,12 @@ struct RadioBrowseView: View {
                 if isLoading && stations.isEmpty {
                     LoadingState().frame(height: 240)
                 } else if let err = error {
-                    ErrorStateView(title: "加载失败", message: err) { Task { await load() } }
+                    ErrorStateView(title: "加载失败".t, message: err) { Task { await load() } }
                         .frame(height: 240)
                 } else if stations.isEmpty {
                     EmptyStateView(systemImage: "antenna.radiowaves.left.and.right",
-                                   title: "没找到电台",
-                                   message: "换个关键词或切换分类。")
+                                   title: "没找到电台".t,
+                                   message: "换个关键词或切换分类。".t)
                         .frame(height: 240)
                 } else {
                     VStack(spacing: Metrics.s) {
@@ -56,8 +56,8 @@ struct RadioBrowseView: View {
             .padding(.top, Metrics.s)
         }
         .background(Color(.systemBackground).ignoresSafeArea())
-        .navigationTitle("电台")
-        .searchable(text: $query, prompt: "搜索电台")
+        .navigationTitle("电台".t)
+        .searchable(text: $query, prompt: "搜索电台".t)
         .onSubmit(of: .search) {
             guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return }
             mode = .search(query)
@@ -74,7 +74,7 @@ struct RadioBrowseView: View {
     private var pillRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Metrics.s) {
-                pill("热门", isActive: mode == .top) {
+                pill("热门".t, isActive: mode == .top) {
                     mode = .top; Task { await load() }
                 }
                 ForEach(Self.countries, id: \.code) { item in

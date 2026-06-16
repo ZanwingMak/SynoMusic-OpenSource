@@ -125,7 +125,7 @@ struct SongListSection: View {
                         playlists.toggleFavorite(song)
                         Haptics.tap()
                     } label: {
-                        Label(playlists.isFavorite(song) ? "取消喜欢" : "喜欢",
+                        Label(playlists.isFavorite(song) ? "取消喜欢".t : "喜欢".t,
                               systemImage: playlists.isFavorite(song) ? "heart.slash" : "heart")
                     }
                 }

@@ -22,7 +22,8 @@ struct ServerEditorView: View {
     enum Mode: String, CaseIterable, Identifiable {
         case direct, quickConnect
         var id: String { rawValue }
-        var title: String {
+        /// 返回中文 key；调用处使用 `.t` 翻译。
+        var titleKey: String {
             switch self {
             case .direct: return "直接连接"
             case .quickConnect: return "QuickConnect"
@@ -69,7 +70,7 @@ struct ServerEditorView: View {
                 Button("我知道了".t, role: .cancel) { error = nil }
                 if (error ?? "").contains("Audio Station") {
                     Button("复制 DSM 路径".t) {
-                        UIPasteboard.general.string = "控制面板 → 用户与群组 → 编辑用户 → 应用程序 → Audio Station → 允许"
+                        UIPasteboard.general.string = "控制面板 → 用户与群组 → 编辑用户 → 应用程序 → Audio Station → 允许".t
                     }
                 }
             } message: {
@@ -84,7 +85,7 @@ struct ServerEditorView: View {
     private var modeSection: some View {
         Section {
             Picker("模式".t, selection: $mode) {
-                ForEach(Mode.allCases) { m in Text(m.title.t).tag(m) }
+                ForEach(Mode.allCases) { m in Text(m.titleKey.t).tag(m) }
             }
             .pickerStyle(.segmented)
         } footer: {
@@ -292,9 +293,9 @@ struct ServerEditorView: View {
                 p.host = resolved.host
                 p.port = resolved.port
                 p.scheme = resolved.scheme
-                playback.setStatus("已解析为 \(resolved.scheme.rawValue.uppercased()) \(resolved.host):\(resolved.port)")
+                playback.setStatus("已解析为".t + " \(resolved.scheme.rawValue.uppercased()) \(resolved.host):\(resolved.port)")
             } catch {
-                self.error = "QuickConnect 解析失败：\(error.localizedDescription)\n\n注：iOS 模拟器对 QuickConnect 端点有网络栈限制，真机/Mac 上可正常解析。也可改用直连模式输入 IP 或 DDNS。"
+                self.error = "QuickConnect 解析失败".t + "：\(error.localizedDescription)\n\n" + "注：iOS 模拟器对 QuickConnect 端点有网络栈限制，真机/Mac 上可正常解析。也可改用直连模式输入 IP 或 DDNS。".t
                 Haptics.warning()
                 return
             }
@@ -316,14 +317,14 @@ struct ServerEditorView: View {
             Haptics.success()
             dismiss()
         } catch let SynologyError.api(code, _) where code == 403 {
-            self.error = "账号启用了两步验证。请展开「高级」填入 6 位 OTP 代码后再试。配置已保存到「服务器」列表，可稍后重试。"
+            self.error = "账号启用了两步验证。请展开「高级」填入 6 位 OTP 代码后再试。配置已保存到「服务器」列表，可稍后重试。".t
             advancedExpanded = true
             Haptics.warning()
         } catch let err as SynologyError {
-            self.error = (err.errorDescription ?? "连接失败") + "\n\n配置已保存到「服务器」列表，可在列表中点 ⓘ 修改后重试。"
+            self.error = (err.errorDescription ?? "连接失败".t) + "\n\n" + "配置已保存到「服务器」列表，可在列表中点 ⓘ 修改后重试。".t
             Haptics.warning()
         } catch {
-            self.error = error.localizedDescription + "\n\n配置已保存到「服务器」列表。"
+            self.error = error.localizedDescription + "\n\n" + "配置已保存到「服务器」列表。".t
             Haptics.warning()
         }
     }

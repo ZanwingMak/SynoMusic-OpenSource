@@ -55,11 +55,11 @@ struct SponsorListSheet: View {
                 .padding(.top, Metrics.m)
             }
             .background(Color(.systemBackground).ignoresSafeArea())
-            .navigationTitle("赞助支持")
+            .navigationTitle("赞助支持".t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("关闭") { dismiss() }
+                    Button("关闭".t) { dismiss() }
                 }
             }
             .sheet(item: $selected) { m in
@@ -82,8 +82,8 @@ private struct SponsorRow: View {
                     .foregroundStyle(method.tint)
             }
             VStack(alignment: .leading, spacing: 3) {
-                Text(method.title).font(.nocBody.weight(.semibold))
-                Text(method.subtitle).font(.nocLabel).foregroundStyle(.secondary).lineLimit(1)
+                Text(method.title.t).font(.nocBody.weight(.semibold))
+                Text(method.subtitle.t).font(.nocLabel).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
             Image(systemName: "chevron.right")
@@ -127,11 +127,11 @@ private struct SponsorQRSheet: View {
                 .padding(.vertical, Metrics.l)
             }
             .background(Color(.systemBackground).ignoresSafeArea())
-            .navigationTitle(method.title)
+            .navigationTitle(method.title.t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("关闭") { dismiss() }
+                    Button("关闭".t) { dismiss() }
                 }
             }
         }

@@ -8,40 +8,40 @@ struct SongInfoSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("基本") {
-                    info("标题", song.title)
-                    info("艺术家", song.artist ?? "—")
-                    info("专辑", song.album ?? "—")
-                    info("专辑艺术家", song.albumArtist ?? "—")
-                    if let y = song.year, y > 0 { info("年代", String(y)) }
-                    if let g = song.genre { info("流派", g) }
-                    if let c = song.composer { info("作曲", c) }
-                    if let t = song.trackNumber { info("曲目", "\(t)") }
-                    if let d = song.discNumber { info("碟号", "\(d)") }
+                Section("基本".t) {
+                    info("标题".t, song.title)
+                    info("艺术家".t, song.artist ?? "—")
+                    info("专辑".t, song.album ?? "—")
+                    info("专辑艺术家".t, song.albumArtist ?? "—")
+                    if let y = song.year, y > 0 { info("年代".t, String(y)) }
+                    if let g = song.genre { info("流派".t, g) }
+                    if let c = song.composer { info("作曲".t, c) }
+                    if let t = song.trackNumber { info("曲目".t, "\(t)") }
+                    if let d = song.discNumber { info("碟号".t, "\(d)") }
                 }
-                Section("音频") {
-                    info("时长", formatDuration(song.duration))
-                    if let codec = song.codec { info("编码", codec.uppercased()) }
-                    if let br = song.bitrate, br > 0 { info("比特率", "\(br / 1000) kbps") }
-                    if let fs = song.filesize, fs > 0 { info("文件大小", fs.humanSize) }
-                    if let r = song.rating { info("评分", "★ \(r) / 5") }
+                Section("音频".t) {
+                    info("时长".t, formatDuration(song.duration))
+                    if let codec = song.codec { info("编码".t, codec.uppercased()) }
+                    if let br = song.bitrate, br > 0 { info("比特率".t, "\(br / 1000) kbps") }
+                    if let fs = song.filesize, fs > 0 { info("文件大小".t, fs.humanSize) }
+                    if let r = song.rating { info("评分".t, "★ \(r) / 5") }
                 }
                 if let path = song.path, !path.isEmpty {
-                    Section("位置") {
-                        info("路径", path)
+                    Section("位置".t) {
+                        info("路径".t, path)
                     }
                 }
                 Section {
-                    Text("说明：Audio Station 没有官方编辑 ID3 元数据的 API。如需修改标题/艺术家等服务端字段，请在 NAS 上直接修改源文件后重新扫描媒体库。本地仍可通过「编辑歌曲信息」加入自己的备注与显示覆盖。")
+                    Text("说明：Audio Station 没有官方编辑 ID3 元数据的 API。如需修改标题/艺术家等服务端字段，请在 NAS 上直接修改源文件后重新扫描媒体库。本地仍可通过「编辑歌曲信息」加入自己的备注与显示覆盖。".t)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("歌曲信息")
+            .navigationTitle("歌曲信息".t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("完成") { dismiss() }
+                    Button("完成".t) { dismiss() }
                 }
             }
         }
@@ -84,32 +84,32 @@ struct SongEditSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    Text("Audio Station 没有 ID3 标签写入接口，下面的字段只在本机生效（用于在 SynoMusic 内覆盖显示）。在 NAS 上修改实际元数据请使用 File Station + 媒体扫描。")
+                    Text("Audio Station 没有 ID3 标签写入接口，下面的字段只在本机生效（用于在 SynoMusic 内覆盖显示）。在 NAS 上修改实际元数据请使用 File Station + 媒体扫描。".t)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Section("本地覆盖") {
-                    LabeledRow("标题", text: $customTitle)
-                    LabeledRow("艺术家", text: $customArtist)
-                    LabeledRow("专辑", text: $customAlbum)
+                Section("本地覆盖".t) {
+                    LabeledRow("标题".t, text: $customTitle)
+                    LabeledRow("艺术家".t, text: $customArtist)
+                    LabeledRow("专辑".t, text: $customAlbum)
                 }
-                Section("个人备注") {
-                    TextField("写点什么…", text: $note, axis: .vertical)
+                Section("个人备注".t) {
+                    TextField("写点什么…".t, text: $note, axis: .vertical)
                         .lineLimit(3...6)
                 }
             }
-            .navigationTitle("编辑歌曲信息")
+            .navigationTitle("编辑歌曲信息".t)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { dismiss() }
+                    Button("取消".t) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") { showConfirm = true }
+                    Button("保存".t) { showConfirm = true }
                 }
             }
-            .alert("保存修改？", isPresented: $showConfirm) {
-                Button("确认保存") {
+            .alert("保存修改？".t, isPresented: $showConfirm) {
+                Button("确认保存".t) {
                     let data = SongUserData(
                         note: note,
                         customTitle: customTitle.trimmingCharacters(in: .whitespaces),
@@ -120,9 +120,9 @@ struct SongEditSheet: View {
                     Haptics.success()
                     dismiss()
                 }
-                Button("取消", role: .cancel) {}
+                Button("取消".t, role: .cancel) {}
             } message: {
-                Text("将把上方的本地覆盖与备注写入本机存储，不会影响 NAS 上的源文件。")
+                Text("将把上方的本地覆盖与备注写入本机存储，不会影响 NAS 上的源文件。".t)
             }
             .onAppear {
                 let d = store.data(for: song.id)

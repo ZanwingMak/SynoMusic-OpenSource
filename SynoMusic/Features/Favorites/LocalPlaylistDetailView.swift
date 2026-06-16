@@ -27,12 +27,12 @@ struct LocalPlaylistDetailView: View {
     var body: some View {
         Group {
             if playlist == nil {
-                EmptyStateView(systemImage: "questionmark.circle", title: "歌单不存在", message: "该歌单已被删除。")
+                EmptyStateView(systemImage: "questionmark.circle", title: "歌单不存在".t, message: "该歌单已被删除。".t)
             } else if snapshots.isEmpty {
                 EmptyStateView(
                     systemImage: playlist?.isBuiltin == true ? "heart" : "music.note.list",
-                    title: "暂无歌曲",
-                    message: playlist?.isBuiltin == true ? "在播放器或歌曲菜单点击 ❤️ 添加。" : "在歌曲菜单选择「添加到歌单」加入。"
+                    title: "暂无歌曲".t,
+                    message: playlist?.isBuiltin == true ? "在播放器或歌曲菜单点击 ❤️ 添加。".t : "在歌曲菜单选择「添加到歌单」加入。".t
                 )
             } else {
                 List {
@@ -50,7 +50,7 @@ struct LocalPlaylistDetailView: View {
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
                                 playlists.remove(song.id, from: playlistID)
-                            } label: { Label("移除", systemImage: "trash") }
+                            } label: { Label("移除".t, systemImage: "trash") }
                         }
                     }
                 }
@@ -64,22 +64,22 @@ struct LocalPlaylistDetailView: View {
         }
         .safeAreaInset(edge: .bottom) { if isEditing { editBar } }
         .alert(
-            "重命名歌单",
+            "重命名歌单".t,
             isPresented: $showRename
         ) {
-            TextField("名称", text: $renameText)
-            Button("保存") {
+            TextField("名称".t, text: $renameText)
+            Button("保存".t) {
                 playlists.rename(playlistID, to: renameText)
                 Haptics.success()
             }
-            Button("取消", role: .cancel) {}
+            Button("取消".t, role: .cancel) {}
         }
-        .alert("删除歌单", isPresented: $showDeleteConfirm) {
-            Button("删除", role: .destructive) {
+        .alert("删除歌单".t, isPresented: $showDeleteConfirm) {
+            Button("删除".t, role: .destructive) {
                 playlists.delete(playlistID)
                 dismiss()
             }
-            Button("取消", role: .cancel) {}
+            Button("取消".t, role: .cancel) {}
         } message: {
             Text(deleteMessage)
         }
@@ -89,36 +89,36 @@ struct LocalPlaylistDetailView: View {
     // MARK: 子组件
 
     private var navTitle: String {
-        if isEditing { return "已选 \(selected.count) 首" }
+        if isEditing { return "已选".t + " \(selected.count) " + "首".t }
         return playlist?.name ?? ""
     }
 
     /// 删除歌单 alert 的提示文案；抽出避免内联插值让编译器超时。
     private var deleteMessage: String {
         let name = playlist?.name ?? ""
-        return "将永久删除「\(name)」。歌曲文件本身不会被删除。"
+        return "将永久删除".t + "「\(name)」。" + "歌曲文件本身不会被删除。".t
     }
 
     @ViewBuilder
     private var trailingMenu: some View {
         if isEditing {
-            Button("完成") { exitEdit() }
+            Button("完成".t) { exitEdit() }
         } else if !snapshots.isEmpty {
             Menu {
-                Button { enterEdit() } label: { Label("批量编辑", systemImage: "checklist") }
+                Button { enterEdit() } label: { Label("批量编辑".t, systemImage: "checklist") }
                 if let p = playlist, !p.isBuiltin {
                     Button {
                         renameText = p.name
                         showRename = true
-                    } label: { Label("重命名", systemImage: "pencil") }
+                    } label: { Label("重命名".t, systemImage: "pencil") }
                 }
                 Button(role: .destructive) {
                     playlists.clear(playlistID)
-                } label: { Label("清空全部歌曲", systemImage: "trash") }
+                } label: { Label("清空全部歌曲".t, systemImage: "trash") }
                 if let p = playlist, !p.isBuiltin {
                     Button(role: .destructive) {
                         showDeleteConfirm = true
-                    } label: { Label("删除歌单", systemImage: "minus.circle") }
+                    } label: { Label("删除歌单".t, systemImage: "minus.circle") }
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
@@ -131,13 +131,13 @@ struct LocalPlaylistDetailView: View {
             Button {
                 playback.isShuffling = false
                 playback.play(queue: snapshots, startAt: 0)
-            } label: { Label("播放", systemImage: "play.fill") }
+            } label: { Label("播放".t, systemImage: "play.fill") }
             .buttonStyle(PrimaryButtonStyle())
 
             Button {
                 playback.isShuffling = true
                 playback.play(queue: snapshots.shuffled(), startAt: 0)
-            } label: { Label("随机", systemImage: "shuffle") }
+            } label: { Label("随机".t, systemImage: "shuffle") }
             .buttonStyle(SecondaryButtonStyle())
         }
         .padding(.vertical, Metrics.s)
@@ -154,12 +154,12 @@ struct LocalPlaylistDetailView: View {
                 }
                 Haptics.tap()
             } label: {
-                Label(selected.count == snapshots.count ? "全不选" : "全选",
+                Label(selected.count == snapshots.count ? "全不选".t : "全选".t,
                       systemImage: selected.count == snapshots.count ? "checkmark.square" : "square")
             }
             .buttonStyle(SecondaryButtonStyle())
 
-            Button { playSelected() } label: { Label("播放选中", systemImage: "play.fill") }
+            Button { playSelected() } label: { Label("播放选中".t, systemImage: "play.fill") }
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(selected.isEmpty)
 

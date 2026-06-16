@@ -19,7 +19,8 @@ struct AllSongsView: View {
     enum SortOption: String, CaseIterable, Identifiable {
         case name, artist, album, recently_added
         var id: String { rawValue }
-        var label: String {
+        /// 返回中文 key；调用处使用 `.t` 翻译。
+        var labelKey: String {
             switch self {
             case .name: return "按名称"
             case .artist: return "按艺术家"
@@ -36,7 +37,7 @@ struct AllSongsView: View {
             } else if let err = error, songs.isEmpty {
                 ErrorStateView(title: "加载失败".t, message: err) { Task { await reload() } }
             } else if songs.isEmpty {
-                EmptyStateView(systemImage: "music.note", title: "没有歌曲", message: "Audio Station 中没有歌曲。")
+                EmptyStateView(systemImage: "music.note", title: "没有歌曲".t, message: "Audio Station 中没有歌曲。".t)
             } else {
                 List {
                     actionsRow.listRowSeparator(.hidden)
@@ -46,17 +47,17 @@ struct AllSongsView: View {
                         }
                         .contextMenu { menu(for: song) }
                         .swipeActions(edge: .trailing) {
-                            Button { playback.appendNext(song) } label: { Label("接下来", systemImage: "text.line.first.and.arrowtriangle.forward") }
+                            Button { playback.appendNext(song) } label: { Label("接下来".t, systemImage: "text.line.first.and.arrowtriangle.forward") }
                                 .tint(.blue)
                             Button {
                                 if playlists.isFavorite(song) { playlists.toggleFavorite(song) }
                                 else { playlists.toggleFavorite(song); Haptics.success() }
                             } label: {
-                                Label(playlists.isFavorite(song) ? "取消喜欢" : "喜欢",
+                                Label(playlists.isFavorite(song) ? "取消喜欢".t : "喜欢".t,
                                       systemImage: playlists.isFavorite(song) ? "heart.slash" : "heart")
                             }
                             .tint(playlists.isFavorite(song) ? .gray : .pink)
-                            Button { pickerSong = song } label: { Label("加入歌单", systemImage: "text.badge.plus") }
+                            Button { pickerSong = song } label: { Label("加入歌单".t, systemImage: "text.badge.plus") }
                                 .tint(Theme.accent)
                         }
                         .onAppear {
@@ -75,12 +76,12 @@ struct AllSongsView: View {
             }
         }
         .background(Color(.systemBackground).ignoresSafeArea())
-        .navigationTitle("所有歌曲")
+        .navigationTitle("所有歌曲".t)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Picker("排序", selection: $sortBy) {
-                        ForEach(SortOption.allCases) { o in Text(o.label).tag(o) }
+                    Picker("排序".t, selection: $sortBy) {
+                        ForEach(SortOption.allCases) { o in Text(o.labelKey.t).tag(o) }
                     }
                 } label: { Image(systemName: "arrow.up.arrow.down") }
             }
@@ -122,7 +123,7 @@ struct AllSongsView: View {
             playlists.toggleFavorite(song)
             Haptics.tap()
         } label: {
-            Label(playlists.isFavorite(song) ? "取消喜欢" : "喜欢",
+            Label(playlists.isFavorite(song) ? "取消喜欢".t : "喜欢".t,
                   systemImage: playlists.isFavorite(song) ? "heart.slash" : "heart")
         }
     }
@@ -163,7 +164,7 @@ struct AllSongsView: View {
             songs.append(contentsOf: page)
             if page.count < pageSize { reachedEnd = true }
         } catch {
-            playback.setStatus("加载更多失败：\(error.localizedDescription)")
+            playback.setStatus("加载更多失败".t + "：\(error.localizedDescription)")
         }
     }
 }

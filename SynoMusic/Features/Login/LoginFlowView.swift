@@ -133,7 +133,7 @@ struct LoginFlowView: View {
             } catch {
                 // 已存密码失败：清掉 connecting 状态，转入手动登录页
                 let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-                quickConnectError = "自动登录失败：\(message)。请重新输入密码。"
+                quickConnectError = "自动登录失败".t + "：\(message)。" + "请重新输入密码。".t
                 path.append(profile)
             }
             connectingProfileID = nil

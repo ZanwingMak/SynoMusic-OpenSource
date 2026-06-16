@@ -58,7 +58,7 @@ private struct ArtistTile: View {
                 .font(.nocBody.weight(.medium))
                 .lineLimit(1)
             if let count = artist.albumCount, count > 0 {
-                Text("\(count) 张专辑")
+                Text("\(count) " + "张专辑".t)
                     .font(.nocLabel)
                     .foregroundStyle(.secondary)
             }
