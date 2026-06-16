@@ -110,6 +110,12 @@ struct LocalPlaylistsView: View {
 /// 歌单行：渐变方块封面 + 名称 + 歌曲数。
 struct PlaylistRow: View {
     let playlist: LocalPlaylist
+
+    /// 内置歌单走本地化，用户自建歌单保持原始名称。
+    private var displayName: String {
+        playlist.isBuiltin ? playlist.name.t : playlist.name
+    }
+
     var body: some View {
         HStack(spacing: Metrics.m) {
             ZStack {
@@ -122,7 +128,7 @@ struct PlaylistRow: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(playlist.name).font(.nocBody.weight(.semibold))
+                    Text(displayName).font(.nocBody.weight(.semibold))
                     if playlist.isBuiltin {
                         Text("内置".t)
                             .font(.caption2.weight(.semibold))

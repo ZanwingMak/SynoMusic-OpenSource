@@ -185,7 +185,7 @@ struct ServerEditorView: View {
                 ClearableTextField(title: "备注名（家里的 DS220+）".t, text: $profile.name, autocapitalization: .sentences)
                 ClearableTextField(title: "二步验证码（OTP）".t, text: $otp, keyboard: .numberPad)
                 Toggle("记住密码".t, isOn: $rememberPassword)
-                if mode == .direct, profile.scheme == .https {
+                if profile.scheme == .https {
                     Toggle("信任自签名证书".t, isOn: $profile.ignoreInvalidCertificate)
                 }
                 if isEditingExisting {

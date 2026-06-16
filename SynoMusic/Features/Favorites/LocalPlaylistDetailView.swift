@@ -24,6 +24,12 @@ struct LocalPlaylistDetailView: View {
         playlist?.snapshots ?? []
     }
 
+    /// 内置歌单走本地化，用户自建歌单保持原始名称。
+    private var playlistDisplayName: String {
+        guard let playlist else { return "" }
+        return playlist.isBuiltin ? playlist.name.t : playlist.name
+    }
+
     var body: some View {
         Group {
             if playlist == nil {
@@ -90,12 +96,12 @@ struct LocalPlaylistDetailView: View {
 
     private var navTitle: String {
         if isEditing { return "已选".t + " \(selected.count) " + "首".t }
-        return playlist?.name ?? ""
+        return playlistDisplayName
     }
 
     /// 删除歌单 alert 的提示文案；抽出避免内联插值让编译器超时。
     private var deleteMessage: String {
-        let name = playlist?.name ?? ""
+        let name = playlistDisplayName
         return "将永久删除".t + "「\(name)」。" + "歌曲文件本身不会被删除。".t
     }
 

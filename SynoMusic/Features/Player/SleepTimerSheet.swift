@@ -3,6 +3,7 @@ import SwiftUI
 /// 定时停止 sheet：倒计时预设 / 自定义时长 / 时间点停止 / 本曲结束 / 取消。
 struct SleepTimerSheet: View {
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var theme: ThemeManager
     @Binding var isPresented: Bool
 
     private static let presets: [Int] = [5, 10, 15, 30, 45, 60, 90]
@@ -30,6 +31,8 @@ struct SleepTimerSheet: View {
             }
             .sheet(isPresented: $showCustomDuration) { customDurationPicker }
             .sheet(isPresented: $showDeadline) { deadlinePicker }
+            .tint(theme.current.accent(in: .dark))
+            .animation(.easeInOut(duration: 0.18), value: theme.currentID)
         }
     }
 

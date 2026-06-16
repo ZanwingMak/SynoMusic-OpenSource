@@ -93,6 +93,12 @@ final class PlaybackEngine: ObservableObject {
     private var originalQueue: [Song] = []   // 用于关闭随机时还原
     private var demoTicker: Task<Void, Never>?
     private var statusClearTask: Task<Void, Never>?
+    /// 加载提示至少停留的时间，避免缓存命中时 Toast 一闪而过。
+    private let loadingStatusMinimumDuration: TimeInterval = 1.2
+    /// 当前加载提示文本，用来区分可自动延迟清理的 loading Toast。
+    private var loadingStatusMessage: String?
+    /// 当前状态提示开始显示的时间，用于计算 loading Toast 的最短展示时间。
+    private var statusVisibleSince: Date?
     private var sleepTask: Task<Void, Never>?
     /// 当前曲目临时使用的转码偏好（fallback 用），不修改用户全局设置。
     private var transcodeOverride: AudioQuality?
@@ -123,13 +129,13 @@ final class PlaybackEngine: ObservableObject {
         var ordered = songs
         if isShuffling { ordered = shuffledKeepingHead(songs, head: index) }
         self.queue = ordered
-        self.currentIndex = ordered.indices.contains(index) ? index : 0
+        self.currentIndex = isShuffling ? 0 : (ordered.indices.contains(index) ? index : 0)
         // 新曲：清空临时转码状态
         transcodeOverride = nil
         fallbackTried = false
         // 立即给用户视觉反馈，避免"点了没反应"的错觉
         if let title = currentSong?.title {
-            setStatus("正在加载：\(title)")
+            setLoadingStatus(title: title)
         }
         loadCurrent(autoPlay: true)
     }
@@ -403,11 +409,20 @@ final class PlaybackEngine: ObservableObject {
     /// 设置一条状态消息；`persistent=false` 时 4 秒后自动清除。
     func setStatus(_ message: String?, persistent: Bool = false) {
         statusMessage = message
+        statusVisibleSince = message == nil ? nil : Date()
+        if message == nil || message != loadingStatusMessage {
+            loadingStatusMessage = nil
+        }
         statusClearTask?.cancel()
         if let message, !persistent, !message.isEmpty {
             statusClearTask = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: 4_000_000_000)
-                await MainActor.run { self?.statusMessage = nil }
+                await MainActor.run {
+                    guard self?.statusMessage == message else { return }
+                    self?.statusMessage = nil
+                    self?.loadingStatusMessage = nil
+                    self?.statusVisibleSince = nil
+                }
             }
         }
     }
@@ -416,6 +431,34 @@ final class PlaybackEngine: ObservableObject {
     func dismissStatus() {
         statusClearTask?.cancel()
         statusMessage = nil
+        loadingStatusMessage = nil
+        statusVisibleSince = nil
+    }
+
+    /// 显示当前歌曲加载中的状态消息，并记录最短可见时间。
+    private func setLoadingStatus(title: String) {
+        let message = "正在加载".t + ": \(title)"
+        loadingStatusMessage = message
+        setStatus(message)
+    }
+
+    /// 在播放器 ready 后清理加载提示；显示不足最短时长时延迟清理。
+    private func dismissLoadingStatusIfNeeded() {
+        guard let loadingStatusMessage, statusMessage == loadingStatusMessage else { return }
+        let elapsed = statusVisibleSince.map { Date().timeIntervalSince($0) } ?? loadingStatusMinimumDuration
+        let remaining = max(0, loadingStatusMinimumDuration - elapsed)
+        statusClearTask?.cancel()
+        guard remaining > 0 else {
+            dismissStatus()
+            return
+        }
+        statusClearTask = Task { [weak self, loadingStatusMessage] in
+            try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+            await MainActor.run {
+                guard self?.statusMessage == loadingStatusMessage else { return }
+                self?.dismissStatus()
+            }
+        }
     }
 
     /// 监听 AVPlayerItem 失败事件，转成可见错误。
@@ -429,7 +472,7 @@ final class PlaybackEngine: ObservableObject {
         ) { [weak self] note in
             let err = note.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
             Task { @MainActor in
-                self?.setStatus("播放中断：\(err?.localizedDescription ?? "未知错误")")
+                self?.setStatus("播放中断".t + ": \(err?.localizedDescription ?? "未知错误".t)")
             }
         }
         statusCancel?.cancel()
@@ -440,19 +483,19 @@ final class PlaybackEngine: ObservableObject {
                 switch status {
                 case .readyToPlay:
                     self.isBuffering = false
-                    self.dismissStatus()
+                    self.dismissLoadingStatusIfNeeded()
                 case .failed:
-                    let reason = item?.error?.localizedDescription ?? "未知错误"
+                    let reason = item?.error?.localizedDescription ?? "未知错误".t
                     // 兜底：原始流失败时，自动用 MP3 转码再试一次（仅 NAS 流，不针对电台）
                     let isNasStream = !(self.currentSong?.id.hasPrefix("radio:") ?? false)
                     let usingRaw = (self.transcodeOverride ?? self.quality).streamFormat == "raw"
                     if isNasStream, usingRaw, !self.fallbackTried {
                         self.fallbackTried = true
                         self.transcodeOverride = .high
-                        self.setStatus("原始格式无法播放，正在改用 MP3 转码…")
+                        self.setStatus("原始格式无法播放，正在改用 MP3 转码…".t)
                         self.loadCurrent(autoPlay: true)
                     } else {
-                        self.setStatus("无法播放：\(reason)")
+                        self.setStatus("无法播放".t + ": \(reason)")
                         self.isBuffering = false
                         self.isPlaying = false
                     }

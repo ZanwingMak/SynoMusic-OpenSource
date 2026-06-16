@@ -179,7 +179,7 @@ private struct ActionCard: View {
             Image(systemName: icon)
                 .font(.system(size: 60, weight: .light))
                 .foregroundStyle(.white.opacity(0.18))
-                .offset(x: 72, y: 18)
+                .offset(x: 54, y: 18)
             VStack(alignment: .leading, spacing: 4) {
                 Spacer()
                 Text(title).font(.nocSection).foregroundStyle(.white)
@@ -187,7 +187,7 @@ private struct ActionCard: View {
             }
             .padding(Metrics.m)
         }
-        .frame(width: 170, height: 110)
+        .frame(width: 136, height: 104)
         .clipShape(RoundedRectangle(cornerRadius: Theme.cornerCard, style: .continuous))
         .shadow(color: gradient.first?.opacity(0.3) ?? .clear, radius: 12, y: 6)
     }
@@ -251,7 +251,7 @@ private struct FeaturedAlbumCard: View {
 private struct AlbumGrid: View {
     let albums: [Album]
     @EnvironmentObject private var session: AppSession
-    private let columns = [GridItem(.adaptive(minimum: 150), spacing: Metrics.m)]
+    private let columns = [GridItem(.adaptive(minimum: 148, maximum: 180), spacing: Metrics.m)]
     var body: some View {
         LazyVGrid(columns: columns, spacing: Metrics.l) {
             ForEach(albums) { album in
@@ -269,11 +269,14 @@ struct AlbumCell: View {
     let album: Album
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            CoverArt(
-                url: session.client?.audioStation.albumCoverURL(album: album.name, albumArtist: album.artist),
-                cornerRadius: 10,
-                fallbackSeed: album.id
-            )
+            GeometryReader { proxy in
+                CoverArt(
+                    url: session.client?.audioStation.albumCoverURL(album: album.name, albumArtist: album.artist),
+                    cornerRadius: 10,
+                    fallbackSeed: album.id
+                )
+                .frame(width: proxy.size.width, height: proxy.size.width)
+            }
             .aspectRatio(1, contentMode: .fit)
             Text(album.name)
                 .font(.nocBody.weight(.semibold))
@@ -283,6 +286,7 @@ struct AlbumCell: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

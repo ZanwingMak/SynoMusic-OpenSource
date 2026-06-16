@@ -6,6 +6,7 @@ struct FullPlayerView: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playlists: PlaylistStore
+    @EnvironmentObject private var theme: ThemeManager
     @Binding var isPresented: Bool
     @State private var showLyrics = false
     @State private var showQueue = false
@@ -62,6 +63,8 @@ struct FullPlayerView: View {
             .padding(.top, Metrics.l)
         }
         .preferredColorScheme(.dark)
+        .animation(.easeInOut(duration: 0.18), value: theme.currentID)
+        .tint(theme.current.accent(in: .dark))
         .overlay(alignment: .top) {
             if let msg = playback.statusMessage {
                 HStack(spacing: Metrics.s) {
@@ -199,8 +202,7 @@ struct FullPlayerView: View {
                     .lineLimit(1)
             }
             Spacer()
-            // 把 Menu 抽到一个独立视图，仅依赖 currentSong 的 id；
-            // 这样 0.5s 一次的 currentTime 更新不会让 Menu 跟着 body 重建闪烁。
+            // 把更多操作抽到独立视图，仅依赖 currentSong 的 id。
             TopBarMenu(
                 song: playback.currentSong,
                 onAppendNext: { if let s = playback.currentSong { playback.appendNext(s) } },
@@ -225,43 +227,37 @@ private struct TopBarMenu: View {
     let onShowEdit: () -> Void
     let onRate: (Int) -> Void
     let onDelete: () -> Void
+    @State private var showActions = false
+    @State private var showRating = false
 
     var body: some View {
-        Menu {
-            if let song {
-                Button(action: onAppendNext) {
-                    Label("加入队列".t, systemImage: "text.line.first.and.arrowtriangle.forward")
-                }
-                Button(action: onAddToPlaylist) {
-                    Label("添加到歌单…".t, systemImage: "text.badge.plus")
-                }
-                Button(action: onShowInfo) {
-                    Label("歌曲信息".t, systemImage: "info.circle")
-                }
-                Button(action: onShowEdit) {
-                    Label("编辑歌曲信息".t, systemImage: "square.and.pencil")
-                }
-                Menu("评分".t) {
-                    ForEach(0...5, id: \.self) { r in
-                        Button {
-                            onRate(r)
-                        } label: {
-                            Label("\(r) \("星".t)", systemImage: r == 0 ? "star.slash" : "star.fill")
-                        }
-                    }
-                }
-                Divider()
-                Button(role: .destructive, action: onDelete) {
-                    Label("删除文件…".t, systemImage: "trash")
-                }
-                .disabled(song.id.hasPrefix("radio:") || (song.path ?? "").isEmpty)
-            }
+        Button {
+            showActions = true
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 38, height: 38)
                 .background(.white.opacity(0.12), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .confirmationDialog("更多操作".t, isPresented: $showActions, titleVisibility: .hidden) {
+            if let song {
+                Button("加入队列".t, action: onAppendNext)
+                Button("添加到歌单…".t, action: onAddToPlaylist)
+                Button("歌曲信息".t, action: onShowInfo)
+                Button("编辑歌曲信息".t, action: onShowEdit)
+                Button("评分".t) { showRating = true }
+                Button("删除文件…".t, role: .destructive, action: onDelete)
+                    .disabled(song.id.hasPrefix("radio:") || (song.path ?? "").isEmpty)
+            }
+        }
+        .confirmationDialog("评分".t, isPresented: $showRating, titleVisibility: .visible) {
+            ForEach(0...5, id: \.self) { r in
+                Button(r == 0 ? "清除评分".t : "\(r) \("星".t)") {
+                    onRate(r)
+                }
+            }
         }
     }
 }
@@ -455,6 +451,7 @@ private struct LyricsPanel: View {
 
 private struct QueuePanel: View {
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var theme: ThemeManager
     @Environment(\.dismiss) private var dismiss
     @Environment(\.editMode) private var editMode
 
@@ -498,6 +495,7 @@ private struct QueuePanel: View {
             }
             .navigationTitle("队列".t)
             .navigationBarTitleDisplayMode(.inline)
+            .tint(theme.current.accent(in: .dark))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(isEditingQueue ? "完成".t : "编辑".t) {
@@ -508,24 +506,27 @@ private struct QueuePanel: View {
         }
     }
 
-    /// 切换队列的编辑状态，并用动画同步列表移动/删除控件。
+    /// 切换队列的编辑状态；避免额外动画叠加系统列表编辑动画造成卡顿。
     private func toggleQueueEditing() {
-        withAnimation {
-            editMode?.wrappedValue = isEditingQueue ? .inactive : .active
-        }
+        editMode?.wrappedValue = isEditingQueue ? .inactive : .active
     }
 }
 
 // MARK: AirPlay 按钮包装
 
 private struct AirPlayButton: UIViewRepresentable {
+    /// 创建系统 AirPlay 路由选择器，并使用当前强调色作为激活态颜色。
     func makeUIView(context: Context) -> AVRoutePickerView {
         let v = AVRoutePickerView()
         v.tintColor = .white
         v.activeTintColor = UIColor(Theme.accent)
         return v
     }
-    func updateUIView(_ uiView: AVRoutePickerView, context: Context) {}
+
+    /// SwiftUI 刷新时同步强调色，避免切换主题后 AirPlay 激活态仍保留旧颜色。
+    func updateUIView(_ uiView: AVRoutePickerView, context: Context) {
+        uiView.activeTintColor = UIColor(Theme.accent)
+    }
 }
 
 // MARK: 背景光斑

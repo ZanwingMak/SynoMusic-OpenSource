@@ -5,6 +5,7 @@ struct MainShellView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var playlists: PlaylistStore
+    @EnvironmentObject private var theme: ThemeManager
     @Binding var showFullPlayer: Bool
     @State private var selectedTab: Tab = {
         #if DEBUG
@@ -41,7 +42,7 @@ struct MainShellView: View {
                     .tabItem { Label("设置".t, systemImage: "gearshape.fill") }
                     .tag(Tab.settings)
             }
-            .tint(Theme.accent)
+            .tint(theme.current.accent(in: .dark))
 
             // 迷你播放器悬浮在 TabBar 之上：用 ZStack 浮，避免被 TabBar 覆盖；
             // 让位通过 .reserveMiniPlayer modifier 在每个 NavigationStack 内做。
@@ -63,6 +64,7 @@ struct MainShellView: View {
             playback.apiClient = newClient
         }
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: playback.currentSong)
+        .animation(.easeInOut(duration: 0.18), value: theme.currentID)
         .sheet(isPresented: $showQueueSheet) {
             QueueSheet().presentationDetents([.medium, .large])
         }
@@ -72,6 +74,7 @@ struct MainShellView: View {
 /// 通用队列面板，被迷你播放器队列按钮触发。
 struct QueueSheet: View {
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var theme: ThemeManager
     @Environment(\.dismiss) private var dismiss
     @Environment(\.editMode) private var editMode
 
@@ -115,6 +118,7 @@ struct QueueSheet: View {
             }
             .navigationTitle("队列".t)
             .navigationBarTitleDisplayMode(.inline)
+            .tint(theme.current.accent(in: .dark))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(isEditingQueue ? "完成".t : "编辑".t) {
@@ -128,11 +132,9 @@ struct QueueSheet: View {
         }
     }
 
-    /// 切换队列的编辑状态，并用动画同步列表移动/删除控件。
+    /// 切换队列的编辑状态；避免额外动画叠加系统列表编辑动画造成卡顿。
     private func toggleQueueEditing() {
-        withAnimation {
-            editMode?.wrappedValue = isEditingQueue ? .inactive : .active
-        }
+        editMode?.wrappedValue = isEditingQueue ? .inactive : .active
     }
 }
 

@@ -6,6 +6,7 @@ struct RootView: View {
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var serverStore: ServerStore
     @EnvironmentObject private var playback: PlaybackEngine
+    @EnvironmentObject private var theme: ThemeManager
     @State private var showFullPlayer: Bool = false
     @State private var isAutoLogging: Bool = false
 
@@ -40,6 +41,8 @@ struct RootView: View {
         }
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: session.isLoggedIn)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: playback.statusMessage)
+        .animation(.easeInOut(duration: 0.18), value: theme.currentID)
+        .tint(theme.current.accent(in: .dark))
         .background(Theme.background.ignoresSafeArea())
         .sheet(isPresented: $showFullPlayer) {
             FullPlayerView(isPresented: $showFullPlayer)

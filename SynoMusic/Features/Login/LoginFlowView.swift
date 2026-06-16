@@ -4,6 +4,7 @@ import SwiftUI
 struct LoginFlowView: View {
     @EnvironmentObject private var serverStore: ServerStore
     @EnvironmentObject private var session: AppSession
+    @EnvironmentObject private var theme: ThemeManager
     @State private var path = NavigationPath()
     @State private var editingProfile: ServerProfile?
     @State private var connectingProfileID: UUID?
@@ -109,6 +110,8 @@ struct LoginFlowView: View {
             }
             #endif
         }
+        .animation(.easeInOut(duration: 0.18), value: theme.currentID)
+        .tint(theme.current.accent(in: .dark))
     }
 
     /// 点击已保存档案：若 Keychain 有密码就直接快速登录；否则打开登录页输入密码。

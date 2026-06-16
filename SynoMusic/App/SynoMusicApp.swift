@@ -32,8 +32,7 @@ struct SynoMusicApp: App {
                 .tint(theme.current.accent(in: .dark))
                 .preferredColorScheme(theme.appearance.colorScheme)
                 // 只对语言变化重建整树（翻译值仅在 body 重算时才会刷新）；
-                // 主题强调色与 appearance 通过 .tint() 与 .preferredColorScheme()
-                // 由 SwiftUI 自动传播，不需要重建，避免切换主题就跳回首页。
+                // 主题强调色由 RootView / MainShellView 订阅刷新，避免切换主题就跳回首页。
                 .id(lm.current.rawValue)
         }
     }
