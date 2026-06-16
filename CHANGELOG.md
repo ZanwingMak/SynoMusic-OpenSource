@@ -5,6 +5,15 @@
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-06-16
+
+### 修复
+- **播放页右上更多菜单重做**：旧实现用 `.overlay` 套全屏遮罩 + 自绘 RoundedRectangle，把 layout 容器撑大导致弹层锚点漂移、且尺寸过大。改用系统 `popover(arrowEdge: .top)` + `presentationCompactAdaptation(.popover)` + `presentationBackground(.thinMaterial)`：
+  - 位置由系统从 `ellipsis` 按钮自动锚定，不会再脱锚。
+  - 背景使用 iOS 系统液态玻璃材质（`.thinMaterial`），随播放器背景自然透出。
+  - 宽度由 268 缩到 220，行高 46 → 38，图标 28 → 20，字号 nocSection → 15，去掉冗余的内层圆角描边和阴影。
+  - 评分子面板复用同一 popover，仅切换内容，动画平滑无闪烁。
+
 ## [1.2.3] - 2026-06-16
 
 ### 修复

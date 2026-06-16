@@ -201,7 +201,7 @@ struct FullPlayerView: View {
     }
 }
 
-/// 全屏播放器右上的自定义玻璃菜单，单独建模避免随 currentTime 高频刷新一起重建。
+/// 全屏播放器右上的菜单：用 popover + 系统液态玻璃材质渲染，位置由系统锚定。
 private struct TopBarMenu: View {
     let song: Song?
     let onAppendNext: () -> Void
@@ -210,10 +210,10 @@ private struct TopBarMenu: View {
     let onShowEdit: () -> Void
     let onRate: (Int) -> Void
     let onDelete: () -> Void
-    @State private var showActions = false
+    @State private var showMenu = false
     @State private var showRating = false
 
-    private let menuWidth: CGFloat = 268
+    private let menuWidth: CGFloat = 220
 
     /// 当前歌曲是否允许删除文件。
     private var canDeleteCurrentSong: Bool {
@@ -221,18 +221,11 @@ private struct TopBarMenu: View {
         return !song.id.hasPrefix("radio:") && !(song.path ?? "").isEmpty
     }
 
-    /// 是否正在展示任一菜单面板。
-    private var isShowingMenu: Bool {
-        showActions || showRating
-    }
-
     var body: some View {
         Button {
             Haptics.tap()
-            withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                showActions.toggle()
-                showRating = false
-            }
+            showRating = false
+            showMenu = true
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 18, weight: .bold))
@@ -241,127 +234,84 @@ private struct TopBarMenu: View {
                 .background(.white.opacity(0.12), in: Circle())
         }
         .buttonStyle(.plain)
-        .overlay(alignment: .topTrailing) {
-            if isShowingMenu {
-                Color.black.opacity(0.001)
-                    .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
-                    .contentShape(Rectangle())
-                    .onTapGesture { closeMenu() }
-                    .zIndex(0)
-
-                Group {
-                    if showRating {
-                        ratingPanel
-                    } else {
-                        actionsPanel
-                    }
-                }
+        .popover(isPresented: $showMenu, arrowEdge: .top) {
+            menuContent
                 .frame(width: menuWidth)
-                .offset(y: 48)
-                .transition(.scale(scale: 0.96, anchor: .topTrailing).combined(with: .opacity))
-                .zIndex(1)
-            }
+                .presentationCompactAdaptation(.popover)
+                .presentationBackground(.thinMaterial)
         }
     }
 
-    /// 主要操作面板。
+    /// popover 内的两种面板切换。
+    @ViewBuilder
+    private var menuContent: some View {
+        if showRating {
+            ratingPanel
+                .transition(.opacity)
+        } else {
+            actionsPanel
+                .transition(.opacity)
+        }
+    }
+
+    /// 主菜单面板。
     private var actionsPanel: some View {
-        PlayerGlassMenu {
-            VStack(spacing: 4) {
-                PlayerMenuRow(icon: "text.line.first.and.arrowtriangle.forward", title: "加入队列".t) {
-                    perform(onAppendNext)
-                }
-                PlayerMenuRow(icon: "text.badge.plus", title: "添加到歌单…".t) {
-                    perform(onAddToPlaylist)
-                }
-                PlayerMenuRow(icon: "info.circle", title: "歌曲信息".t) {
-                    perform(onShowInfo)
-                }
-                PlayerMenuRow(icon: "square.and.pencil", title: "编辑歌曲信息".t) {
-                    perform(onShowEdit)
-                }
-                PlayerMenuRow(icon: nil, title: "评分".t, showsChevron: true) {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                        showRating = true
-                    }
-                }
-                Divider()
-                    .overlay(Color.white.opacity(0.12))
-                    .padding(.vertical, 10)
-                PlayerMenuRow(
-                    icon: "trash",
-                    title: "删除文件…".t,
-                    role: .destructive,
-                    isEnabled: canDeleteCurrentSong
-                ) {
-                    perform(onDelete)
-                }
+        VStack(spacing: 0) {
+            PlayerMenuRow(icon: "text.line.first.and.arrowtriangle.forward", title: "加入队列".t) {
+                perform(onAppendNext)
+            }
+            PlayerMenuRow(icon: "text.badge.plus", title: "添加到歌单…".t) {
+                perform(onAddToPlaylist)
+            }
+            PlayerMenuRow(icon: "info.circle", title: "歌曲信息".t) {
+                perform(onShowInfo)
+            }
+            PlayerMenuRow(icon: "square.and.pencil", title: "编辑歌曲信息".t) {
+                perform(onShowEdit)
+            }
+            PlayerMenuRow(icon: "star", title: "评分".t, showsChevron: true) {
+                withAnimation(.easeInOut(duration: 0.18)) { showRating = true }
+            }
+            Divider().padding(.vertical, 4)
+            PlayerMenuRow(
+                icon: "trash",
+                title: "删除文件…".t,
+                role: .destructive,
+                isEnabled: canDeleteCurrentSong
+            ) {
+                perform(onDelete)
             }
         }
+        .padding(.vertical, 6)
     }
 
-    /// 评分选择面板。
+    /// 评分子面板。
     private var ratingPanel: some View {
-        PlayerGlassMenu {
-            VStack(spacing: 4) {
-                PlayerMenuRow(icon: "chevron.left", title: "评分".t) {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                        showRating = false
-                    }
-                }
-                Divider()
-                    .overlay(Color.white.opacity(0.12))
-                    .padding(.vertical, 6)
-                PlayerMenuRow(icon: "star.slash", title: "清除评分".t) {
-                    perform { onRate(0) }
-                }
-                ForEach(1...5, id: \.self) { rating in
-                    PlayerMenuRow(icon: "star.fill", title: "\(rating) \("星".t)") {
-                        perform { onRate(rating) }
-                    }
+        VStack(spacing: 0) {
+            PlayerMenuRow(icon: "chevron.left", title: "评分".t) {
+                withAnimation(.easeInOut(duration: 0.18)) { showRating = false }
+            }
+            Divider().padding(.vertical, 4)
+            PlayerMenuRow(icon: "star.slash", title: "清除评分".t) {
+                perform { onRate(0) }
+            }
+            ForEach(1...5, id: \.self) { rating in
+                PlayerMenuRow(icon: "star.fill", title: "\(rating) \("星".t)") {
+                    perform { onRate(rating) }
                 }
             }
         }
+        .padding(.vertical, 6)
     }
 
-    /// 收起菜单。
-    private func closeMenu() {
-        withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-            showActions = false
-            showRating = false
-        }
-    }
-
-    /// 执行动作并收起菜单。
+    /// 执行动作并关闭 popover。
     private func perform(_ action: @escaping () -> Void) {
-        closeMenu()
+        showMenu = false
         action()
     }
 }
 
-/// 播放器菜单玻璃容器。
-private struct PlayerGlassMenu<Content: View>: View {
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        content()
-            .padding(.horizontal, 20)
-            .padding(.vertical, 18)
-            .background {
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .fill(Color.black.opacity(0.34))
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .stroke(Color.white.opacity(0.16), lineWidth: 1)
-            }
-            .shadow(color: .black.opacity(0.35), radius: 24, y: 12)
-    }
-}
-
-/// 播放器菜单行。
+/// 播放器菜单单行：紧凑布局 + 标准 Label 风格，依赖 popover 系统背景。
 private struct PlayerMenuRow: View {
     enum Role {
         case normal
@@ -375,8 +325,7 @@ private struct PlayerMenuRow: View {
     var isEnabled: Bool = true
     let action: () -> Void
 
-    private let iconColor = Color(red: 0.70, green: 0.50, blue: 1.0)
-    private let destructiveColor = Color(red: 1.0, green: 0.43, blue: 0.38)
+    private let iconColor = Color(red: 0.55, green: 0.36, blue: 0.95)
 
     var body: some View {
         Button {
@@ -384,34 +333,28 @@ private struct PlayerMenuRow: View {
             Haptics.tap()
             action()
         } label: {
-            HStack(spacing: 18) {
-                Group {
-                    if let icon {
-                        Image(systemName: icon)
-                    } else {
-                        Color.clear
-                    }
+            HStack(spacing: 12) {
+                if let icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(role == .destructive ? .red : iconColor)
+                        .frame(width: 20, height: 20)
                 }
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(iconColor)
-                .frame(width: 28, height: 28)
-
                 Text(title)
-                    .font(.nocSection)
-                    .foregroundStyle(role == .destructive ? destructiveColor : .white.opacity(0.92))
+                    .font(.system(size: 15))
+                    .foregroundStyle(role == .destructive ? .red : .primary)
                     .lineLimit(1)
-
                 Spacer(minLength: 0)
-
                 if showsChevron {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.9))
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.secondary)
                 }
             }
-            .frame(height: 46)
+            .padding(.horizontal, 14)
+            .frame(height: 38)
             .contentShape(Rectangle())
-            .opacity(isEnabled ? 1 : 0.42)
+            .opacity(isEnabled ? 1 : 0.4)
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
