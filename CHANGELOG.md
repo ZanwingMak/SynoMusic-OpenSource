@@ -5,6 +5,14 @@
 
 ## [Unreleased]
 
+## [1.2.9] - 2026-06-17
+
+### 变更
+- 进一步压缩 App 图标与预览图资源，降低安装包体积。
+
+### 版本
+- 发布版本号更新为 `1.2.9`。
+
 ## [1.2.8] - 2026-06-17
 
 ### 新增
@@ -271,7 +279,8 @@
 - Swift 6 严格并发：`SynologyClient` / `AudioStationAPI` 标记 `@unchecked Sendable` 并加锁保护 `sid`
 - iOS 17.0 起；以 Xcode 26 / Swift 6.3 通过编译
 
-[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.8...HEAD
+[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.9...HEAD
+[1.2.9]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.8...v1.2.9
 [1.2.8]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.7...v1.2.8
 [1.2.7]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.6...v1.2.7
 [1.2.6]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.4...v1.2.6
