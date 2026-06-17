@@ -5,6 +5,24 @@
 
 ## [Unreleased]
 
+## [1.2.8] - 2026-06-17
+
+### 新增
+- 播放页底部新增下载按钮，区分未下载、下载中、已下载状态，并可直达下载管理。
+- 播放页右上菜单新增「下载管理」，可从播放器直接跳转到设置里的下载列表。
+- 专辑详情页封面支持点击展开/收起，竖版封面默认完整显示，避免遮挡专辑名和作者。
+
+### 变更
+- 调整播放页右上菜单位置、宽度与入场动画，使弹窗更靠近三点入口。
+- 下载开始提示改为短暂显示，下载完成后再提示结果，不再长时间停留。
+- 歌词面板支持点击歌词行跳转播放进度，并优化当前歌词行高亮和自动滚动。
+
+### 修复
+- 修复 QuickConnect 在复杂网络下未优先使用 `relay_dn` / `relay_ip` / `relay_port` 中继候选地址的问题。
+
+### 版本
+- 发布版本号更新为 `1.2.8`。
+
 ## [1.2.7] - 2026-06-17
 
 ### 变更
@@ -253,7 +271,8 @@
 - Swift 6 严格并发：`SynologyClient` / `AudioStationAPI` 标记 `@unchecked Sendable` 并加锁保护 `sid`
 - iOS 17.0 起；以 Xcode 26 / Swift 6.3 通过编译
 
-[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.7...HEAD
+[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.8...HEAD
+[1.2.8]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.7...v1.2.8
 [1.2.7]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.6...v1.2.7
 [1.2.6]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.4...v1.2.6
 [1.2.4]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.3...v1.2.4

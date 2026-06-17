@@ -16,10 +16,10 @@ SynoMusic 通过 DSM 的 Audio Station Web API 工作，提供干净流畅的 iO
 | :---: | :---: |
 | ![播放器](docs/screenshots/04-player.png) | ![编辑器](docs/screenshots/05-editor.png) |
 
-## 最新版本：1.2.7
+## 最新版本：1.2.8
 
-- 默认图标和商店图标改为新的非二次元播放器风格。
-- 10 张二次元备用图标改为紧凑的 `@2x` / `@3x` 尺寸，并优化预览图和资源配置。
+- 全屏播放器底部新增下载按钮，可同步未下载、下载中、已下载状态。
+- 优化播放器菜单、歌词跳转、专辑封面展开/收起，并增强 QuickConnect 中继地址回退。
 - 完整更新见 [`CHANGELOG.md`](CHANGELOG.md)。
 
 ## 功能
