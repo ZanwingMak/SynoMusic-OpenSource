@@ -5,6 +5,21 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-17
+
+### 新增
+- 播放页歌词支持在线获取：Audio Station 没有歌词时，会自动从 LRCLIB 查询同步歌词或纯文本歌词。
+
+### 变更
+- 专辑详情页封面恢复为固定方形封面，移除点击展开/收起交互。
+
+### 修复
+- 修复 QuickConnect 登录会错误沿用用户选择的 HTTP/HTTPS 通道，导致连到不可用端口的问题。
+- 优化 QuickConnect 候选地址顺序，优先使用实际可登录的 DDNS / 公网 IP，降低 direct quickconnect 域名不可达导致的失败概率。
+
+### 版本
+- 发布版本号更新为 `1.3.0`。
+
 ## [1.2.9] - 2026-06-17
 
 ### 变更
@@ -279,7 +294,8 @@
 - Swift 6 严格并发：`SynologyClient` / `AudioStationAPI` 标记 `@unchecked Sendable` 并加锁保护 `sid`
 - iOS 17.0 起；以 Xcode 26 / Swift 6.3 通过编译
 
-[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.9...HEAD
+[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.9...v1.3.0
 [1.2.9]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.8...v1.2.9
 [1.2.8]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.7...v1.2.8
 [1.2.7]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.6...v1.2.7

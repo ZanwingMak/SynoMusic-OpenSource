@@ -16,10 +16,10 @@ SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a 
 | :---: | :---: |
 | ![Player](docs/screenshots/04-player.png) | ![Editor](docs/screenshots/05-editor.png) |
 
-## Latest release: 1.2.9
+## Latest release: 1.3.0
 
-- Further compresses app icon and preview image assets to reduce package size.
-- Includes the player download, lyrics, album cover, and QuickConnect relay improvements from 1.2.8.
+- Adds online lyrics lookup when Audio Station has no embedded lyrics.
+- Fixes QuickConnect portal selection and restores the album detail cover to the fixed square layout.
 - See [`CHANGELOG.md`](CHANGELOG.md) for the full release notes.
 
 ## Features

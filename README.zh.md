@@ -16,10 +16,10 @@ SynoMusic 通过 DSM 的 Audio Station Web API 工作，提供干净流畅的 iO
 | :---: | :---: |
 | ![播放器](docs/screenshots/04-player.png) | ![编辑器](docs/screenshots/05-editor.png) |
 
-## 最新版本：1.2.9
+## 最新版本：1.3.0
 
-- 进一步压缩 App 图标与预览图资源，降低安装包体积。
-- 包含 1.2.8 的播放器下载、歌词、专辑封面和 QuickConnect 中继优化。
+- Audio Station 没有内置歌词时，播放页会自动在线查找歌词。
+- 修复 QuickConnect 通道选择问题，并将专辑详情页封面恢复为固定方形布局。
 - 完整更新见 [`CHANGELOG.md`](CHANGELOG.md)。
 
 ## 功能
