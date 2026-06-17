@@ -37,6 +37,13 @@ struct ServerProfile: Identifiable, Hashable, Codable {
         return "\(scheme.rawValue)://\(host):\(port)"
     }
 
+    /// 展示 QuickConnect 已解析出的真实设备地址；直连档案与 displayURL 一致。
+    var resolvedDisplayURL: String {
+        guard isQuickConnect else { return displayURL }
+        guard !host.isEmpty, host != quickConnectID else { return "未获取" }
+        return "\(scheme.rawValue)://\(host):\(port)"
+    }
+
     init(
         id: UUID = UUID(),
         name: String = "",

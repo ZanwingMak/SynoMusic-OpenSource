@@ -159,7 +159,7 @@ private struct QuickActions: View {
                 playback.setStatus("没有可播放的歌曲".t)
                 return
             }
-            playback.play(queue: songs, startAt: 0, honoringShuffle: false)
+            playback.play(queue: songs, startAt: 0, honoringShuffle: false, contextTitle: "随机100首".t)
         } catch {
             playback.setStatus("随机抓取失败".t + "：\(error.localizedDescription)")
         }

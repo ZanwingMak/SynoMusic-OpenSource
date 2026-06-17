@@ -56,7 +56,7 @@ final class QuickConnectResolver: @unchecked Sendable {
 
     /// 把 `quickConnect:xxx` / `qc:xxx` / 大小写差异统一成纯 ID。
     static func strip(_ host: String) -> String {
-        var s = host.trimmingCharacters(in: .whitespaces)
+        var s = host.trimmingCharacters(in: .whitespacesAndNewlines)
         let prefixes = ["quickconnect:", "quickConnect:", "QuickConnect:", "qc:", "QC:"]
         for p in prefixes where s.lowercased().hasPrefix(p.lowercased()) {
             s = String(s.dropFirst(p.count))

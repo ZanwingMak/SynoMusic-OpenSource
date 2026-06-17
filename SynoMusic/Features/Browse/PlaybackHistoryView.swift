@@ -43,7 +43,7 @@ struct PlaybackHistoryView: View {
                 ForEach(playback.queueHistory) { snapshot in
                     Button {
                         Haptics.tap()
-                        playback.play(queue: snapshot.songs, startAt: startIndex(for: snapshot), honoringShuffle: false)
+                        playback.play(queue: snapshot.songs, startAt: startIndex(for: snapshot), honoringShuffle: false, contextTitle: snapshot.title)
                     } label: {
                         QueueHistoryRow(snapshot: snapshot)
                     }
@@ -67,7 +67,7 @@ struct PlaybackHistoryView: View {
                         isCurrent: playback.currentSong?.id == song.id,
                         isPlaying: playback.isPlaying
                     ) {
-                        playback.play(queue: playback.playedHistory, startAt: index, honoringShuffle: false)
+                        playback.play(queue: playback.playedHistory, startAt: index, honoringShuffle: false, contextTitle: "最近播放".t)
                     }
                 }
             }

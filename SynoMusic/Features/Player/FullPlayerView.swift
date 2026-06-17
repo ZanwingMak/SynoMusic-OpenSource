@@ -23,6 +23,8 @@ struct FullPlayerView: View {
     @State private var copyToastMessage: String?
     @State private var copyToastTask: Task<Void, Never>?
     @State private var dominantColor: Color = Color(red: 0.18, green: 0.10, blue: 0.25)
+    @State private var isSeeking: Bool = false
+    @State private var seekDraft: TimeInterval = 0
 
     /// 创建全屏播放器，并在调试参数要求时预展开右上角菜单。
     init(isPresented: Binding<Bool>) {
@@ -287,7 +289,7 @@ struct FullPlayerView: View {
             Spacer()
             VStack(spacing: 2) {
                 Text("正在播放".t).font(.nocLabel).foregroundStyle(.white.opacity(0.6))
-                Text(playback.currentSong?.album ?? "")
+                Text(playback.playbackContextTitle ?? playback.currentSong?.album ?? "")
                     .font(.nocLabel.weight(.semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
@@ -592,7 +594,13 @@ extension FullPlayerView {
                     lines: playback.lyrics,
                     currentIndex: playback.currentLyricIndex,
                     isLoading: playback.isFetchingLyrics,
-                    onSeek: { playback.seek(to: $0) }
+                    fontSize: playback.lyricFontSize,
+                    autoScroll: playback.lyricAutoScroll,
+                    delay: playback.lyricDelay,
+                    onSeek: { playback.seek(to: $0) },
+                    onFontSizeChange: { playback.adjustLyricFontSize(by: $0) },
+                    onAutoScrollChange: { playback.setLyricAutoScroll($0) },
+                    onDelayChange: { playback.setLyricDelay($0) }
                 )
                     .transition(.opacity)
             } else {
@@ -612,14 +620,18 @@ extension FullPlayerView {
     private var progressSection: some View {
         VStack(spacing: 6) {
             Slider(
-                value: Binding(get: { playback.currentTime }, set: { playback.seek(to: $0) }),
-                in: 0...max(playback.duration, 0.01)
+                value: Binding(
+                    get: { isSeeking ? seekDraft : playback.currentTime },
+                    set: { seekDraft = $0 }
+                ),
+                in: 0...max(playback.duration, 0.01),
+                onEditingChanged: handleSeekEditingChanged
             )
             .tint(.white)
             HStack {
-                Text(format(playback.currentTime))
+                Text(format(isSeeking ? seekDraft : playback.currentTime))
                 Spacer()
-                Text(format(max(0, playback.duration - playback.currentTime)).withMinus)
+                Text(format(max(0, playback.duration - (isSeeking ? seekDraft : playback.currentTime))).withMinus)
             }
             .font(.nocLabel.monospacedDigit())
             .foregroundStyle(.white.opacity(0.65))
@@ -691,7 +703,7 @@ extension FullPlayerView {
 
     /// 当前播放音质徽标。
     private var qualityBadge: some View {
-        Text(playback.quality.titleKey.t)
+        Text(playback.effectiveQuality.titleKey.t)
             .font(.system(size: 11, weight: .semibold, design: .rounded))
             .foregroundStyle(.white.opacity(0.88))
             .padding(.horizontal, 8)
@@ -838,6 +850,18 @@ extension FullPlayerView {
         return String(format: "%d:%02d", total / 60, total % 60)
     }
 
+    /// Slider 拖动中只更新本地预览，松手后再执行一次真实 seek，避免连续 seek 卡顿。
+    private func handleSeekEditingChanged(_ editing: Bool) {
+        if editing {
+            isSeeking = true
+            seekDraft = playback.currentTime
+        } else {
+            let target = seekDraft
+            isSeeking = false
+            playback.seek(to: target)
+        }
+    }
+
     /// 复制非空文本到剪贴板并提示用户。
     private func copyToPasteboard(_ text: String) {
         guard !text.isEmpty else { return }
@@ -887,10 +911,16 @@ private struct LyricsPanel: View {
     let lines: [LyricLine]
     let currentIndex: Int?
     let isLoading: Bool
+    let fontSize: Double
+    let autoScroll: Bool
+    let delay: Double
     let onSeek: (TimeInterval) -> Void
+    let onFontSizeChange: (Double) -> Void
+    let onAutoScrollChange: (Bool) -> Void
+    let onDelayChange: (Double) -> Void
 
     var body: some View {
-        Group {
+        ZStack(alignment: .top) {
             if isLoading && lines.isEmpty {
                 VStack(spacing: 10) {
                     ProgressView()
@@ -919,7 +949,7 @@ private struct LyricsPanel: View {
                                     onSeek(line.timestamp)
                                 } label: {
                                     Text(line.text.isEmpty ? "♪" : line.text)
-                                        .font(.system(size: idx == currentIndex ? 22 : 18, weight: idx == currentIndex ? .bold : .regular, design: .rounded))
+                                        .font(.system(size: idx == currentIndex ? fontSize + 4 : fontSize, weight: idx == currentIndex ? .bold : .regular, design: .rounded))
                                         .foregroundStyle(idx == currentIndex ? .white : .white.opacity(0.5))
                                         .multilineTextAlignment(.center)
                                         .frame(maxWidth: .infinity)
@@ -938,18 +968,79 @@ private struct LyricsPanel: View {
                             }
                         }
                         .padding(.horizontal, Metrics.l)
-                        .padding(.vertical, 40)
+                        .padding(.top, 56)
+                        .padding(.bottom, 40)
                     }
                     .onAppear {
-                        scrollToCurrent(proxy)
+                        if autoScroll { scrollToCurrent(proxy) }
                     }
                     .onChange(of: currentIndex) { _, idx in
-                        guard idx != nil else { return }
+                        guard autoScroll, idx != nil else { return }
                         scrollToCurrent(proxy)
                     }
+                    .onChange(of: autoScroll) { _, enabled in
+                        if enabled { scrollToCurrent(proxy) }
+                    }
                 }
+                controls
             }
         }
+    }
+
+    /// 顶部歌词控制条：字号、自动滚动、时间偏移。
+    private var controls: some View {
+        HStack(spacing: 8) {
+            lyricControlButton(systemName: "textformat.size", accessibility: "减小字号".t) {
+                onFontSizeChange(-1)
+            }
+            lyricControlButton(systemName: "textformat.size", accessibility: "增大字号".t) {
+                onFontSizeChange(1)
+            }
+            .scaleEffect(1.12)
+
+            Button {
+                Haptics.tap()
+                onAutoScrollChange(!autoScroll)
+            } label: {
+                Image(systemName: autoScroll ? "arrow.down.to.line" : "hand.raised")
+                    .frame(width: 28, height: 28)
+                    .foregroundStyle(autoScroll ? Theme.accent : .white.opacity(0.75))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("跟随进度滚动".t)
+
+            Spacer(minLength: 0)
+
+            lyricControlButton(systemName: "minus.circle", accessibility: "减少歌词延迟".t) {
+                onDelayChange(delay - 0.1)
+            }
+            Text(String(format: "%+.1fs", delay))
+                .font(.caption.monospacedDigit().weight(.semibold))
+                .foregroundStyle(.white.opacity(0.82))
+                .frame(width: 48)
+            lyricControlButton(systemName: "plus.circle", accessibility: "增加歌词延迟".t) {
+                onDelayChange(delay + 0.1)
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 38)
+        .background(.black.opacity(0.24), in: Capsule(style: .continuous))
+        .padding(.horizontal, Metrics.l)
+        .padding(.top, 4)
+    }
+
+    /// 生成歌词控制条内的轻量图标按钮。
+    private func lyricControlButton(systemName: String, accessibility: String, action: @escaping () -> Void) -> some View {
+        Button {
+            Haptics.tap()
+            action()
+        } label: {
+            Image(systemName: systemName)
+                .frame(width: 28, height: 28)
+                .foregroundStyle(.white.opacity(0.82))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibility)
     }
 
     /// 把当前歌词行滚动到中间。

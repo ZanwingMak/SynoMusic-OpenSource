@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// 专辑详情：顶部巨幅封面、信息、歌曲列表、播放/随机播放按钮。
 struct AlbumDetailView: View {
@@ -22,7 +23,7 @@ struct AlbumDetailView: View {
                     LoadingState().frame(height: 200)
                 } else {
                     SongListSection(songs: songs) { idx in
-                        playback.play(queue: songs, startAt: idx, honoringShuffle: false)
+                        playback.play(queue: songs, startAt: idx, honoringShuffle: false, contextTitle: album.name)
                     }
                 }
             }
@@ -41,7 +42,7 @@ struct AlbumDetailView: View {
                 cornerRadius: Theme.cornerHero,
                 fallbackSeed: album.id
             )
-            .frame(width: 240, height: 240)
+            .frame(width: albumCoverSide, height: albumCoverSide)
             .shadow(color: .black.opacity(0.25), radius: 28, y: 16)
             .padding(.top, Metrics.l)
 
@@ -61,11 +62,16 @@ struct AlbumDetailView: View {
         }
     }
 
+    /// 根据屏幕高度限制专辑封面边长，避免竖屏封面挤压标题区。
+    private var albumCoverSide: CGFloat {
+        min(220, UIScreen.main.bounds.height * 0.28)
+    }
+
     private var actions: some View {
         HStack(spacing: Metrics.m) {
             Button {
                 playback.isShuffling = false
-                playback.play(queue: songs, startAt: 0, honoringShuffle: false)
+                playback.play(queue: songs, startAt: 0, honoringShuffle: false, contextTitle: album.name)
             } label: {
                 Label("播放".t, systemImage: "play.fill")
             }
@@ -74,7 +80,7 @@ struct AlbumDetailView: View {
 
             Button {
                 playback.isShuffling = true
-                playback.play(queue: songs.shuffled(), startAt: 0, honoringShuffle: false)
+                playback.play(queue: songs.shuffled(), startAt: 0, honoringShuffle: false, contextTitle: album.name)
             } label: {
                 Label("随机".t, systemImage: "shuffle")
             }

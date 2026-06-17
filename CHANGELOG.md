@@ -5,6 +5,29 @@
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-06-18
+
+### 新增
+- 设置页 QuickConnect 当前会话显示已解析设备地址，并提供「更新设备地址」手动刷新入口。
+- 播放页歌词支持调整字号、是否跟随进度滚动和时间延迟。
+
+### 变更
+- QuickConnect 编辑页固定使用 HTTPS 通道，已通过 QuickConnect 登录的服务器不再允许切回直连模式。
+- 切换服务器账号时保留当前页面并显示行内 loading，登录成功后再替换会话。
+- 播放页顶部副标题改为播放来源：专辑、歌单、随机100首、所有歌曲等上下文。
+- 播放页进度条改为松手后再 seek，降低拖动卡顿。
+- 原始格式播放失败自动回退 MP3 时不再弹出顶部提示，改为更新当前实际音质徽标。
+- 播放专辑或歌单时不再弹出「正在加载」顶部提示。
+
+### 修复
+- 修复 QuickConnect 外网中继登录与本地表单状态不一致的问题。
+- 修复服务器编辑页连接进度 Toast 显示在 sheet 背后的问题。
+- 提高暗色登录页输入提示文字对比度。
+- 限制专辑详情页顶部封面高度，避免竖版封面挤压标题与作者信息。
+
+### 版本
+- 发布版本号更新为 `1.3.1`。
+
 ## [1.3.0] - 2026-06-17
 
 ### 新增
@@ -294,7 +317,8 @@
 - Swift 6 严格并发：`SynologyClient` / `AudioStationAPI` 标记 `@unchecked Sendable` 并加锁保护 `sid`
 - iOS 17.0 起；以 Xcode 26 / Swift 6.3 通过编译
 
-[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.9...v1.3.0
 [1.2.9]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.8...v1.2.9
 [1.2.8]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.7...v1.2.8

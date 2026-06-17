@@ -146,11 +146,29 @@ final class DownloadManager: ObservableObject {
 }
 
 /// 下载请求专用的证书代理；仅在用户配置允许自签名证书时使用。
-private final class DownloadCertDelegate: NSObject, URLSessionDelegate {
-    /// 对下载请求的证书挑战进行处理。
+private final class DownloadCertDelegate: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
+    /// 对下载请求的 session 级证书挑战进行处理。
     func urlSession(
         _ session: URLSession,
         didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        complete(challenge, completionHandler: completionHandler)
+    }
+
+    /// 对下载请求的 task 级证书挑战进行处理。
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        complete(challenge, completionHandler: completionHandler)
+    }
+
+    /// 根据认证类型决定是否信任当前服务器证书。
+    private func complete(
+        _ challenge: URLAuthenticationChallenge,
         completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
         if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,

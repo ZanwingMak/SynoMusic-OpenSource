@@ -23,9 +23,9 @@ final class SynologyClient: @unchecked Sendable, Equatable {
         self.profile = profile
 
         let cfg = URLSessionConfiguration.default
-        cfg.waitsForConnectivity = true
-        cfg.timeoutIntervalForRequest = 20
-        cfg.timeoutIntervalForResource = 60
+        cfg.waitsForConnectivity = false
+        cfg.timeoutIntervalForRequest = 12
+        cfg.timeoutIntervalForResource = 24
         cfg.httpCookieAcceptPolicy = .always
         cfg.httpShouldSetCookies = true
 
@@ -76,6 +76,7 @@ final class SynologyClient: @unchecked Sendable, Equatable {
         let url = try makeURL(path: path, query: query)
         var req = URLRequest(url: url)
         req.httpMethod = "GET"
+        req.timeoutInterval = 12
 
         let (data, response): (Data, URLResponse)
         do {
@@ -168,10 +169,29 @@ final class SynologyClient: @unchecked Sendable, Equatable {
 }
 
 /// 允许自签名证书：仅当用户在 ServerProfile 显式打开时才使用。
-private final class PermissiveCertDelegate: NSObject, URLSessionDelegate {
+private final class PermissiveCertDelegate: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
+    /// 处理 session 级 TLS 证书挑战，允许用户已确认的自签名证书继续连接。
     func urlSession(
         _ session: URLSession,
         didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        complete(challenge, completionHandler: completionHandler)
+    }
+
+    /// 处理 task 级 TLS 证书挑战，覆盖 iOS 在 `data(for:)` 下分发到 task delegate 的情况。
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        complete(challenge, completionHandler: completionHandler)
+    }
+
+    /// 根据认证类型决定是否信任当前服务器证书。
+    private func complete(
+        _ challenge: URLAuthenticationChallenge,
         completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
         if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
@@ -225,14 +245,39 @@ enum SynologyLoginHelper {
         var loginProfile = profile
         let client = SynologyClient(profile: loginProfile)
         do {
-            try await client.login(password: password, otp: otp)
+            _ = try await withTimeout(seconds: 14) {
+                try await client.login(password: password, otp: otp)
+            }
             return (client, loginProfile)
         } catch let error as SynologyError where shouldRetryTrustingCertificate(error, profile: loginProfile) {
             loginProfile.ignoreInvalidCertificate = true
             if let report { await report("正在连接...") }
             let retryClient = SynologyClient(profile: loginProfile)
-            try await retryClient.login(password: password, otp: otp)
+            _ = try await withTimeout(seconds: 14) {
+                try await retryClient.login(password: password, otp: otp)
+            }
             return (retryClient, loginProfile)
+        }
+    }
+
+    /// 给单个候选地址的登录过程加上硬超时，避免 URLSession 在异常网络下让 UI 长时间停在连接中。
+    private static func withTimeout<T: Sendable>(
+        seconds: Double,
+        operation: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
+        try await withThrowingTaskGroup(of: T.self) { group in
+            group.addTask {
+                try await operation()
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                throw SynologyError.network("连接超时，请检查 QuickConnect 网络或稍后重试")
+            }
+            guard let result = try await group.next() else {
+                throw SynologyError.cancelled
+            }
+            group.cancelAll()
+            return result
         }
     }
 
@@ -246,7 +291,7 @@ enum SynologyLoginHelper {
         let id = QuickConnectResolver.strip(rawID)
         let resolved = try await QuickConnectResolver().resolve(
             id,
-            preferred: profile.scheme,
+            preferred: .https,
             report: report
         )
         return resolved.candidates.map { candidate in
@@ -260,6 +305,31 @@ enum SynologyLoginHelper {
             }
             return copy
         }
+    }
+
+    /// 只刷新 QuickConnect 解析出的设备地址，不执行账号登录。
+    static func refreshQuickConnectAddress(
+        for profile: ServerProfile,
+        report: ProgressReporter? = nil
+    ) async throws -> ServerProfile {
+        guard profile.isQuickConnect else { return profile }
+        let rawID = profile.quickConnectID.isEmpty ? profile.host : profile.quickConnectID
+        let id = QuickConnectResolver.strip(rawID)
+        let resolved = try await QuickConnectResolver().resolve(
+            id,
+            preferred: .https,
+            report: report
+        )
+        guard let candidate = resolved.candidates.first else {
+            throw QuickConnectResolver.ResolveError.noHost
+        }
+        var copy = profile
+        copy.quickConnectID = id
+        copy.host = candidate.host
+        copy.port = candidate.port
+        copy.scheme = candidate.scheme
+        copy.ignoreInvalidCertificate = true
+        return copy
     }
 
     /// 仅 QuickConnect HTTPS 在证书信任/域名不匹配时自动重试一次。

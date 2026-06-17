@@ -115,7 +115,7 @@ struct RadioBrowseView: View {
 
     private func tap(_ station: RadioStation) {
         Haptics.soft()
-        playback.play(queue: [station.asSong()], startAt: 0, honoringShuffle: false)
+        playback.play(queue: [station.asSong()], startAt: 0, honoringShuffle: false, contextTitle: "电台".t)
         Task { await api.reportClick(station.stationuuid) }
     }
 

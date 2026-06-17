@@ -17,6 +17,7 @@ struct ServerEditorView: View {
 
     @State private var isConnecting: Bool = false
     @State private var error: String?
+    @State private var progressMessage: String?
 
     /// 编辑模式（QC / 直连）。
     enum Mode: String, CaseIterable, Identifiable {
@@ -42,6 +43,10 @@ struct ServerEditorView: View {
 
     private var isEditingExisting: Bool {
         serverStore.profiles.contains(where: { $0.id == profile.id })
+    }
+
+    private var isLockedQuickConnect: Bool {
+        isEditingExisting && profile.isQuickConnect
     }
 
     var body: some View {
@@ -84,10 +89,20 @@ struct ServerEditorView: View {
 
     private var modeSection: some View {
         Section {
-            Picker("模式".t, selection: $mode) {
-                ForEach(Mode.allCases) { m in Text(m.titleKey.t).tag(m) }
+            if isLockedQuickConnect {
+                Label("QuickConnect", systemImage: "bolt.horizontal.circle.fill")
+                    .foregroundStyle(Theme.accent)
+            } else {
+                Picker("模式".t, selection: $mode) {
+                    ForEach(Mode.allCases) { m in Text(m.titleKey.t).tag(m) }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: mode) { _, newValue in
+                    if newValue == .quickConnect {
+                        enterQuickConnectMode()
+                    }
+                }
             }
-            .pickerStyle(.segmented)
         } footer: {
             Text(mode == .quickConnect
                 ? "QuickConnect ID 由群晖服务解析为真实地址，无需自己填 IP 与端口。".t
@@ -99,16 +114,19 @@ struct ServerEditorView: View {
     private var quickConnectSection: some View {
         Section {
             ClearableTextField(title: "QuickConnect ID", text: $profile.quickConnectID, keyboard: .URL)
-            Picker("通道".t, selection: $profile.scheme) {
-                ForEach(ServerProfile.Scheme.allCases) { s in
-                    Text(s.rawValue.uppercased()).tag(s)
+            if profile.isQuickConnect, profile.host != profile.quickConnectID, !profile.host.isEmpty {
+                HStack {
+                    Text("设备地址".t)
+                    Spacer()
+                    Text(profile.resolvedDisplayURL)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
-            .pickerStyle(.segmented)
         } header: {
             Text("QuickConnect")
         } footer: {
-            Text("在 DSM 控制面板 → QuickConnect 中查到的 ID（不包含 quickconnect.to 域名）。HTTP 走 dsm_portal 通道，HTTPS 走 dsm_portal_https 通道。".t)
+            Text("在 DSM 控制面板 → QuickConnect 中查到的 ID（不包含 quickconnect.to 域名）。App 会自动使用 HTTPS QuickConnect 通道。".t)
         }
     }
 
@@ -168,7 +186,7 @@ struct ServerEditorView: View {
                             .tint(.white)
                             .scaleEffect(0.9)
                     }
-                    Text(loadingShown ? "正在连接...".t : "连接并保存".t)
+                    Text(progressButtonTitle)
                     Spacer(minLength: 0)
                 }
             }
@@ -207,11 +225,18 @@ struct ServerEditorView: View {
               !password.isEmpty else { return false }
         switch mode {
         case .quickConnect:
-            return !profile.quickConnectID.trimmingCharacters(in: .whitespaces).isEmpty
+            return !profile.quickConnectID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .direct:
-            return !profile.host.trimmingCharacters(in: .whitespaces).isEmpty
+            return !profile.host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && profile.port > 0 && profile.port <= 65535
         }
+    }
+
+    private var progressButtonTitle: String {
+        if loadingShown {
+            return progressMessage ?? "正在连接...".t
+        }
+        return "连接并保存".t
     }
 
     private func setupOnAppear() {
@@ -224,6 +249,9 @@ struct ServerEditorView: View {
             // 添加新档案：强制清空密码，避免 SwiftUI 复用 / 系统自动填残留
             password = ""
             mode = .direct
+        }
+        if mode == .quickConnect {
+            enterQuickConnectMode()
         }
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
@@ -258,12 +286,34 @@ struct ServerEditorView: View {
         var copy = p
         copy.isQuickConnect = (mode == .quickConnect)
         if mode == .quickConnect {
-            // 把 ID 也塞到 host 字段，让 QC resolver 能识别
-            copy.host = copy.quickConnectID
+            let id = QuickConnectResolver.strip(copy.quickConnectID)
+            copy.quickConnectID = id
+            copy.host = id
+            copy.scheme = .https
+            copy.port = 5001
+            copy.ignoreInvalidCertificate = true
         } else {
             copy.quickConnectID = ""
         }
         return copy
+    }
+
+    /// 同步 QuickConnect 表单的派生字段，避免出现 HTTPS 仍保存 5000 端口的中间状态。
+    private func syncQuickConnectDefaults(for scheme: ServerProfile.Scheme) {
+        profile.port = scheme == .https ? 5001 : 5000
+        portText = String(profile.port)
+        if scheme == .https {
+            profile.ignoreInvalidCertificate = true
+        }
+    }
+
+    /// 进入 QuickConnect 模式时优先使用 HTTPS，与群晖实际返回的中继通道保持一致。
+    private func enterQuickConnectMode() {
+        profile.scheme = .https
+        syncQuickConnectDefaults(for: .https)
+        if !profile.isQuickConnect {
+            profile.host = ""
+        }
     }
 
     /// 列表显示名：QC 模式优先用 ID。
@@ -275,7 +325,11 @@ struct ServerEditorView: View {
     private func connectAndSave() async {
         guard canSubmit else { return }
         isConnecting = true
-        defer { isConnecting = false }
+        progressMessage = "正在连接...".t
+        defer {
+            isConnecting = false
+            progressMessage = nil
+        }
         error = nil
 
         var p = applyMode(to: profile)
@@ -289,7 +343,7 @@ struct ServerEditorView: View {
                 profile: p,
                 password: password,
                 otp: otp.isEmpty ? nil : otp,
-                report: { [weak playback] key in playback?.setStatus(key.t) }
+                report: { key in progressMessage = key.t }
             )
             var updated = result.profile
             updated.lastConnectedAt = Date()

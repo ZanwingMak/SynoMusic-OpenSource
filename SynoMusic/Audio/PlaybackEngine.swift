@@ -73,10 +73,21 @@ final class PlaybackEngine: ObservableObject {
     @Published private(set) var isBuffering: Bool = false
     @Published var repeatMode: RepeatMode = .off
     @Published var isShuffling: Bool = false
-    @Published var quality: AudioQuality = .original
+    @Published var quality: AudioQuality = .original {
+        didSet {
+            if transcodeOverride == nil {
+                effectiveQuality = quality
+            }
+        }
+    }
+    @Published private(set) var effectiveQuality: AudioQuality = .original
+    @Published private(set) var playbackContextTitle: String?
     @Published private(set) var lyrics: [LyricLine] = []
     @Published private(set) var currentLyricIndex: Int? = nil
     @Published private(set) var isFetchingLyrics: Bool = false
+    @Published private(set) var lyricFontSize: Double = UserDefaults.standard.double(forKey: "syno.lyrics.fontSize").clamped(to: 16...28, defaultValue: 18)
+    @Published private(set) var lyricAutoScroll: Bool = UserDefaults.standard.object(forKey: "syno.lyrics.autoScroll") as? Bool ?? true
+    @Published private(set) var lyricDelay: Double = UserDefaults.standard.double(forKey: "syno.lyrics.delay").clamped(to: -3...3, defaultValue: 0)
     /// 用户可见的瞬时状态消息（错误、Demo 提示等）；nil 表示无消息。
     @Published private(set) var statusMessage: String?
     /// 睡眠定时剩余秒数；nil 表示未启用。
@@ -132,6 +143,9 @@ final class PlaybackEngine: ObservableObject {
     private var onlineLyricsCache: [String: [LyricLine]] = [:]
     private let playedHistoryKey = "syno.playback.history.songs"
     private let queueHistoryKey = "syno.playback.history.queues"
+    private let lyricFontSizeKey = "syno.lyrics.fontSize"
+    private let lyricAutoScrollKey = "syno.lyrics.autoScroll"
+    private let lyricDelayKey = "syno.lyrics.delay"
     private let maxPlayedHistoryCount = 200
     private let maxQueueHistoryCount = 50
 
@@ -154,7 +168,7 @@ final class PlaybackEngine: ObservableObject {
     // MARK: 公开操作
 
     /// 替换队列并从指定下标开始播放；可选择是否沿用当前随机播放开关来重排队列。
-    func play(queue songs: [Song], startAt index: Int = 0, honoringShuffle: Bool = true) {
+    func play(queue songs: [Song], startAt index: Int = 0, honoringShuffle: Bool = true, contextTitle: String? = nil) {
         guard !songs.isEmpty else { return }
         recordQueueSnapshotIfNeeded(replacingWith: songs)
         self.originalQueue = songs
@@ -166,10 +180,8 @@ final class PlaybackEngine: ObservableObject {
         // 新曲：清空临时转码状态
         transcodeOverride = nil
         fallbackTried = false
-        // 立即给用户视觉反馈，避免"点了没反应"的错觉
-        if let title = currentSong?.title {
-            setLoadingStatus(title: title)
-        }
+        effectiveQuality = quality
+        playbackContextTitle = cleanContextTitle(contextTitle) ?? currentSong?.album
         loadCurrent(autoPlay: true)
     }
 
@@ -222,6 +234,7 @@ final class PlaybackEngine: ObservableObject {
         currentIndex = -1
         currentTime = 0
         duration = 0
+        playbackContextTitle = nil
         dismissStatus()
         clearNowPlaying()
         #if canImport(ActivityKit)
@@ -271,6 +284,25 @@ final class PlaybackEngine: ObservableObject {
                 self.updateNowPlayingPlaybackState()
             }
         }
+    }
+
+    /// 调整歌词字号并持久化到本地。
+    func adjustLyricFontSize(by delta: Double) {
+        lyricFontSize = (lyricFontSize + delta).clamped(to: 16...28, defaultValue: 18)
+        UserDefaults.standard.set(lyricFontSize, forKey: lyricFontSizeKey)
+    }
+
+    /// 设置歌词是否跟随播放进度自动滚动。
+    func setLyricAutoScroll(_ enabled: Bool) {
+        lyricAutoScroll = enabled
+        UserDefaults.standard.set(enabled, forKey: lyricAutoScrollKey)
+    }
+
+    /// 设置歌词时间偏移，正数代表歌词提前显示。
+    func setLyricDelay(_ delay: Double) {
+        lyricDelay = delay.clamped(to: -3...3, defaultValue: 0)
+        UserDefaults.standard.set(lyricDelay, forKey: lyricDelayKey)
+        updateCurrentLyric()
     }
 
     func toggleShuffle() {
@@ -374,6 +406,7 @@ final class PlaybackEngine: ObservableObject {
             url = URL(string: path)
         } else if let api = apiClient?.audioStation {
             let effective = transcodeOverride ?? quality
+            effectiveQuality = effective
             url = api.streamURL(songID: song.id, format: effective.streamFormat)
         } else {
             startDemoPlayback(for: song, autoPlay: autoPlay)
@@ -415,6 +448,7 @@ final class PlaybackEngine: ObservableObject {
         player.removeAllItems()
         duration = song.duration > 0 ? song.duration : 240
         currentTime = 0
+        effectiveQuality = quality
         isBuffering = false
         isPlaying = autoPlay
         setStatus("演示模式：尚未连接服务器，未真实播放。", persistent: true)
@@ -569,7 +603,7 @@ final class PlaybackEngine: ObservableObject {
                     if isNasStream, usingRaw, !self.fallbackTried {
                         self.fallbackTried = true
                         self.transcodeOverride = .high
-                        self.setStatus("原始格式无法播放，正在改用 MP3 转码…".t)
+                        self.effectiveQuality = .high
                         self.loadCurrent(autoPlay: true)
                     } else {
                         self.setStatus("无法播放".t + ": \(reason)")
@@ -680,7 +714,7 @@ final class PlaybackEngine: ObservableObject {
     private func recordQueueSnapshotIfNeeded(replacingWith songs: [Song]) {
         guard !queue.isEmpty else { return }
         guard queue.map(\.id) != songs.map(\.id) else { return }
-        let title = currentSong?.album ?? currentSong?.title ?? "播放队列".t
+        let title = playbackContextTitle ?? currentSong?.album ?? currentSong?.title ?? "播放队列".t
         let snapshot = PlaybackQueueSnapshot(
             title: title,
             songs: queue,
@@ -927,10 +961,11 @@ final class PlaybackEngine: ObservableObject {
             currentLyricIndex = nil; return
         }
         // 二分定位最后一个 timestamp <= currentTime 的行。
+        let lyricClock = currentTime + lyricDelay
         var lo = 0, hi = lyrics.count - 1, found: Int? = nil
         while lo <= hi {
             let mid = (lo + hi) / 2
-            if lyrics[mid].timestamp <= currentTime {
+            if lyrics[mid].timestamp <= lyricClock {
                 found = mid; lo = mid + 1
             } else {
                 hi = mid - 1
@@ -947,5 +982,20 @@ final class PlaybackEngine: ObservableObject {
         rest.remove(at: head)
         rest.shuffle()
         return [h] + rest
+    }
+
+    /// 清理播放上下文标题，空字符串不进入播放器顶部展示。
+    private func cleanContextTitle(_ title: String?) -> String? {
+        guard let title else { return nil }
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+}
+
+private extension Double {
+    /// 将数值限制在闭区间内；UserDefaults 首次读取 0 时可给出业务默认值。
+    func clamped(to range: ClosedRange<Double>, defaultValue: Double) -> Double {
+        let value = self == 0 ? defaultValue : self
+        return min(max(value, range.lowerBound), range.upperBound)
     }
 }

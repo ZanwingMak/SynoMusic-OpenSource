@@ -161,7 +161,7 @@ private struct FieldRow<Trailing: View>: View {
                 .foregroundStyle(.white.opacity(0.75))
                 .frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.nocLabel).foregroundStyle(.white.opacity(0.55))
+                Text(title).font(.nocLabel).foregroundStyle(.white.opacity(0.72))
                 if let value { Text(value).font(.nocBody).foregroundStyle(.white) }
             }
             Spacer()
@@ -180,12 +180,14 @@ private struct SecureFieldRow: View {
                 .foregroundStyle(.white.opacity(0.75))
                 .frame(width: 22)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.nocLabel).foregroundStyle(.white.opacity(0.55))
+                Text(title).font(.nocLabel).foregroundStyle(.white.opacity(0.72))
                 Group {
                     if visible {
-                        TextField("", text: $text).textInputAutocapitalization(.never).autocorrectionDisabled()
+                        TextField(title, text: $text)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
                     } else {
-                        SecureField("", text: $text)
+                        SecureField(title, text: $text)
                     }
                 }
                 .font(.nocBody)

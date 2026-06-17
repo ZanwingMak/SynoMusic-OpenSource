@@ -67,7 +67,7 @@ struct FolderBrowseView: View {
             duration: 0, bitrate: nil, codec: nil, filesize: nil,
             path: node.path, rating: nil
         )
-        playback.play(queue: [song], startAt: 0, honoringShuffle: false)
+        playback.play(queue: [song], startAt: 0, honoringShuffle: false, contextTitle: "文件夹".t)
     }
 }
 

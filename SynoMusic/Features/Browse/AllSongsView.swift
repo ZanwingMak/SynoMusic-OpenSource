@@ -43,7 +43,7 @@ struct AllSongsView: View {
                     actionsRow.listRowSeparator(.hidden)
                     ForEach(Array(songs.enumerated()), id: \.element.id) { idx, song in
                         SongTrackRow(song: song, index: idx + 1, isCurrent: playback.currentSong?.id == song.id, isPlaying: playback.isPlaying) {
-                            playback.play(queue: songs, startAt: idx, honoringShuffle: false)
+                            playback.play(queue: songs, startAt: idx, honoringShuffle: false, contextTitle: "所有歌曲".t)
                         }
                         .contextMenu { menu(for: song) }
                         .swipeActions(edge: .trailing) {
@@ -98,13 +98,13 @@ struct AllSongsView: View {
         HStack(spacing: Metrics.m) {
             Button {
                 playback.isShuffling = false
-                playback.play(queue: songs, startAt: 0, honoringShuffle: false)
+                playback.play(queue: songs, startAt: 0, honoringShuffle: false, contextTitle: "所有歌曲".t)
             } label: { Label("播放".t, systemImage: "play.fill") }
             .buttonStyle(PrimaryButtonStyle())
 
             Button {
                 playback.isShuffling = true
-                playback.play(queue: songs.shuffled(), startAt: 0, honoringShuffle: false)
+                playback.play(queue: songs.shuffled(), startAt: 0, honoringShuffle: false, contextTitle: "所有歌曲".t)
             } label: { Label("随机".t, systemImage: "shuffle") }
             .buttonStyle(SecondaryButtonStyle())
         }
@@ -116,7 +116,7 @@ struct AllSongsView: View {
     private func menu(for song: Song) -> some View {
         Button { playback.appendNext(song) } label: { Label("接下来播放".t, systemImage: "text.line.first.and.arrowtriangle.forward") }
         Button {
-            if playback.queue.isEmpty { playback.play(queue: [song], honoringShuffle: false) } else { playback.appendNext(song) }
+            if playback.queue.isEmpty { playback.play(queue: [song], honoringShuffle: false, contextTitle: "所有歌曲".t) } else { playback.appendNext(song) }
         } label: { Label("加入队列".t, systemImage: "list.bullet") }
         Button { pickerSong = song } label: { Label("添加到歌单…".t, systemImage: "text.badge.plus") }
         Button {

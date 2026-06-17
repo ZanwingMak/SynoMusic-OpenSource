@@ -17,6 +17,8 @@ struct SettingsView: View {
     @State private var showSponsors: Bool = false
     @State private var selectedIconName: String? = UIApplication.shared.alternateIconName
     @State private var isChangingIcon: Bool = false
+    @State private var switchingProfileID: UUID?
+    @State private var refreshingQuickConnectID: UUID?
 
     var body: some View {
         Form {
@@ -75,7 +77,23 @@ struct SettingsView: View {
         Section("当前会话".t) {
             if let active = session.client?.profile {
                 infoRow("名称".t, active.name)
-                infoRow("地址".t, active.displayURL)
+                if active.isQuickConnect {
+                    infoRow("QuickConnect", active.quickConnectID)
+                    infoRow("设备地址".t, active.resolvedDisplayURL == "未获取" ? "未获取".t : active.resolvedDisplayURL)
+                    Button {
+                        Task { await refreshQuickConnectAddress(for: active) }
+                    } label: {
+                        HStack {
+                            if refreshingQuickConnectID == active.id {
+                                ProgressView()
+                            }
+                            Label("更新设备地址".t, systemImage: "arrow.clockwise")
+                        }
+                    }
+                    .disabled(refreshingQuickConnectID != nil)
+                } else {
+                    infoRow("地址".t, active.displayURL)
+                }
                 infoRow("用户".t, active.username)
                 if let v = serverInfo["version_string"] {
                     infoRow("Audio Station", v)
@@ -103,6 +121,7 @@ struct SettingsView: View {
                         profile: p,
                         isDefault: p.id == serverStore.activeProfileID,
                         isCurrentSession: p.id == session.client?.profile.id,
+                        isSwitching: p.id == switchingProfileID,
                         onTap: { Task { await switchSession(to: p) } },
                         onEdit: { editingProfile = p }
                     )
@@ -335,6 +354,36 @@ struct SettingsView: View {
         await session.signOut()
     }
 
+    /// 手动刷新 QuickConnect 解析出的真实设备地址，并在当前会话可用时重新连接。
+    private func refreshQuickConnectAddress(for profile: ServerProfile) async {
+        guard refreshingQuickConnectID == nil else { return }
+        refreshingQuickConnectID = profile.id
+        defer { refreshingQuickConnectID = nil }
+        do {
+            let refreshed = try await SynologyLoginHelper.refreshQuickConnectAddress(
+                for: profile,
+                report: { [weak playback] key in playback?.setStatus(key.t) }
+            )
+            serverStore.upsert(refreshed)
+            if profile.id == session.client?.profile.id,
+               let pwd = serverStore.password(for: profile), !pwd.isEmpty {
+                let result = try await SynologyLoginHelper.login(profile: refreshed, password: pwd)
+                var updated = result.profile
+                updated.lastConnectedAt = Date()
+                serverStore.upsert(updated)
+                serverStore.setActive(updated)
+                let oldClient = session.client
+                session.sign(in: result.client)
+                await oldClient?.logout()
+            }
+            playback.setStatus("设备地址已更新".t)
+            Haptics.success()
+        } catch {
+            playback.setStatus("更新设备地址失败".t + "：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
+            Haptics.warning()
+        }
+    }
+
     /// 切换系统 App 图标，并同步设置页的选中状态。
     private func applyAppIcon(_ choice: AppIconChoice) {
         guard selectedIconName != choice.alternateName else { return }
@@ -359,17 +408,17 @@ struct SettingsView: View {
     /// 切换成功后 RootView 的 `.id(client.profile.id)` 会重建 MainShellView，
     /// 各页面的缓存数据（专辑/艺术家/歌曲列表）随之失效并重新加载。
     private func switchSession(to p: ServerProfile) async {
+        guard switchingProfileID == nil else { return }
         Haptics.tap()
         serverStore.setActive(p)
         // 已经是当前会话则只更新默认标记
         if p.id == session.client?.profile.id { return }
         guard let pwd = serverStore.password(for: p), !pwd.isEmpty else {
             playback.setStatus("「\(p.name)」" + "未保存密码，请在登录页输入".t)
-            await signOut()
             return
         }
-        playback.stop()
-        await session.signOut()
+        switchingProfileID = p.id
+        defer { switchingProfileID = nil }
         do {
             let result = try await SynologyLoginHelper.login(
                 profile: p,
@@ -380,7 +429,10 @@ struct SettingsView: View {
             updated.lastConnectedAt = Date()
             serverStore.upsert(updated)
             serverStore.setActive(updated)
+            let oldClient = session.client
+            playback.stop()
             session.sign(in: result.client)
+            await oldClient?.logout()
             playback.setStatus("已切换到".t + "「\(p.name)」")
             Haptics.success()
         } catch {
@@ -472,6 +524,7 @@ private struct ServerRowItem: View {
     let profile: ServerProfile
     let isDefault: Bool
     let isCurrentSession: Bool
+    let isSwitching: Bool
     let onTap: () -> Void
     let onEdit: () -> Void
 
@@ -500,7 +553,7 @@ private struct ServerRowItem: View {
                             tagPill("默认".t, color: Theme.accent)
                         }
                     }
-                    Text("\(profile.username) @ \(profile.displayURL)")
+                    Text(serverSubtitle)
                         .font(.nocLabel)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -508,24 +561,39 @@ private struct ServerRowItem: View {
 
                 Spacer(minLength: 8)
 
-                Button(action: { Haptics.tap(); onEdit() }) {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.secondary)
+                if isSwitching {
+                    ProgressView()
+                        .frame(width: 28, height: 28)
+                } else {
+                    Button(action: { Haptics.tap(); onEdit() }) {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("编辑服务器".t)
                 }
-                .buttonStyle(.borderless)
-                .accessibilityLabel("编辑服务器".t)
             }
             .padding(.vertical, 6)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(isSwitching)
     }
 
     /// 备注名为空时回退到主机；保证列表行不出现空白条目。
     private var displayName: String {
         let trimmed = profile.name.trimmingCharacters(in: .whitespaces)
         return trimmed.isEmpty ? profile.host : trimmed
+    }
+
+    /// 服务器副标题：QC 档案同时展示 ID 与已解析设备地址。
+    private var serverSubtitle: String {
+        if profile.isQuickConnect {
+            let resolved = profile.resolvedDisplayURL == "未获取" ? "未获取".t : profile.resolvedDisplayURL
+            return "\(profile.username) @ QC: \(profile.quickConnectID) · \(resolved)"
+        }
+        return "\(profile.username) @ \(profile.displayURL)"
     }
 
     private func tagPill(_ text: String, color: Color) -> some View {
