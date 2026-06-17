@@ -6,42 +6,39 @@ struct MainShellView: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var playlists: PlaylistStore
     @EnvironmentObject private var theme: ThemeManager
+    @EnvironmentObject private var navigation: AppNavigationState
     @Environment(\.colorScheme) private var colorScheme
     @Binding var showFullPlayer: Bool
-    @State private var selectedTab: Tab = {
-        #if DEBUG
-        let args = ProcessInfo.processInfo.arguments
-        if args.contains("-tab=browse") { return .browse }
-        if args.contains("-tab=search") { return .search }
-        if args.contains("-tab=settings") { return .settings }
-        #endif
-        return .library
-    }()
-
-    enum Tab: Hashable {
-        case library, browse, search, settings
-    }
 
     @State private var showQueueSheet: Bool = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            TabView(selection: $selectedTab) {
+            TabView(selection: $navigation.selectedTab) {
                 NavigationStack { LibraryHomeView().browseRoutes().reserveMiniPlayer(visible: playback.currentSong != nil) }
                     .tabItem { Label("资料库".t, systemImage: "rectangle.stack.fill") }
-                    .tag(Tab.library)
+                    .tag(MainTab.library)
 
                 NavigationStack { BrowseRootView().browseRoutes().reserveMiniPlayer(visible: playback.currentSong != nil) }
                     .tabItem { Label("浏览".t, systemImage: "square.grid.2x2.fill") }
-                    .tag(Tab.browse)
+                    .tag(MainTab.browse)
 
                 NavigationStack { SearchView().browseRoutes().reserveMiniPlayer(visible: playback.currentSong != nil) }
                     .tabItem { Label("搜索".t, systemImage: "magnifyingglass") }
-                    .tag(Tab.search)
+                    .tag(MainTab.search)
 
-                NavigationStack { SettingsView().reserveMiniPlayer(visible: playback.currentSong != nil) }
+                NavigationStack(path: $navigation.settingsPath) {
+                    SettingsView()
+                        .reserveMiniPlayer(visible: playback.currentSong != nil)
+                        .navigationDestination(for: SettingsRoute.self) { route in
+                            switch route {
+                            case .downloads:
+                                DownloadsListView()
+                            }
+                        }
+                }
                     .tabItem { Label("设置".t, systemImage: "gearshape.fill") }
-                    .tag(Tab.settings)
+                    .tag(MainTab.settings)
             }
             .tint(theme.current.accent(in: colorScheme))
 

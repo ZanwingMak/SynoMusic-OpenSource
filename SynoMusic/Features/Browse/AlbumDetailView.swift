@@ -9,6 +9,7 @@ struct AlbumDetailView: View {
     @State private var songs: [Song] = []
     @State private var isLoading: Bool = false
     @State private var error: String?
+    @State private var isCoverExpanded: Bool = true
 
     var body: some View {
         ScrollView {
@@ -36,14 +37,7 @@ struct AlbumDetailView: View {
 
     private var header: some View {
         VStack(spacing: Metrics.m) {
-            CoverArt(
-                url: session.client?.audioStation.albumCoverURL(album: album.name, albumArtist: album.artist),
-                cornerRadius: Theme.cornerHero,
-                fallbackSeed: album.id
-            )
-            .frame(width: 240, height: 240)
-            .shadow(color: .black.opacity(0.25), radius: 28, y: 16)
-            .padding(.top, Metrics.l)
+            coverToggle
 
             VStack(spacing: 4) {
                 Text(album.name)
@@ -59,6 +53,42 @@ struct AlbumDetailView: View {
                 }
             }
         }
+    }
+
+    /// 可点击展开/收起的专辑封面；展开时完整显示竖版封面，收起时回到紧凑方形。
+    private var coverToggle: some View {
+        let expandedWidth = min(UIScreen.main.bounds.width - Metrics.l * 2, 340)
+        let expandedHeight = min(expandedWidth * 1.24, 430)
+        let width = isCoverExpanded ? expandedWidth : 240
+        let height = isCoverExpanded ? expandedHeight : 240
+
+        return Button {
+            Haptics.tap()
+            withAnimation(.spring(response: 0.36, dampingFraction: 0.86)) {
+                isCoverExpanded.toggle()
+            }
+        } label: {
+            ZStack(alignment: .bottomTrailing) {
+                CoverArt(
+                    url: session.client?.audioStation.albumCoverURL(album: album.name, albumArtist: album.artist),
+                    cornerRadius: Theme.cornerHero,
+                    fallbackSeed: album.id,
+                    contentMode: isCoverExpanded ? .fit : .fill
+                )
+                .frame(width: width, height: height)
+                .shadow(color: .black.opacity(0.25), radius: 28, y: 16)
+
+                Image(systemName: isCoverExpanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(Color.black.opacity(0.48), in: Circle())
+                    .padding(10)
+            }
+            .padding(.top, Metrics.l)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isCoverExpanded ? "收起封面".t : "展开封面".t)
     }
 
     private var actions: some View {

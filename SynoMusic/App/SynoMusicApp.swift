@@ -19,6 +19,8 @@ struct SynoMusicApp: App {
     @StateObject private var lm = LanguageManager.shared
     /// 播放偏好（后台播放 / 锁屏 / AirPlay 开关）。
     @StateObject private var playbackSettings = PlaybackSettings()
+    /// App 内部导航状态，用于播放器等浮层跳转主框架页面。
+    @StateObject private var navigation = AppNavigationState()
 
     var body: some Scene {
         WindowGroup {
@@ -31,6 +33,7 @@ struct SynoMusicApp: App {
                 .environmentObject(theme)
                 .environmentObject(lm)
                 .environmentObject(playbackSettings)
+                .environmentObject(navigation)
                 .onAppear {
                     playback.applyPlaybackSettings(playbackSettings)
                     playback.downloadManager = downloads

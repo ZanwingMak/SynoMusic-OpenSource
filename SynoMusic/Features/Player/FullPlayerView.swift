@@ -9,6 +9,7 @@ struct FullPlayerView: View {
     @EnvironmentObject private var playlists: PlaylistStore
     @EnvironmentObject private var downloads: DownloadManager
     @EnvironmentObject private var theme: ThemeManager
+    @EnvironmentObject private var navigation: AppNavigationState
     @Binding var isPresented: Bool
     @State private var showLyrics = false
     @State private var showQueue = false
@@ -67,19 +68,21 @@ struct FullPlayerView: View {
                         onAddToPlaylist: { showAddToPlaylist = true },
                         onDownload: { Task { await downloadCurrent() } },
                         onRemoveDownload: { removeCurrentDownload() },
+                        onOpenDownloadManager: { openDownloadManager() },
                         onShowInfo: { showSongInfo = true },
                         onShowEdit: { showSongEdit = true },
                         currentRating: ratingPending ?? playback.currentSong?.rating,
                         onRate: { stars in Task { await applyRating(stars) } },
                         onDelete: { showDeleteConfirm = true }
                     )
-                    .transition(.opacity)
+                    .transition(.scale(scale: 0.86, anchor: .topTrailing).combined(with: .opacity))
                     .zIndex(300)
                 }
             }
         }
         .preferredColorScheme(.dark)
         .animation(.easeInOut(duration: 0.18), value: theme.currentID)
+        .animation(.spring(response: 0.28, dampingFraction: 0.82), value: showPlayerMenu)
         .tint(theme.current.accent(in: .dark))
         .overlay(alignment: .top) {
             if let msg = playback.statusMessage {
@@ -222,7 +225,7 @@ struct FullPlayerView: View {
         }
         let fileExtension = playback.quality == .original ? (song.codec ?? "mp3") : "mp3"
         do {
-            playback.setStatus("正在下载".t + "：\(song.title)", persistent: true)
+            playback.setStatus("正在下载".t + "：\(song.title)")
             try await downloads.download(
                 song: song,
                 streamURL: url,
@@ -243,6 +246,14 @@ struct FullPlayerView: View {
         downloads.remove(songID: song.id)
         playback.setStatus("已删除下载".t + "：\(song.title)")
         Haptics.success()
+    }
+
+    /// 关闭播放器并跳转到设置里的下载管理。
+    private func openDownloadManager() {
+        isPresented = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
+            navigation.openDownloads()
+        }
     }
 
     /// 是否有任一定时停止策略已激活，决定月亮图标着色。
@@ -322,6 +333,7 @@ private struct PlayerTopMenuOverlay: View {
     let onAddToPlaylist: () -> Void
     let onDownload: () -> Void
     let onRemoveDownload: () -> Void
+    let onOpenDownloadManager: () -> Void
     let onShowInfo: () -> Void
     let onShowEdit: () -> Void
     let currentRating: Int?
@@ -329,7 +341,7 @@ private struct PlayerTopMenuOverlay: View {
     let onDelete: () -> Void
     @State private var showRating = false
 
-    private let menuWidth: CGFloat = 252
+    private let menuWidth: CGFloat = 224
 
     /// 当前歌曲是否允许删除文件。
     private var canDeleteCurrentSong: Bool {
@@ -348,9 +360,9 @@ private struct PlayerTopMenuOverlay: View {
                 menuContent
             }
             .frame(width: menuWidth)
-            .padding(.top, Metrics.l + 100)
+            .padding(.top, Metrics.l + 48)
             .padding(.trailing, Metrics.l)
-            .transition(.scale(scale: 0.96, anchor: .topTrailing).combined(with: .opacity))
+            .transition(.scale(scale: 0.86, anchor: .topTrailing).combined(with: .opacity))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         .onDisappear { showRating = false }
@@ -384,6 +396,9 @@ private struct PlayerTopMenuOverlay: View {
             }
             PlayerMenuRow(icon: "square.and.pencil", title: "编辑歌曲信息".t) {
                 perform(onShowEdit)
+            }
+            PlayerMenuRow(icon: "tray.and.arrow.down", title: "下载管理".t) {
+                perform(onOpenDownloadManager)
             }
             PlayerMenuRow(icon: "star", title: "评分".t, showsChevron: true) {
                 Haptics.tap()
@@ -501,7 +516,7 @@ private struct PlayerGlassMenu<Content: View>: View {
             RoundedRectangle(cornerRadius: 34, style: .continuous)
                 .stroke(Color.white.opacity(0.16), lineWidth: 0.8)
         }
-        .shadow(color: .black.opacity(0.35), radius: 24, x: 0, y: 12)
+        .shadow(color: .black.opacity(0.35), radius: 22, x: 0, y: 10)
     }
 }
 
@@ -545,7 +560,7 @@ private struct PlayerMenuRow: View {
                 }
             }
             .padding(.horizontal, 14)
-            .frame(height: 44)
+            .frame(height: 42)
             .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .opacity(isEnabled ? 1 : 0.4)
         }
@@ -573,7 +588,11 @@ extension FullPlayerView {
     private func playbackVisual(artSide: CGFloat) -> some View {
         ZStack {
             if showLyrics {
-                LyricsPanel(lines: playback.lyrics, currentIndex: playback.currentLyricIndex)
+                LyricsPanel(
+                    lines: playback.lyrics,
+                    currentIndex: playback.currentLyricIndex,
+                    onSeek: { playback.seek(to: $0) }
+                )
                     .transition(.opacity)
             } else {
                 CoverHero(songID: playback.currentSong?.id, seed: playback.currentSong?.id ?? "", side: artSide)
@@ -728,6 +747,11 @@ extension FullPlayerView {
                     .foregroundStyle(.white.opacity(0.85))
                     .frame(width: 28, height: 28)
             }
+            bottomToolButton {
+                handleBottomDownloadTap()
+            } label: {
+                downloadToolIcon
+            }
             AirPlayButton()
                 .frame(width: 36, height: 36)
                 .frame(maxWidth: .infinity)
@@ -746,6 +770,42 @@ extension FullPlayerView {
         }
         .font(.system(size: 18, weight: .semibold))
         .padding(.horizontal, Metrics.xl)
+    }
+
+    /// 当前歌曲的下载状态。
+    private var currentDownloadStatus: DownloadStatus? {
+        playback.currentSong.flatMap { downloads.status(for: $0.id) }
+    }
+
+    /// 底部下载按钮图标，区分未下载、下载中和已下载。
+    @ViewBuilder
+    private var downloadToolIcon: some View {
+        switch currentDownloadStatus {
+        case .completed:
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(Color.green)
+        case .downloading, .pending:
+            ProgressView()
+                .progressViewStyle(.circular)
+                .tint(Theme.accent)
+                .frame(width: 22, height: 22)
+        case .failed:
+            Image(systemName: "arrow.clockwise.circle")
+                .foregroundStyle(Color.orange)
+        case .none:
+            Image(systemName: "arrow.down.circle")
+                .foregroundStyle(.white.opacity(0.85))
+        }
+    }
+
+    /// 点击底部下载按钮：未下载/失败时下载，下载中或已下载时进入下载管理。
+    private func handleBottomDownloadTap() {
+        switch currentDownloadStatus {
+        case .downloading, .pending, .completed:
+            openDownloadManager()
+        case .failed, .none:
+            Task { await downloadCurrent() }
+        }
     }
 
     /// 底部工具栏的等宽按钮容器，保证图标切换时其它按钮不横向跳动。
@@ -825,6 +885,7 @@ private struct CoverHero: View {
 private struct LyricsPanel: View {
     let lines: [LyricLine]
     let currentIndex: Int?
+    let onSeek: (TimeInterval) -> Void
 
     var body: some View {
         Group {
@@ -839,27 +900,51 @@ private struct LyricsPanel: View {
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {
-                        VStack(spacing: 18) {
+                        VStack(spacing: 14) {
                             ForEach(Array(lines.enumerated()), id: \.element.id) { idx, line in
-                                Text(line.text.isEmpty ? "♪" : line.text)
-                                    .font(.system(size: idx == currentIndex ? 22 : 18, weight: idx == currentIndex ? .bold : .regular, design: .rounded))
-                                    .foregroundStyle(idx == currentIndex ? .white : .white.opacity(0.45))
-                                    .multilineTextAlignment(.center)
-                                    .id(idx)
-                                    .animation(.easeInOut(duration: 0.25), value: currentIndex)
+                                Button {
+                                    Haptics.tap()
+                                    onSeek(line.timestamp)
+                                } label: {
+                                    Text(line.text.isEmpty ? "♪" : line.text)
+                                        .font(.system(size: idx == currentIndex ? 22 : 18, weight: idx == currentIndex ? .bold : .regular, design: .rounded))
+                                        .foregroundStyle(idx == currentIndex ? .white : .white.opacity(0.5))
+                                        .multilineTextAlignment(.center)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, idx == currentIndex ? 8 : 4)
+                                        .background {
+                                            if idx == currentIndex {
+                                                Capsule(style: .continuous)
+                                                    .fill(Color.white.opacity(0.12))
+                                            }
+                                        }
+                                }
+                                .buttonStyle(.plain)
+                                .id(idx)
+                                .animation(.easeInOut(duration: 0.25), value: currentIndex)
                             }
                         }
                         .padding(.horizontal, Metrics.l)
                         .padding(.vertical, 40)
                     }
+                    .onAppear {
+                        scrollToCurrent(proxy)
+                    }
                     .onChange(of: currentIndex) { _, idx in
-                        guard let idx else { return }
-                        withAnimation(.easeInOut(duration: 0.4)) {
-                            proxy.scrollTo(idx, anchor: .center)
-                        }
+                        guard idx != nil else { return }
+                        scrollToCurrent(proxy)
                     }
                 }
             }
+        }
+    }
+
+    /// 把当前歌词行滚动到中间。
+    private func scrollToCurrent(_ proxy: ScrollViewProxy) {
+        guard let currentIndex else { return }
+        withAnimation(.easeInOut(duration: 0.4)) {
+            proxy.scrollTo(currentIndex, anchor: .center)
         }
     }
 }

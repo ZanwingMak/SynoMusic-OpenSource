@@ -239,9 +239,7 @@ struct SettingsView: View {
 
     private var cacheSection: some View {
         Section("下载与缓存".t) {
-            NavigationLink {
-                DownloadsListView()
-            } label: {
+            NavigationLink(value: SettingsRoute.downloads) {
                 HStack {
                     Label("已下载歌曲".t, systemImage: "arrow.down.circle")
                     Spacer()

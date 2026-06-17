@@ -201,7 +201,7 @@ final class QuickConnectResolver: @unchecked Sendable {
 
     /// 判断一个字典是否就是 QuickConnect 返回的 service 对象。
     private func looksLikeService(_ dict: [String: Any]) -> Bool {
-        let serviceKeys = ["port", "ext_port", "ext_port_https", "pingpong", "pingpong_desc"]
+        let serviceKeys = ["port", "ext_port", "ext_port_https", "pingpong", "pingpong_desc", "relay_dn", "relay_ip", "relay_port"]
         return serviceKeys.contains { dict[$0] != nil }
     }
 
@@ -224,12 +224,18 @@ final class QuickConnectResolver: @unchecked Sendable {
             }
         }()
 
-        // 候选地址优先级：pingpong_desc（群晖探测出的可达 host:port）
+        // 候选地址优先级：relay（QuickConnect 中继，外网/复杂 NAT 下更可靠）
+        //                > pingpong_desc（群晖探测出的可达 host:port）
         //                > smartdns（QuickConnect 智能解析域名）
         //                > ddns（用户自配的群晖 DDNS）
         //                > external.ip / external.ipv6（公网 IP）
         //                > interface[].ip（内网 IP，只在与 NAS 同网时可达）
         var candidates: [(host: String, port: Int?)] = []
+        appendCandidate(host: stringValue(service["relay_dn"]), port: nonZero(service["relay_port"]), to: &candidates)
+        appendCandidate(host: stringValue(service["relay_ip"]), port: nonZero(service["relay_port"]), to: &candidates)
+        if preferred == .https {
+            appendCandidate(host: stringValue(service["https_ip"]), port: nonZero(service["https_port"]), to: &candidates)
+        }
         for item in stringArray(service["pingpong_desc"]) {
             if let pair = splitHostPort(item) {
                 candidates.append(pair)
@@ -267,6 +273,12 @@ final class QuickConnectResolver: @unchecked Sendable {
         return Resolved(candidates: resolved)
     }
 
+    /// 追加非空候选地址。
+    private func appendCandidate(host: String?, port: Int?, to candidates: inout [(host: String, port: Int?)]) {
+        guard let host, !host.isEmpty, host != "NULL" else { return }
+        candidates.append((host, port))
+    }
+
     /// 从 smartdns 字段中抽取直连域名。
     private func appendSmartDNS(_ value: Any?, to candidates: inout [(host: String, port: Int?)]) {
         if let host = value as? String, !host.isEmpty {
@@ -282,6 +294,13 @@ final class QuickConnectResolver: @unchecked Sendable {
                 }
             }
         }
+    }
+
+    /// 把 QuickConnect 字段里的 String / NSNumber 转成字符串。
+    private func stringValue(_ value: Any?) -> String? {
+        if let string = value as? String { return string }
+        if let number = value as? NSNumber { return number.stringValue }
+        return nil
     }
 
     /// 兼容字符串数组与单个字符串两种 QuickConnect 字段。
