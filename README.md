@@ -16,10 +16,10 @@ SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a 
 | :---: | :---: |
 | ![Player](docs/screenshots/04-player.png) | ![Editor](docs/screenshots/05-editor.png) |
 
-## Latest release: 1.2.6
+## Latest release: 1.2.7
 
-- Adds player download/cache actions with shared Download Manager state and local-cache-first playback.
-- Fixes the full player menu dismissal layer, copy popover flicker, app icon edge artifacts, icon-switch localization, and improves QuickConnect fallback candidates.
+- Uses the new non-anime player icon as the default and App Store icon.
+- Keeps 10 anime-style alternate icons in compact `@2x` / `@3x` sizes with optimized previews and asset metadata.
 - See [`CHANGELOG.md`](CHANGELOG.md) for the full release notes.
 
 ## Features

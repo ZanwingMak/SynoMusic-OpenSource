@@ -5,6 +5,19 @@
 
 ## [Unreleased]
 
+## [1.2.7] - 2026-06-17
+
+### 变更
+- 默认图标与商店图标改为非二次元播放器风格，继续保留 `1024x1024` 源图。
+- 10 张二次元图标改为用户可切换的备用图标，仅保留 `120x120 @2x` 与 `180x180 @3x`，并统一设置页预览图为 `180x180`。
+- 规范化 App 图标资源命名与 `Contents.json`，压缩图标资源体积。
+
+### 修复
+- 修复模拟器安装脚本可能选中旧 DerivedData 构建产物的问题，确保安装当前构建出来的 App。
+
+### 版本
+- 发布版本号更新为 `1.2.7`。
+
 ## [1.2.6] - 2026-06-17
 
 ### 新增
@@ -240,7 +253,8 @@
 - Swift 6 严格并发：`SynologyClient` / `AudioStationAPI` 标记 `@unchecked Sendable` 并加锁保护 `sid`
 - iOS 17.0 起；以 Xcode 26 / Swift 6.3 通过编译
 
-[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.6...HEAD
+[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.7...HEAD
+[1.2.7]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.6...v1.2.7
 [1.2.6]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.4...v1.2.6
 [1.2.4]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.2...v1.2.3
