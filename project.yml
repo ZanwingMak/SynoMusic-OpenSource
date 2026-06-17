@@ -64,6 +64,11 @@ targets:
               - AppIcon
             UIPrerenderedIcon: false
           CFBundleAlternateIcons:
+            AppIconAlt01:
+              CFBundleIconName: AppIconAlt01
+              CFBundleIconFiles:
+                - AppIconAlt01
+              UIPrerenderedIcon: false
             AppIconAlt02:
               CFBundleIconName: AppIconAlt02
               CFBundleIconFiles:
@@ -114,7 +119,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: app.synomusic.SynoMusic
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIconAlt02 AppIconAlt03 AppIconAlt04 AppIconAlt05 AppIconAlt06 AppIconAlt07 AppIconAlt08 AppIconAlt09 AppIconAlt10"
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIconAlt01 AppIconAlt02 AppIconAlt03 AppIconAlt04 AppIconAlt05 AppIconAlt06 AppIconAlt07 AppIconAlt08 AppIconAlt09 AppIconAlt10"
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: NO
         SUPPORTS_MACCATALYST: NO

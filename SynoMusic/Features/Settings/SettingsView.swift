@@ -402,7 +402,8 @@ private struct AppIconChoice: Identifiable {
     var id: String { alternateName ?? "AppIcon" }
 
     static let all: [AppIconChoice] = [
-        AppIconChoice(alternateName: nil, assetName: "AppIcon", previewName: "AppIconPreview01", title: "图标 1"),
+        AppIconChoice(alternateName: nil, assetName: "AppIcon", previewName: "AppIconPreviewDefault", title: "默认"),
+        AppIconChoice(alternateName: "AppIconAlt01", assetName: "AppIconAlt01", previewName: "AppIconPreview01", title: "图标 1"),
         AppIconChoice(alternateName: "AppIconAlt02", assetName: "AppIconAlt02", previewName: "AppIconPreview02", title: "图标 2"),
         AppIconChoice(alternateName: "AppIconAlt03", assetName: "AppIconAlt03", previewName: "AppIconPreview03", title: "图标 3"),
         AppIconChoice(alternateName: "AppIconAlt04", assetName: "AppIconAlt04", previewName: "AppIconPreview04", title: "图标 4"),

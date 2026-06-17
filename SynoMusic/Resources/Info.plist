@@ -12,6 +12,17 @@
 	<dict>
 		<key>CFBundleAlternateIcons</key>
 		<dict>
+			<key>AppIconAlt01</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIconAlt01</string>
+				</array>
+				<key>CFBundleIconName</key>
+				<string>AppIconAlt01</string>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
 			<key>AppIconAlt02</key>
 			<dict>
 				<key>CFBundleIconFiles</key>
