@@ -591,6 +591,7 @@ extension FullPlayerView {
                 LyricsPanel(
                     lines: playback.lyrics,
                     currentIndex: playback.currentLyricIndex,
+                    isLoading: playback.isFetchingLyrics,
                     onSeek: { playback.seek(to: $0) }
                 )
                     .transition(.opacity)
@@ -885,11 +886,22 @@ private struct CoverHero: View {
 private struct LyricsPanel: View {
     let lines: [LyricLine]
     let currentIndex: Int?
+    let isLoading: Bool
     let onSeek: (TimeInterval) -> Void
 
     var body: some View {
         Group {
-            if lines.isEmpty {
+            if isLoading && lines.isEmpty {
+                VStack(spacing: 10) {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .tint(.white.opacity(0.75))
+                    Text("正在查找歌词".t)
+                        .font(.nocBody)
+                        .foregroundStyle(.white.opacity(0.65))
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if lines.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "music.note.list")
                         .font(.system(size: 28))

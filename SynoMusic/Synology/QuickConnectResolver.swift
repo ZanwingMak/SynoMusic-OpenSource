@@ -75,8 +75,6 @@ final class QuickConnectResolver: @unchecked Sendable {
         report: (@MainActor @Sendable (String) -> Void)? = nil
     ) async throws -> Resolved {
         let id = Self.strip(rawID)
-        let portalID = preferred == .https ? "dsm_portal_https" : "dsm_portal"
-
         var pending = ["global.quickconnect.to", "cnc.quickconnect.cn", "euc.quickconnect.eu"]
         var tried: [String] = []
         if let report { await report("正在解析 QuickConnect ID…") }
@@ -87,12 +85,14 @@ final class QuickConnectResolver: @unchecked Sendable {
             tried.append(endpoint)
             if let report { await report("正在连接...") }
 
-            let objects = try await postServerInfo(host: endpoint, id: id, preferred: preferred)
-            for obj in objects {
+            let results = try await postServerInfo(host: endpoint, id: id, preferred: preferred)
+            for result in results {
+                let obj = result.object
                 let errno = obj["errno"] as? Int ?? 0
                 if errno == 0, let server = obj["server"] as? [String: Any] {
-                    let service = pickService(from: obj, server: server, portalID: portalID)
-                    return try pick(response: obj, server: server, service: service, preferred: preferred)
+                    let service = pickService(from: obj, server: server, portalID: result.portalID)
+                    let actualScheme = scheme(for: result.portalID) ?? preferred
+                    return try pick(response: obj, server: server, service: service, preferred: actualScheme)
                 }
                 if errno == 4, let sites = obj["sites"] as? [String] {
                     for site in sites where !tried.contains(site) && !pending.contains(site) {
@@ -106,8 +106,14 @@ final class QuickConnectResolver: @unchecked Sendable {
 
     // MARK: 内部
 
+    /// 单个 QuickConnect 响应及其对应的 DSM portal。
+    private struct ServerInfoResult {
+        let object: [String: Any]
+        let portalID: String
+    }
+
     /// 请求指定 QuickConnect 端点；不同 DSM/区域端点接受的字段略有差异，因此串行尝试多种 body。
-    private func postServerInfo(host: String, id: String, preferred: ServerProfile.Scheme) async throws -> [[String: Any]] {
+    private func postServerInfo(host: String, id: String, preferred: ServerProfile.Scheme) async throws -> [ServerInfoResult] {
         guard let url = URL(string: "https://\(host)/Serv.php") else {
             throw ResolveError.invalidResponse(detail: "URL")
         }
@@ -132,15 +138,24 @@ final class QuickConnectResolver: @unchecked Sendable {
         cfg.timeoutIntervalForRequest = 12
         let session = URLSession(configuration: cfg)
 
-        let bodyStrings = [
-            #"[{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(firstPortal)","serverID":"\#(safeID)","server_id":"\#(safeID)","is_gofile":false},{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(secondPortal)","serverID":"\#(safeID)","server_id":"\#(safeID)","is_gofile":false}]"#,
-            #"{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(firstPortal)","serverID":"\#(safeID)","server_id":"\#(safeID)","is_gofile":false}"#,
-            #"{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(safeID)","serverID":"\#(safeID)","server_id":"\#(safeID)","service":"\#(firstPortal)","is_gofile":false}"#
+        let attempts: [(body: String, portals: [String])] = [
+            (
+                #"[{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(firstPortal)","serverID":"\#(safeID)","server_id":"\#(safeID)","is_gofile":false},{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(secondPortal)","serverID":"\#(safeID)","server_id":"\#(safeID)","is_gofile":false}]"#,
+                [firstPortal, secondPortal]
+            ),
+            (
+                #"{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(firstPortal)","serverID":"\#(safeID)","server_id":"\#(safeID)","is_gofile":false}"#,
+                [firstPortal]
+            ),
+            (
+                #"{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(safeID)","serverID":"\#(safeID)","server_id":"\#(safeID)","service":"\#(firstPortal)","is_gofile":false}"#,
+                [firstPortal]
+            )
         ]
 
-        var lastObjects: [[String: Any]]?
-        for bodyString in bodyStrings {
-            req.httpBody = bodyString.data(using: .utf8)
+        var lastResults: [ServerInfoResult]?
+        for attempt in attempts {
+            req.httpBody = attempt.body.data(using: .utf8)
             let (data, response) = try await session.data(for: req)
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
                 let code = (response as? HTTPURLResponse)?.statusCode ?? -1
@@ -156,11 +171,28 @@ final class QuickConnectResolver: @unchecked Sendable {
                 let preview = String(data: data.prefix(120), encoding: .utf8) ?? "<binary>"
                 throw ResolveError.invalidResponse(detail: "\(host) JSON: \(preview)")
             }
-            if objects.contains(where: { ($0["errno"] as? Int ?? 0) == 0 }) { return objects }
-            lastObjects = objects
+            let results = attachPortalIDs(to: objects, portals: attempt.portals)
+            if results.contains(where: { ($0.object["errno"] as? Int ?? 0) == 0 }) { return results }
+            lastResults = results
         }
-        guard let lastObjects else { throw ResolveError.invalidResponse(detail: "\(host) empty") }
-        return lastObjects
+        guard let lastResults else { throw ResolveError.invalidResponse(detail: "\(host) empty") }
+        return lastResults
+    }
+
+    /// 给 QuickConnect 返回对象补上对应的 portal ID。
+    private func attachPortalIDs(to objects: [[String: Any]], portals: [String]) -> [ServerInfoResult] {
+        objects.enumerated().map { index, object in
+            let portalIndex = min(index, max(portals.count - 1, 0))
+            let portalID = portals.isEmpty ? "dsm_portal_https" : portals[portalIndex]
+            return ServerInfoResult(object: object, portalID: portalID)
+        }
+    }
+
+    /// 根据 DSM portal 推断真实连接协议。
+    private func scheme(for portalID: String) -> ServerProfile.Scheme? {
+        if portalID == "dsm_portal_https" { return .https }
+        if portalID == "dsm_portal" { return .http }
+        return nil
     }
 
     /// 转义手写 JSON 里的字符串字段。
@@ -226,9 +258,9 @@ final class QuickConnectResolver: @unchecked Sendable {
 
         // 候选地址优先级：relay（QuickConnect 中继，外网/复杂 NAT 下更可靠）
         //                > pingpong_desc（群晖探测出的可达 host:port）
-        //                > smartdns（QuickConnect 智能解析域名）
         //                > ddns（用户自配的群晖 DDNS）
         //                > external.ip / external.ipv6（公网 IP）
+        //                > smartdns（QuickConnect 智能解析域名，部分网络下会解析到不可用内网域名）
         //                > interface[].ip（内网 IP，只在与 NAS 同网时可达）
         var candidates: [(host: String, port: Int?)] = []
         appendCandidate(host: stringValue(service["relay_dn"]), port: nonZero(service["relay_port"]), to: &candidates)
@@ -241,8 +273,6 @@ final class QuickConnectResolver: @unchecked Sendable {
                 candidates.append(pair)
             }
         }
-        appendSmartDNS(response["smartdns"], to: &candidates)
-        appendSmartDNS(server["smartdns"], to: &candidates)
         if let ddns = server["ddns"] as? String, !ddns.isEmpty, ddns != "NULL" {
             candidates.append((ddns, nil))
         }
@@ -255,6 +285,8 @@ final class QuickConnectResolver: @unchecked Sendable {
         if let fqdn = server["fqdn"] as? String, !fqdn.isEmpty, fqdn != "NULL" {
             candidates.append((fqdn, nil))
         }
+        appendSmartDNS(response["smartdns"], to: &candidates)
+        appendSmartDNS(server["smartdns"], to: &candidates)
         if let interfaces = server["interface"] as? [[String: Any]] {
             for iface in interfaces {
                 if let ip = iface["ip"] as? String, !ip.isEmpty { candidates.append((ip, nil)) }

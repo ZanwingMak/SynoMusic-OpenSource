@@ -76,6 +76,7 @@ final class PlaybackEngine: ObservableObject {
     @Published var quality: AudioQuality = .original
     @Published private(set) var lyrics: [LyricLine] = []
     @Published private(set) var currentLyricIndex: Int? = nil
+    @Published private(set) var isFetchingLyrics: Bool = false
     /// 用户可见的瞬时状态消息（错误、Demo 提示等）；nil 表示无消息。
     @Published private(set) var statusMessage: String?
     /// 睡眠定时剩余秒数；nil 表示未启用。
@@ -127,6 +128,8 @@ final class PlaybackEngine: ObservableObject {
     private var transcodeOverride: AudioQuality?
     /// 当前曲目是否已尝试过 raw→mp3 兜底重试，避免无限循环。
     private var fallbackTried: Bool = false
+    private let onlineLyricsClient = OnlineLyricsClient()
+    private var onlineLyricsCache: [String: [LyricLine]] = [:]
     private let playedHistoryKey = "syno.playback.history.songs"
     private let queueHistoryKey = "syno.playback.history.queues"
     private let maxPlayedHistoryCount = 200
@@ -591,16 +594,50 @@ final class PlaybackEngine: ObservableObject {
         isBuffering = false
     }
 
+    /// 加载当前歌曲歌词：优先使用 NAS 内置歌词，缺失时自动从 LRCLIB 在线查询。
     private func fetchLyricsAsync(for song: Song) async {
-        guard let api = apiClient?.audioStation else {
-            self.lyrics = []; return
+        lyrics = []
+        currentLyricIndex = nil
+        isFetchingLyrics = true
+        defer { isFetchingLyrics = false }
+
+        if let api = apiClient?.audioStation,
+           let nasLines = try? await api.getLyrics(songID: song.id),
+           !nasLines.isEmpty {
+            assignLyrics(nasLines, for: song)
+            return
         }
+
+        let key = onlineLyricsCacheKey(for: song)
+        if let cached = onlineLyricsCache[key] {
+            assignLyrics(cached, for: song)
+            return
+        }
+
         do {
-            let lines = try await api.getLyrics(songID: song.id)
-            self.lyrics = lines
+            let onlineLines = try await onlineLyricsClient.fetch(for: song)
+            onlineLyricsCache[key] = onlineLines
+            assignLyrics(onlineLines, for: song)
         } catch {
-            self.lyrics = []
+            assignLyrics([], for: song)
         }
+    }
+
+    /// 只给仍然是当前曲目的歌曲赋值歌词，避免快速切歌时旧请求覆盖新歌词。
+    private func assignLyrics(_ lines: [LyricLine], for song: Song) {
+        guard currentSong?.id == song.id else { return }
+        lyrics = lines
+        updateCurrentLyric()
+    }
+
+    /// 构造在线歌词缓存键。
+    private func onlineLyricsCacheKey(for song: Song) -> String {
+        [
+            song.title,
+            song.artist ?? "",
+            song.album ?? "",
+            String(Int(song.duration.rounded()))
+        ].joined(separator: "|").lowercased()
     }
 
     // MARK: 历史记录

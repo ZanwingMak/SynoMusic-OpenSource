@@ -185,7 +185,6 @@ struct CoverArt: View {
     let url: URL?
     var cornerRadius: CGFloat = 10
     var fallbackSeed: String = ""
-    var contentMode: ContentMode = .fill
 
     var body: some View {
         AsyncImage(url: url, transaction: Transaction(animation: .easeInOut(duration: 0.35))) { phase in
@@ -193,7 +192,7 @@ struct CoverArt: View {
             case .success(let image):
                 image
                     .resizable()
-                    .aspectRatio(contentMode: contentMode)
+                    .scaledToFill()
             default:
                 placeholderGradient
                     .overlay {
@@ -203,7 +202,6 @@ struct CoverArt: View {
                     }
             }
         }
-        .background(Color.primary.opacity(0.06))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipped()
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
