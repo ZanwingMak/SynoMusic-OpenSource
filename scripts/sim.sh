@@ -10,8 +10,14 @@ BUNDLE_ID="app.synomusic.SynoMusic"
 
 bash scripts/build.sh
 
-APP=$(find ~/Library/Developer/Xcode/DerivedData -name "SynoMusic.app" -path "*Debug-iphonesimulator*" 2>/dev/null | head -1)
+BUILD_SETTINGS=$(xcodebuild -project SynoMusic.xcodeproj -scheme SynoMusic \
+  -destination "platform=iOS Simulator,name=$DEVICE,OS=latest" \
+  -configuration Debug -showBuildSettings)
+BUILD_DIR=$(printf '%s\n' "$BUILD_SETTINGS" | awk -F'= ' '/ TARGET_BUILD_DIR =/ {print $2; exit}')
+WRAPPER_NAME=$(printf '%s\n' "$BUILD_SETTINGS" | awk -F'= ' '/ WRAPPER_NAME =/ {print $2; exit}')
+APP="$BUILD_DIR/${WRAPPER_NAME:-SynoMusic.app}"
 [ -d "$APP" ] || { echo "没找到 SynoMusic.app，先跑 build.sh"; exit 1; }
+echo "📦 安装当前构建产物: $APP"
 
 xcrun simctl boot "$DEVICE" 2>/dev/null || true
 open -a Simulator
