@@ -11,6 +11,8 @@ struct SynoMusicApp: App {
     @StateObject private var session = AppSession()
     /// 本地歌单仓库（含「我喜欢的」内置 + 用户自定义）。
     @StateObject private var playlists = PlaylistStore()
+    /// 下载管理器：播放器、歌曲菜单和设置页共享同一个缓存索引。
+    @StateObject private var downloads = DownloadManager()
     /// 主题（accent 色 + 外观偏好）。
     @StateObject private var theme = ThemeManager.shared
     /// 多语言。
@@ -25,10 +27,14 @@ struct SynoMusicApp: App {
                 .environmentObject(playback)
                 .environmentObject(session)
                 .environmentObject(playlists)
+                .environmentObject(downloads)
                 .environmentObject(theme)
                 .environmentObject(lm)
                 .environmentObject(playbackSettings)
-                .onAppear { playback.applyPlaybackSettings(playbackSettings) }
+                .onAppear {
+                    playback.applyPlaybackSettings(playbackSettings)
+                    playback.downloadManager = downloads
+                }
                 .tint(theme.current.accent(in: .dark))
                 .preferredColorScheme(theme.appearance.colorScheme)
                 // 只对语言变化重建整树（翻译值仅在 body 重算时才会刷新）；

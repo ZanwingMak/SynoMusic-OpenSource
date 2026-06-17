@@ -194,7 +194,35 @@ enum SynologyLoginHelper {
         otp: String? = nil,
         report: ProgressReporter? = nil
     ) async throws -> (client: SynologyClient, profile: ServerProfile) {
-        var loginProfile = try await resolvedProfile(for: profile, report: report)
+        let profiles = try await resolvedProfiles(for: profile, report: report)
+        var lastError: Error?
+        for (index, loginProfile) in profiles.enumerated() {
+            if index > 0, let report {
+                let message = await MainActor.run {
+                    LanguageManager.shared.t("正在尝试备用地址") + " \(index + 1)/\(profiles.count)…"
+                }
+                await report(message)
+            }
+            do {
+                return try await loginSingleCandidate(profile: loginProfile, password: password, otp: otp, report: report)
+            } catch {
+                if !profile.isQuickConnect || !shouldTryNextQuickConnectCandidate(error) {
+                    throw error
+                }
+                lastError = error
+            }
+        }
+        throw lastError ?? SynologyError.invalidResponse
+    }
+
+    /// 用单个已解析档案执行登录，必要时对 HTTPS 自签证书自动重试一次。
+    private static func loginSingleCandidate(
+        profile: ServerProfile,
+        password: String,
+        otp: String?,
+        report: ProgressReporter?
+    ) async throws -> (client: SynologyClient, profile: ServerProfile) {
+        var loginProfile = profile
         let client = SynologyClient(profile: loginProfile)
         do {
             try await client.login(password: password, otp: otp)
@@ -208,28 +236,30 @@ enum SynologyLoginHelper {
         }
     }
 
-    /// QuickConnect 档案每次登录前重新解析，直连档案原样返回。
-    private static func resolvedProfile(
+    /// QuickConnect 档案每次登录前重新解析为多个候选；直连档案原样返回。
+    private static func resolvedProfiles(
         for profile: ServerProfile,
         report: ProgressReporter?
-    ) async throws -> ServerProfile {
-        guard profile.isQuickConnect else { return profile }
-        var copy = profile
-        let rawID = copy.quickConnectID.isEmpty ? copy.host : copy.quickConnectID
+    ) async throws -> [ServerProfile] {
+        guard profile.isQuickConnect else { return [profile] }
+        let rawID = profile.quickConnectID.isEmpty ? profile.host : profile.quickConnectID
         let id = QuickConnectResolver.strip(rawID)
         let resolved = try await QuickConnectResolver().resolve(
             id,
-            preferred: copy.scheme,
+            preferred: profile.scheme,
             report: report
         )
-        copy.quickConnectID = id
-        copy.host = resolved.host
-        copy.port = resolved.port
-        copy.scheme = resolved.scheme
-        if copy.scheme == .https {
-            copy.ignoreInvalidCertificate = true
+        return resolved.candidates.map { candidate in
+            var copy = profile
+            copy.quickConnectID = id
+            copy.host = candidate.host
+            copy.port = candidate.port
+            copy.scheme = candidate.scheme
+            if copy.scheme == .https {
+                copy.ignoreInvalidCertificate = true
+            }
+            return copy
         }
-        return copy
     }
 
     /// 仅 QuickConnect HTTPS 在证书信任/域名不匹配时自动重试一次。
@@ -241,5 +271,16 @@ enum SynologyLoginHelper {
             return false
         }
         return true
+    }
+
+    /// 只有网络/HTTP/解析类问题才尝试下一个 QC 候选；账号密码/OTP 等认证错误不重试。
+    private static func shouldTryNextQuickConnectCandidate(_ error: Error) -> Bool {
+        guard let synologyError = error as? SynologyError else { return false }
+        switch synologyError {
+        case .network, .http, .invalidResponse, .decoding, .missingBaseURL, .cancelled:
+            return true
+        case .api, .notAuthenticated:
+            return false
+        }
     }
 }

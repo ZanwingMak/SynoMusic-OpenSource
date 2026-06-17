@@ -6,16 +6,23 @@ import Foundation
 /// 1. POST `global.quickconnect.to/Serv.php` 的 `get_server_info`；
 /// 2. 若返回 `errno=4 + sites=[...]`，说明 ID 不在该全球端点，需到 `sites` 中
 ///    的区域端点（如 `cnc.quickconnect.cn`）重试。
-/// 3. 拿到完整 `server` 后按 smartdns > ddns > external.ip > interface[].ip 优先级
-///    选 host；端口从 `service.ext_port_https` / `ext_port` / `port` 读取，0 视为无效。
+/// 3. 拿到完整 `server` 后生成多个候选地址；登录层会逐个尝试，避免单一候选不可达。
 ///
 /// 字段命名随 DSM 版本演变，因此做防御性解析；HTTP/HTTPS 通道由调用方传入。
 final class QuickConnectResolver: @unchecked Sendable {
 
-    struct Resolved {
+    struct Candidate: Hashable {
         let host: String
         let port: Int
         let scheme: ServerProfile.Scheme
+    }
+
+    struct Resolved {
+        let candidates: [Candidate]
+
+        var host: String { candidates[0].host }
+        var port: Int { candidates[0].port }
+        var scheme: ServerProfile.Scheme { candidates[0].scheme }
     }
 
     enum ResolveError: LocalizedError {
@@ -198,7 +205,7 @@ final class QuickConnectResolver: @unchecked Sendable {
         return serviceKeys.contains { dict[$0] != nil }
     }
 
-    /// 按可达性优先级从 server/service 字段里挑出最终连接地址。
+    /// 按可达性优先级从 server/service 字段里生成登录候选地址。
     private func pick(response: [String: Any], server: [String: Any], service: [String: Any], preferred: ServerProfile.Scheme) throws -> Resolved {
         // 端口：优先按通道字段；0 视为无效；缺失再用 service.port
         func nonZero(_ v: Any?) -> Int? {
@@ -217,7 +224,8 @@ final class QuickConnectResolver: @unchecked Sendable {
             }
         }()
 
-        // 候选地址优先级：smartdns（QuickConnect 智能解析域名）
+        // 候选地址优先级：pingpong_desc（群晖探测出的可达 host:port）
+        //                > smartdns（QuickConnect 智能解析域名）
         //                > ddns（用户自配的群晖 DDNS）
         //                > external.ip / external.ipv6（公网 IP）
         //                > interface[].ip（内网 IP，只在与 NAS 同网时可达）
@@ -248,10 +256,15 @@ final class QuickConnectResolver: @unchecked Sendable {
         }
 
         var seen = Set<String>()
-        guard let candidate = candidates.first(where: { seen.insert($0.host).inserted }) else {
+        let resolved = candidates.compactMap { item -> Candidate? in
+            let key = "\(scheme.rawValue)://\(item.host):\(item.port ?? port)"
+            guard seen.insert(key).inserted else { return nil }
+            return Candidate(host: item.host, port: item.port ?? port, scheme: scheme)
+        }
+        guard !resolved.isEmpty else {
             throw ResolveError.noHost
         }
-        return Resolved(host: candidate.host, port: candidate.port ?? port, scheme: scheme)
+        return Resolved(candidates: resolved)
     }
 
     /// 从 smartdns 字段中抽取直连域名。

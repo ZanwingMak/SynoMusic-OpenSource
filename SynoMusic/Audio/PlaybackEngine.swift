@@ -97,6 +97,8 @@ final class PlaybackEngine: ObservableObject {
     weak var apiClient: SynologyClient?
     /// 本地歌单仓库；用于锁屏 like 命令触发喜欢/取消。
     weak var playlistStore: PlaylistStore?
+    /// 下载管理器；播放时优先使用已缓存的本地文件。
+    weak var downloadManager: DownloadManager?
     /// 播放偏好（后台播放 / 锁屏 / AirPlay）；由 App 注入。
     private var settings: PlaybackSettings?
     private var bgObserver: NSObjectProtocol?
@@ -363,7 +365,9 @@ final class PlaybackEngine: ObservableObject {
         // 2. 已登录：走 Audio Station streamURL
         // 3. 未登录：走 Demo 模拟
         let url: URL?
-        if song.id.hasPrefix("radio:"), let path = song.path {
+        if let localURL = downloadManager?.localURL(for: song.id) {
+            url = localURL
+        } else if song.id.hasPrefix("radio:"), let path = song.path {
             url = URL(string: path)
         } else if let api = apiClient?.audioStation {
             let effective = transcodeOverride ?? quality

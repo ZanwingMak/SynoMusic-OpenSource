@@ -16,10 +16,10 @@ SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a 
 | :---: | :---: |
 | ![Player](docs/screenshots/04-player.png) | ![Editor](docs/screenshots/05-editor.png) |
 
-## Latest release: 1.2.4
+## Latest release: 1.2.6
 
-- Adds generated alternate app icons, playback/queue history, first-play full player presentation, and current quality/copy actions in the player.
-- Fixes QuickConnect region redirects, rating/delete requests, duplicate queue inserts, cancelled refresh toasts, and player menu polish with iOS liquid glass styling.
+- Adds player download/cache actions with shared Download Manager state and local-cache-first playback.
+- Fixes the full player menu dismissal layer, copy popover flicker, app icon edge artifacts, icon-switch localization, and improves QuickConnect fallback candidates.
 - See [`CHANGELOG.md`](CHANGELOG.md) for the full release notes.
 
 ## Features

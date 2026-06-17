@@ -7,6 +7,7 @@ struct FullPlayerView: View {
     @EnvironmentObject private var playback: PlaybackEngine
     @EnvironmentObject private var session: AppSession
     @EnvironmentObject private var playlists: PlaylistStore
+    @EnvironmentObject private var downloads: DownloadManager
     @EnvironmentObject private var theme: ThemeManager
     @Binding var isPresented: Bool
     @State private var showLyrics = false
@@ -17,7 +18,20 @@ struct FullPlayerView: View {
     @State private var ratingPending: Int?
     @State private var showSongInfo = false
     @State private var showSongEdit = false
+    @State private var showPlayerMenu: Bool
+    @State private var copyToastMessage: String?
+    @State private var copyToastTask: Task<Void, Never>?
     @State private var dominantColor: Color = Color(red: 0.18, green: 0.10, blue: 0.25)
+
+    /// 创建全屏播放器，并在调试参数要求时预展开右上角菜单。
+    init(isPresented: Binding<Bool>) {
+        self._isPresented = isPresented
+        #if DEBUG
+        self._showPlayerMenu = State(initialValue: ProcessInfo.processInfo.arguments.contains("-show-player-menu"))
+        #else
+        self._showPlayerMenu = State(initialValue: false)
+        #endif
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -44,6 +58,24 @@ struct FullPlayerView: View {
                         .padding(.bottom, max(Metrics.s, geo.safeAreaInsets.bottom))
                 }
                 .padding(.top, Metrics.l)
+                if showPlayerMenu {
+                    PlayerTopMenuOverlay(
+                        isPresented: $showPlayerMenu,
+                        song: playback.currentSong,
+                        downloadStatus: playback.currentSong.flatMap { downloads.status(for: $0.id) },
+                        onAppendNext: { if let s = playback.currentSong { playback.appendNext(s) } },
+                        onAddToPlaylist: { showAddToPlaylist = true },
+                        onDownload: { Task { await downloadCurrent() } },
+                        onRemoveDownload: { removeCurrentDownload() },
+                        onShowInfo: { showSongInfo = true },
+                        onShowEdit: { showSongEdit = true },
+                        currentRating: ratingPending ?? playback.currentSong?.rating,
+                        onRate: { stars in Task { await applyRating(stars) } },
+                        onDelete: { showDeleteConfirm = true }
+                    )
+                    .transition(.opacity)
+                    .zIndex(300)
+                }
             }
         }
         .preferredColorScheme(.dark)
@@ -74,6 +106,20 @@ struct FullPlayerView: View {
             }
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: playback.statusMessage)
+        .overlay(alignment: .center) {
+            if let copyToastMessage {
+                Text(copyToastMessage)
+                    .font(.nocBody.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .background(.black.opacity(0.72), in: Capsule(style: .continuous))
+                    .transition(.scale(scale: 0.92).combined(with: .opacity))
+                    .allowsHitTesting(false)
+            }
+        }
+        .animation(.easeInOut(duration: 0.16), value: copyToastMessage)
+        .onAppear { syncDebugMenuState() }
         .sheet(isPresented: $showQueue) {
             QueuePanel().presentationDetents([.medium, .large])
         }
@@ -111,6 +157,15 @@ struct FullPlayerView: View {
     private var deleteAlertMessage: String {
         let title = playback.currentSong?.title ?? "该歌曲".t
         return "将通过 File Station 永久删除".t + "「\(title)」" + "对应的文件。该操作不可撤销。".t
+    }
+
+    /// DEBUG 下按启动参数打开播放器菜单，便于模拟器截图验收。
+    private func syncDebugMenuState() {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-show-player-menu") {
+            showPlayerMenu = true
+        }
+        #endif
     }
 
     /// 调用 setrating 接口。
@@ -151,6 +206,45 @@ struct FullPlayerView: View {
         }
     }
 
+    /// 下载当前歌曲到本地缓存，并同步设置页下载管理。
+    private func downloadCurrent() async {
+        guard let song = playback.currentSong, !song.id.hasPrefix("radio:") else {
+            playback.setStatus("无法下载当前歌曲".t)
+            return
+        }
+        guard let api = session.client?.audioStation else {
+            playback.setStatus("请先连接服务器再下载".t)
+            return
+        }
+        guard let url = api.streamURL(songID: song.id, format: playback.quality.streamFormat) else {
+            playback.setStatus("无法下载当前歌曲".t)
+            return
+        }
+        let fileExtension = playback.quality == .original ? (song.codec ?? "mp3") : "mp3"
+        do {
+            playback.setStatus("正在下载".t + "：\(song.title)", persistent: true)
+            try await downloads.download(
+                song: song,
+                streamURL: url,
+                fileExtension: fileExtension,
+                allowInvalidCertificate: session.client?.profile.ignoreInvalidCertificate == true
+            )
+            playback.setStatus("下载完成".t + "：\(song.title)")
+            Haptics.success()
+        } catch {
+            playback.setStatus("下载失败".t + "：\((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)")
+            Haptics.warning()
+        }
+    }
+
+    /// 删除当前歌曲的本地缓存文件。
+    private func removeCurrentDownload() {
+        guard let song = playback.currentSong else { return }
+        downloads.remove(songID: song.id)
+        playback.setStatus("已删除下载".t + "：\(song.title)")
+        Haptics.success()
+    }
+
     /// 是否有任一定时停止策略已激活，决定月亮图标着色。
     private var sleepActive: Bool {
         playback.sleepRemaining != nil || playback.stopAtTrackEnd
@@ -188,18 +282,7 @@ struct FullPlayerView: View {
                     .lineLimit(1)
             }
             Spacer()
-            // 把更多操作抽到独立视图，仅依赖 currentSong 的 id。
-            TopBarMenu(
-                song: playback.currentSong,
-                onAppendNext: { if let s = playback.currentSong { playback.appendNext(s) } },
-                onAddToPlaylist: { showAddToPlaylist = true },
-                onShowInfo: { showSongInfo = true },
-                onShowEdit: { showSongEdit = true },
-                currentRating: ratingPending ?? playback.currentSong?.rating,
-                onRate: { stars in Task { await applyRating(stars) } },
-                onDelete: { showDeleteConfirm = true }
-            )
-            .id(playback.currentSong?.id ?? "none")
+            TopBarMenu(isPresented: $showPlayerMenu)
         }
         .padding(.horizontal, Metrics.l)
         .onChange(of: playback.currentSong?.id) { _, _ in
@@ -208,23 +291,42 @@ struct FullPlayerView: View {
     }
 }
 
-/// 全屏播放器右上的菜单：用 popover + 系统液态玻璃材质渲染，位置由系统锚定。
+/// 全屏播放器右上角的菜单按钮；面板由 FullPlayerView 的全屏 overlay 承载。
 private struct TopBarMenu: View {
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        Button {
+            Haptics.tap()
+            withAnimation(.spring(response: 0.24, dampingFraction: 0.84)) {
+                isPresented.toggle()
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 38, height: 38)
+                .background(.white.opacity(0.12), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("更多".t)
+    }
+}
+
+/// 播放页顶部菜单面板：全屏透明层负责点击外部关闭，右上角玻璃面板展示操作。
+private struct PlayerTopMenuOverlay: View {
+    @Binding var isPresented: Bool
     let song: Song?
+    let downloadStatus: DownloadStatus?
     let onAppendNext: () -> Void
     let onAddToPlaylist: () -> Void
+    let onDownload: () -> Void
+    let onRemoveDownload: () -> Void
     let onShowInfo: () -> Void
     let onShowEdit: () -> Void
     let currentRating: Int?
     let onRate: (Int) -> Void
     let onDelete: () -> Void
-    @State private var showMenu: Bool = {
-        #if DEBUG
-        return ProcessInfo.processInfo.arguments.contains("-show-player-menu")
-        #else
-        return false
-        #endif
-    }()
     @State private var showRating = false
 
     private let menuWidth: CGFloat = 252
@@ -236,32 +338,23 @@ private struct TopBarMenu: View {
     }
 
     var body: some View {
-        Button {
-            Haptics.tap()
-            showRating = false
-            showMenu = true
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 38, height: 38)
-                .background(.white.opacity(0.12), in: Circle())
-        }
-        .buttonStyle(.plain)
-        .overlay(alignment: .topTrailing) {
-            if showMenu {
-                PlayerGlassMenu {
-                    menuContent
-                }
-                .frame(width: menuWidth)
-                .offset(y: 48)
-                .transition(.scale(scale: 0.96, anchor: .topTrailing).combined(with: .opacity))
-                .zIndex(200)
+        ZStack(alignment: .topTrailing) {
+            Color.black.opacity(0.001)
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture { dismiss() }
+
+            PlayerGlassMenu {
+                menuContent
             }
+            .frame(width: menuWidth)
+            .padding(.top, Metrics.l + 100)
+            .padding(.trailing, Metrics.l)
+            .transition(.scale(scale: 0.96, anchor: .topTrailing).combined(with: .opacity))
         }
-        .animation(.spring(response: 0.28, dampingFraction: 0.84), value: showMenu)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        .onDisappear { showRating = false }
         .animation(.easeInOut(duration: 0.16), value: showRating)
-        .zIndex(200)
     }
 
     /// popover 内的两种面板切换。
@@ -285,6 +378,7 @@ private struct TopBarMenu: View {
             PlayerMenuRow(icon: "text.badge.plus", title: "添加到歌单…".t) {
                 perform(onAddToPlaylist)
             }
+            downloadRow
             PlayerMenuRow(icon: "info.circle", title: "歌曲信息".t) {
                 perform(onShowInfo)
             }
@@ -308,6 +402,33 @@ private struct TopBarMenu: View {
         .padding(.vertical, 6)
     }
 
+    /// 下载菜单行：根据当前缓存状态切换为下载、重新下载或删除下载。
+    @ViewBuilder
+    private var downloadRow: some View {
+        switch downloadStatus {
+        case .completed:
+            PlayerMenuRow(icon: "trash.circle", title: "删除下载".t, role: .destructive) {
+                perform(onRemoveDownload)
+            }
+        case .downloading, .pending:
+            PlayerMenuRow(icon: "arrow.down.circle", title: "正在下载".t, isEnabled: false) {}
+        case .failed:
+            PlayerMenuRow(icon: "arrow.clockwise.circle", title: "重新下载".t) {
+                perform(onDownload)
+            }
+        case .none:
+            PlayerMenuRow(icon: "arrow.down.circle", title: "下载歌曲".t, isEnabled: canDownloadCurrentSong) {
+                perform(onDownload)
+            }
+        }
+    }
+
+    /// 判断当前歌曲是否支持本地下载。
+    private var canDownloadCurrentSong: Bool {
+        guard let song else { return false }
+        return !song.id.hasPrefix("radio:")
+    }
+
     /// 评分子面板。
     private var ratingPanel: some View {
         VStack(spacing: 0) {
@@ -329,13 +450,19 @@ private struct TopBarMenu: View {
         .padding(.vertical, 6)
     }
 
-    /// 执行动作并关闭 popover。
+    /// 执行动作并关闭菜单。
     private func perform(_ action: @escaping () -> Void) {
         Haptics.tap()
-        withAnimation(.spring(response: 0.24, dampingFraction: 0.86)) {
-            showMenu = false
-        }
+        dismiss()
         action()
+    }
+
+    /// 关闭菜单并重置子面板状态。
+    private func dismiss() {
+        withAnimation(.spring(response: 0.24, dampingFraction: 0.86)) {
+            isPresented = false
+            showRating = false
+        }
     }
 }
 
@@ -654,7 +781,18 @@ extension FullPlayerView {
     private func copyToPasteboard(_ text: String) {
         guard !text.isEmpty else { return }
         UIPasteboard.general.string = text
-        playback.setStatus("已复制".t)
+        copyToastTask?.cancel()
+        withAnimation(.easeInOut(duration: 0.16)) {
+            copyToastMessage = "已复制".t
+        }
+        copyToastTask = Task {
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    copyToastMessage = nil
+                }
+            }
+        }
         Haptics.success()
     }
 }

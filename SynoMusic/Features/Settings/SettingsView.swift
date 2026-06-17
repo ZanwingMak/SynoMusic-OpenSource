@@ -541,7 +541,7 @@ private struct ServerRowItem: View {
 
 /// 已下载歌曲管理。
 struct DownloadsListView: View {
-    @StateObject private var downloads = DownloadManager()
+    @EnvironmentObject private var downloads: DownloadManager
     var body: some View {
         Group {
             if downloads.entries.isEmpty {
@@ -562,7 +562,11 @@ struct DownloadsListView: View {
                     Section("歌曲".t) {
                         ForEach(downloads.entries) { e in
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(e.title).font(.nocBody)
+                                HStack {
+                                    Text(e.title).font(.nocBody)
+                                    Spacer()
+                                    statusLabel(e.status)
+                                }
                                 HStack {
                                     Text(e.artist ?? "").font(.nocLabel).foregroundStyle(.secondary)
                                     Spacer()
@@ -578,5 +582,24 @@ struct DownloadsListView: View {
             }
         }
         .navigationTitle("下载管理".t)
+    }
+
+    /// 下载状态标签，帮助用户区分下载中、失败和已完成。
+    @ViewBuilder
+    private func statusLabel(_ status: DownloadStatus) -> some View {
+        switch status {
+        case .completed:
+            Text("已下载".t)
+                .font(.nocLabel)
+                .foregroundStyle(.green)
+        case .downloading, .pending:
+            Text("下载中".t)
+                .font(.nocLabel)
+                .foregroundStyle(Theme.accent)
+        case .failed:
+            Text("下载失败".t)
+                .font(.nocLabel)
+                .foregroundStyle(.red)
+        }
     }
 }

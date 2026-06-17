@@ -5,6 +5,22 @@
 
 ## [Unreleased]
 
+## [1.2.6] - 2026-06-17
+
+### 新增
+- 播放页右上菜单新增「下载歌曲 / 重新下载 / 删除下载」，下载内容进入设置页下载管理，并在播放时优先使用本地缓存。
+- 设置页下载管理改为共享全局下载状态，可查看下载中、已下载与下载失败条目。
+
+### 修复
+- 修复播放页右上菜单无法通过点击外部关闭的问题，菜单关闭层改为覆盖整个播放页。
+- 修复复制歌曲标题或作者时复用全局播放状态 toast 导致弹窗闪烁的问题，改为播放页内的独立轻提示。
+- 修复切换 App 图标后的应用内提示未补齐多语言的问题；系统自带确认弹窗仍由 iOS 控制。
+- 修复 App 图标资源边缘带白线的问题，重新裁切主图标、候选图标与设置页预览图。
+- 增强 QuickConnect 登录：登录时会按解析出的 `pingpong_desc`、`smartdns`、DDNS、公网 IP 等候选地址逐个尝试。
+
+### 版本
+- 发布版本号更新为 `1.2.6`。
+
 ## [1.2.4] - 2026-06-16
 
 ### 新增
@@ -224,7 +240,8 @@
 - Swift 6 严格并发：`SynologyClient` / `AudioStationAPI` 标记 `@unchecked Sendable` 并加锁保护 `sid`
 - iOS 17.0 起；以 Xcode 26 / Swift 6.3 通过编译
 
-[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.4...HEAD
+[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.6...HEAD
+[1.2.6]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.4...v1.2.6
 [1.2.4]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.1...v1.2.2
