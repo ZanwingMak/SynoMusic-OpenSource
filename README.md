@@ -16,10 +16,10 @@ SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a 
 | :---: | :---: |
 | ![Player](docs/screenshots/04-player.png) | ![Editor](docs/screenshots/05-editor.png) |
 
-## Latest release: 1.3.3
+## Latest release: 1.3.4
 
-- Moves lyric editing back into the player more menu with localized labels.
-- Refines the lyric settings panel and reserves space for the mini player in Browse.
+- Fixes returning from the password sign-in page opened from Settings.
+- Keeps server switching smooth when a profile needs manual password entry.
 - See [`CHANGELOG.md`](CHANGELOG.md) for the full release notes.
 
 ## Features

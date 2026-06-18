@@ -16,10 +16,10 @@ SynoMusic 通过 DSM 的 Audio Station Web API 工作，提供干净流畅的 iO
 | :---: | :---: |
 | ![播放器](docs/screenshots/04-player.png) | ![编辑器](docs/screenshots/05-editor.png) |
 
-## 最新版本：1.3.3
+## 最新版本：1.3.4
 
-- 歌词编辑入口移回播放页右上角更多菜单，并补齐多语言。
-- 优化歌词设置面板布局，并为浏览页预留迷你播放器底部空间。
+- 修复从设置页打开密码登录页后，登录成功不会自动返回设置页的问题。
+- 优化需要手动输入密码时的服务器切换体验。
 - 完整更新见 [`CHANGELOG.md`](CHANGELOG.md)。
 
 ## 功能

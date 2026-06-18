@@ -106,10 +106,12 @@ struct LoginView: View {
         .onAppear { restoreSaved() }
     }
 
+    /// 从 Keychain 恢复当前服务器保存过的密码，减少重复输入。
     private func restoreSaved() {
         if let saved = serverStore.password(for: profile) { password = saved }
     }
 
+    /// 使用当前输入的凭据登录服务器；成功后更新会话并关闭当前登录页。
     private func connect() async {
         isLoading = true
         defer { isLoading = false }
@@ -127,6 +129,7 @@ struct LoginView: View {
             updated.lastConnectedAt = Date()
             serverStore.upsert(updated)
             serverStore.setActive(updated)
+            dismiss()
             session.sign(in: result.client)
             Haptics.success()
         } catch let SynologyError.api(code, _) where code == 403 {

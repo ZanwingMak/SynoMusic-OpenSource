@@ -5,6 +5,14 @@
 
 ## [Unreleased]
 
+## [1.3.4] - 2026-06-18
+
+### 修复
+- 修复从设置页点击未保存密码的服务器并完成登录后，登录页不会自动关闭回到设置页的问题。
+
+### 版本
+- 发布版本号更新为 `1.3.4`。
+
 ## [1.3.3] - 2026-06-18
 
 ### 变更
@@ -342,7 +350,8 @@
 - Swift 6 严格并发：`SynologyClient` / `AudioStationAPI` 标记 `@unchecked Sendable` 并加锁保护 `sid`
 - iOS 17.0 起；以 Xcode 26 / Swift 6.3 通过编译
 
-[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.3...HEAD
+[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.4...HEAD
+[1.3.4]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.3...v1.3.4
 [1.3.3]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.0...v1.3.1
