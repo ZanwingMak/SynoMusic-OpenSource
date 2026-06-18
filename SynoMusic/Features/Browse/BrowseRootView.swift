@@ -3,6 +3,7 @@ import SwiftUI
 /// 浏览入口：分类卡片。
 struct BrowseRootView: View {
     @EnvironmentObject private var session: AppSession
+    @EnvironmentObject private var playback: PlaybackEngine
 
     private let categories: [(label: String, icon: String, route: BrowseRoute, gradient: [Color])] = [
         ("所有歌曲".t, "music.note", .allSongs, [Color(red: 0.55, green: 0.4, blue: 0.95), Color(red: 0.25, green: 0.25, blue: 0.65)]),
@@ -29,6 +30,7 @@ struct BrowseRootView: View {
             }
             .padding(Metrics.l)
         }
+        .reserveMiniPlayer(visible: playback.currentSong != nil)
         .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle("浏览".t)
     }

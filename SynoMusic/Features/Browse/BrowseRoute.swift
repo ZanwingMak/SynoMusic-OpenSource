@@ -50,9 +50,10 @@ extension BrowseRoute {
 extension View {
     /// 把 BrowseRoute 的 navigationDestination 挂到当前 NavigationStack。
     /// 任何承载 `NavigationLink(value:)` 的 Tab 都需要 attach 一次。
-    func browseRoutes() -> some View {
+    func browseRoutes(reserveMiniPlayer: Bool = false) -> some View {
         navigationDestination(for: BrowseRoute.self) { route in
             route.destination
+                .reserveMiniPlayer(visible: reserveMiniPlayer)
         }
     }
 }

@@ -5,6 +5,16 @@
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-06-18
+
+### 变更
+- 播放页「歌词编辑」入口移入右上角更多菜单，并补齐多语言文案。
+- 重做歌词设置面板布局，避免重复标签和空白行，字号与延迟调整更紧凑。
+- 浏览页主页和二级页面为迷你播放器预留底部空间，避免列表内容被遮挡。
+
+### 版本
+- 发布版本号更新为 `1.3.3`。
+
 ## [1.3.2] - 2026-06-18
 
 ### 变更
@@ -332,7 +342,8 @@
 - Swift 6 严格并发：`SynologyClient` / `AudioStationAPI` 标记 `@unchecked Sendable` 并加锁保护 `sid`
 - iOS 17.0 起；以 Xcode 26 / Swift 6.3 通过编译
 
-[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.2...HEAD
+[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.3...HEAD
+[1.3.3]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.9...v1.3.0

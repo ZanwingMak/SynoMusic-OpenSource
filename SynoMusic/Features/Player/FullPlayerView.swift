@@ -77,6 +77,7 @@ struct FullPlayerView: View {
                         onOpenDownloadManager: { openDownloadManager() },
                         onShowInfo: { showSongInfo = true },
                         onShowEdit: { showSongEdit = true },
+                        onOpenLyricEditor: { openLyricEditorFromMenu() },
                         currentRating: ratingPending ?? playback.currentSong?.rating,
                         onRate: { stars in Task { await applyRating(stars) } },
                         onDelete: { showDeleteConfirm = true }
@@ -368,6 +369,7 @@ private struct PlayerTopMenuOverlay: View {
     let onOpenDownloadManager: () -> Void
     let onShowInfo: () -> Void
     let onShowEdit: () -> Void
+    let onOpenLyricEditor: () -> Void
     let currentRating: Int?
     let onRate: (Int) -> Void
     let onDelete: () -> Void
@@ -421,6 +423,9 @@ private struct PlayerTopMenuOverlay: View {
             }
             PlayerMenuRow(icon: "text.badge.plus", title: "添加到歌单…".t) {
                 perform(onAddToPlaylist)
+            }
+            PlayerMenuRow(icon: "music.note.list", title: "歌词编辑".t) {
+                perform(onOpenLyricEditor)
             }
             downloadRow
             PlayerMenuRow(icon: "info.circle", title: "歌曲信息".t) {
@@ -667,16 +672,11 @@ extension FullPlayerView {
 
     private var trackInfo: some View {
         HStack(alignment: .center, spacing: Metrics.m) {
-            VStack(alignment: .leading, spacing: showLyrics ? 4 : 6) {
-                if showLyrics {
-                    lyricSettingsButton
-                        .transition(.scale(scale: 0.82).combined(with: .opacity))
-                }
-
+            VStack(alignment: .leading, spacing: 6) {
                 Text(playback.currentSong?.title ?? "")
                     .font(.nocTitleHero)
                     .foregroundStyle(.white)
-                    .lineLimit(showLyrics ? 1 : 2)
+                    .lineLimit(2)
                 HStack(spacing: 8) {
                     Text(playback.currentSong?.artist ?? "")
                         .font(.nocBody)
@@ -730,21 +730,6 @@ extension FullPlayerView {
             }
         }
         .padding(.horizontal, Metrics.l)
-    }
-
-    /// 歌词设置入口；只在歌词页展示，放在标题块左上方。
-    private var lyricSettingsButton: some View {
-        Button {
-            openLyricSettings()
-        } label: {
-            Image(systemName: "music.note.list")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.75))
-                .frame(width: 28, height: 22, alignment: .leading)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("歌词设置".t)
     }
 
     /// 当前播放音质徽标。
@@ -924,6 +909,16 @@ extension FullPlayerView {
         showLyricSettings = true
     }
 
+    /// 从右上角菜单进入歌词编辑；先切到歌词页，确保实时预览能被看到。
+    private func openLyricEditorFromMenu() {
+        if !showLyrics {
+            withAnimation(.easeInOut(duration: 0.24)) {
+                showLyrics = true
+            }
+        }
+        openLyricSettings()
+    }
+
     /// 保存歌词设置草稿，并写入播放引擎和本地偏好。
     private func saveLyricSettings() {
         let fontDelta = draftLyricFontSize - playback.lyricFontSize
@@ -1093,22 +1088,42 @@ private struct LyricSettingsSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("字体大小".t) {
-                    Stepper(value: $fontSize, in: 16...28, step: 1) {
-                        valueRow(title: "字体大小".t, value: "\(Int(fontSize))")
+            ScrollView {
+                VStack(spacing: 16) {
+                    lyricSettingCard(
+                        title: "字体大小".t,
+                        value: "\(Int(fontSize))",
+                        onDecrease: { fontSize = max(16, fontSize - 1) },
+                        onIncrease: { fontSize = min(28, fontSize + 1) }
+                    ) {
+                        Slider(value: $fontSize, in: 16...28, step: 1)
                     }
-                    Slider(value: $fontSize, in: 16...28, step: 1)
-                }
-                Section("歌词延迟".t) {
-                    Stepper(value: $delay, in: -3...3, step: 0.1) {
-                        valueRow(title: "歌词延迟".t, value: formattedDelay)
+
+                    lyricSettingCard(
+                        title: "歌词延迟".t,
+                        value: formattedDelay,
+                        onDecrease: { delay = roundedDelay(delay - 0.1) },
+                        onIncrease: { delay = roundedDelay(delay + 0.1) }
+                    ) {
+                        Slider(value: $delay, in: -3...3, step: 0.1)
                     }
-                    Slider(value: $delay, in: -3...3, step: 0.1)
+
+                    HStack(spacing: 12) {
+                        Text("跟随进度滚动".t)
+                            .font(.nocBody.weight(.semibold))
+                            .foregroundStyle(.primary)
+                        Spacer(minLength: 0)
+                        Toggle("", isOn: $autoScroll)
+                            .labelsHidden()
+                            .tint(Theme.accent)
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(height: 58)
+                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                 }
-                Section {
-                    Toggle("跟随进度滚动".t, isOn: $autoScroll)
-                }
+                .padding(.horizontal, 22)
+                .padding(.top, 18)
+                .padding(.bottom, 24)
             }
             .navigationTitle("歌词设置".t)
             .navigationBarTitleDisplayMode(.inline)
@@ -1129,15 +1144,60 @@ private struct LyricSettingsSheet: View {
         String(format: "%+.1fs", delay)
     }
 
-    /// 设置项标题和值的紧凑展示行。
-    private func valueRow(title: String, value: String) -> some View {
-        HStack {
-            Text(title)
-            Spacer()
-            Text(value)
-                .font(.caption.monospacedDigit().weight(.semibold))
-                .foregroundStyle(.secondary)
+    /// 歌词设置卡片：标题、数值、步进按钮和滑杆放在同一块里，避免重复标签。
+    private func lyricSettingCard<SliderContent: View>(
+        title: String,
+        value: String,
+        onDecrease: @escaping () -> Void,
+        onIncrease: @escaping () -> Void,
+        @ViewBuilder slider: () -> SliderContent
+    ) -> some View {
+        VStack(spacing: 14) {
+            HStack(spacing: 12) {
+                Text(title)
+                    .font(.nocBody.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Spacer(minLength: 0)
+                Text(value)
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 48, alignment: .trailing)
+                HStack(spacing: 0) {
+                    lyricStepButton(systemName: "minus", action: onDecrease)
+                    Divider().frame(height: 18)
+                    lyricStepButton(systemName: "plus", action: onIncrease)
+                }
+                .frame(height: 34)
+                .background(.white.opacity(0.08), in: Capsule(style: .continuous))
+            }
+
+            slider()
+                .tint(Theme.accent)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    /// 歌词设置里的小步进按钮。
+    private func lyricStepButton(systemName: String, action: @escaping () -> Void) -> some View {
+        Button {
+            Haptics.tap()
+            action()
+        } label: {
+            Image(systemName: systemName)
+                .font(.system(size: 13, weight: .bold))
+                .frame(width: 36, height: 34)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+    }
+
+    /// 把歌词延迟限制在范围内并保留一位小数，避免浮点误差显示。
+    private func roundedDelay(_ value: Double) -> Double {
+        let clamped = min(3, max(-3, value))
+        return (clamped * 10).rounded() / 10
     }
 }
 

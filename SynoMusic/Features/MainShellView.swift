@@ -20,8 +20,10 @@ struct MainShellView: View {
                     .tabItem { Label("资料库".t, systemImage: "rectangle.stack.fill") }
                     .tag(MainTab.library)
 
-                NavigationStack { BrowseRootView().browseRoutes() }
-                    .reserveMiniPlayer(visible: playback.currentSong != nil)
+                NavigationStack {
+                    BrowseRootView()
+                        .browseRoutes(reserveMiniPlayer: playback.currentSong != nil)
+                }
                     .tabItem { Label("浏览".t, systemImage: "square.grid.2x2.fill") }
                     .tag(MainTab.browse)
 
