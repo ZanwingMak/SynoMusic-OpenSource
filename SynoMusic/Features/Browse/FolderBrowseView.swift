@@ -90,25 +90,27 @@ private struct FolderRow: View {
 private struct FolderSongRow: View {
     let node: FolderNode
     let onTap: () -> Void
-    @State private var pressed: Bool = false
 
     var body: some View {
         Button(action: onTap) {
             FolderRow(node: node)
                 .padding(.horizontal, 4)
                 .contentShape(Rectangle())
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(pressed ? Theme.accent.opacity(0.10) : Color.clear)
-                )
-                .scaleEffect(pressed ? 0.98 : 1)
-                .animation(.spring(response: 0.25, dampingFraction: 0.7), value: pressed)
         }
-        .buttonStyle(.plain)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in if !pressed { pressed = true } }
-                .onEnded { _ in pressed = false }
-        )
+        .buttonStyle(FolderSongButtonStyle())
+    }
+}
+
+/// 文件夹歌曲行的按压样式：不拦截 List 的滚动手势。
+private struct FolderSongButtonStyle: ButtonStyle {
+    /// 根据系统按钮按压状态绘制轻量反馈。
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(configuration.isPressed ? Theme.accent.opacity(0.10) : Color.clear)
+            )
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }

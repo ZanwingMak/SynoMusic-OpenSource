@@ -90,6 +90,12 @@ final class QuickConnectResolver: @unchecked Sendable {
                 let obj = result.object
                 let errno = obj["errno"] as? Int ?? 0
                 if errno == 0, let server = obj["server"] as? [String: Any] {
+                    if let tunnel = try? await resolveTunnel(from: obj, endpoint: endpoint, id: id, preferred: preferred),
+                       let tunnelServer = tunnel.object["server"] as? [String: Any] {
+                        let tunnelService = pickService(from: tunnel.object, server: tunnelServer, portalID: tunnel.portalID)
+                        let actualScheme = scheme(for: tunnel.portalID) ?? preferred
+                        return try pick(response: tunnel.object, server: tunnelServer, service: tunnelService, preferred: actualScheme)
+                    }
                     let service = pickService(from: obj, server: server, portalID: result.portalID)
                     let actualScheme = scheme(for: result.portalID) ?? preferred
                     return try pick(response: obj, server: server, service: service, preferred: actualScheme)
@@ -112,14 +118,53 @@ final class QuickConnectResolver: @unchecked Sendable {
         let portalID: String
     }
 
+    /// 单次 QuickConnect 请求体及对应的 DSM portal 标识。
+    private struct QuickConnectAttempt {
+        let body: String
+        let portals: [String]
+    }
+
     /// 请求指定 QuickConnect 端点；不同 DSM/区域端点接受的字段略有差异，因此串行尝试多种 body。
     private func postServerInfo(host: String, id: String, preferred: ServerProfile.Scheme) async throws -> [ServerInfoResult] {
-        guard let url = URL(string: "https://\(host)/Serv.php") else {
-            throw ResolveError.invalidResponse(detail: "URL")
-        }
         let firstPortal = preferred == .https ? "dsm_portal_https" : "dsm_portal"
         let secondPortal = preferred == .https ? "dsm_portal" : "dsm_portal_https"
         let safeID = jsonEscaped(id)
+
+        let attempts = [
+            QuickConnectAttempt(
+                body: #"[{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(firstPortal)","serverID":"\#(safeID)","server_id":"\#(safeID)","is_gofile":false},{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(secondPortal)","serverID":"\#(safeID)","server_id":"\#(safeID)","is_gofile":false}]"#,
+                portals: [firstPortal, secondPortal]
+            ),
+            QuickConnectAttempt(
+                body: #"{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(firstPortal)","serverID":"\#(safeID)","server_id":"\#(safeID)","is_gofile":false}"#,
+                portals: [firstPortal]
+            ),
+            QuickConnectAttempt(
+                body: #"{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(safeID)","serverID":"\#(safeID)","server_id":"\#(safeID)","service":"\#(firstPortal)","is_gofile":false}"#,
+                portals: [firstPortal]
+            )
+        ]
+        return try await postQuickConnect(host: host, attempts: attempts)
+    }
+
+    /// 请求 QuickConnect tunnel，让群晖返回稳定的中继 relay 地址。
+    private func postTunnelInfo(host: String, id: String, preferred: ServerProfile.Scheme) async throws -> [ServerInfoResult] {
+        let safeID = jsonEscaped(id)
+        let portal = preferred == .https ? "mainapp_https" : "mainapp"
+        let attempts = [
+            QuickConnectAttempt(
+                body: #"[{"version":1,"command":"request_tunnel","stop_when_error":false,"stop_when_success":true,"id":"\#(portal)","serverID":"\#(safeID)","server_id":"\#(safeID)","is_gofile":false,"path":""}]"#,
+                portals: [portal]
+            )
+        ]
+        return try await postQuickConnect(host: host, attempts: attempts)
+    }
+
+    /// 发送 QuickConnect 请求并解析返回对象。
+    private func postQuickConnect(host: String, attempts: [QuickConnectAttempt]) async throws -> [ServerInfoResult] {
+        guard let url = URL(string: "https://\(host)/Serv.php") else {
+            throw ResolveError.invalidResponse(detail: "URL")
+        }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -137,22 +182,6 @@ final class QuickConnectResolver: @unchecked Sendable {
         let cfg = URLSessionConfiguration.ephemeral
         cfg.timeoutIntervalForRequest = 12
         let session = URLSession(configuration: cfg)
-
-        let attempts: [(body: String, portals: [String])] = [
-            (
-                #"[{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(firstPortal)","serverID":"\#(safeID)","server_id":"\#(safeID)","is_gofile":false},{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(secondPortal)","serverID":"\#(safeID)","server_id":"\#(safeID)","is_gofile":false}]"#,
-                [firstPortal, secondPortal]
-            ),
-            (
-                #"{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(firstPortal)","serverID":"\#(safeID)","server_id":"\#(safeID)","is_gofile":false}"#,
-                [firstPortal]
-            ),
-            (
-                #"{"version":1,"command":"get_server_info","stop_when_error":false,"stop_when_success":false,"id":"\#(safeID)","serverID":"\#(safeID)","server_id":"\#(safeID)","service":"\#(firstPortal)","is_gofile":false}"#,
-                [firstPortal]
-            )
-        ]
-
         var lastResults: [ServerInfoResult]?
         for attempt in attempts {
             req.httpBody = attempt.body.data(using: .utf8)
@@ -177,6 +206,22 @@ final class QuickConnectResolver: @unchecked Sendable {
         }
         guard let lastResults else { throw ResolveError.invalidResponse(detail: "\(host) empty") }
         return lastResults
+    }
+
+    /// 基于 `get_server_info` 的控制端点继续建立 QuickConnect tunnel。
+    private func resolveTunnel(
+        from info: [String: Any],
+        endpoint: String,
+        id: String,
+        preferred: ServerProfile.Scheme
+    ) async throws -> ServerInfoResult? {
+        let env = info["env"] as? [String: Any]
+        let tunnelHost = (env?["control_host"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? endpoint
+        let results = try await postTunnelInfo(host: tunnelHost, id: id, preferred: preferred)
+        return results.first { result in
+            let errno = result.object["errno"] as? Int ?? 0
+            return errno == 0 && result.object["server"] is [String: Any]
+        }
     }
 
     /// 给 QuickConnect 返回对象补上对应的 portal ID。

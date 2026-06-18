@@ -5,6 +5,21 @@
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-06-18
+
+### 变更
+- 播放页歌词设置入口移到歌曲标题区域左上方，颜色与播放器其它操作图标保持一致。
+- 歌词设置支持实时预览字号、滚动与延迟，只有点击保存后才写入偏好设置。
+- QuickConnect 登录优先使用群晖中继接口返回的 HTTPS 设备地址，并复用最近一次可用地址。
+
+### 修复
+- 修复 QuickConnect 外网登录在部分网络下长时间停留 connecting 的问题。
+- 修复缺少已保存密码时只提示不跳转登录页的问题。
+- 修复浏览文件夹列表滚动被行按压手势拦截的问题，并避免二级页面底部被迷你播放器遮挡。
+
+### 版本
+- 发布版本号更新为 `1.3.2`。
+
 ## [1.3.1] - 2026-06-18
 
 ### 新增
@@ -317,7 +332,8 @@
 - Swift 6 严格并发：`SynologyClient` / `AudioStationAPI` 标记 `@unchecked Sendable` 并加锁保护 `sid`
 - iOS 17.0 起；以 Xcode 26 / Swift 6.3 通过编译
 
-[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.2...HEAD
+[1.3.2]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.9...v1.3.0
 [1.2.9]: https://github.com/ZanwingMak/SynoMusic/compare/v1.2.8...v1.2.9

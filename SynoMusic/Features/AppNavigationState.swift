@@ -11,6 +11,7 @@ enum MainTab: Hashable {
 /// 设置页可被外部直达的子页面。
 enum SettingsRoute: Hashable {
     case downloads
+    case login(ServerProfile)
 }
 
 /// App 内部导航状态：让全屏播放器等浮层可以请求切换 Tab 或进入设置子页。
@@ -42,5 +43,11 @@ final class AppNavigationState: ObservableObject {
         selectedTab = .settings
         settingsPath = NavigationPath()
         settingsPath.append(SettingsRoute.downloads)
+    }
+
+    /// 切到设置页并打开指定服务器的手动登录页。
+    func openLogin(for profile: ServerProfile) {
+        selectedTab = .settings
+        settingsPath.append(SettingsRoute.login(profile))
     }
 }

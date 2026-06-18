@@ -15,28 +15,33 @@ struct MainShellView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $navigation.selectedTab) {
-                NavigationStack { LibraryHomeView().browseRoutes().reserveMiniPlayer(visible: playback.currentSong != nil) }
+                NavigationStack { LibraryHomeView().browseRoutes() }
+                    .reserveMiniPlayer(visible: playback.currentSong != nil)
                     .tabItem { Label("资料库".t, systemImage: "rectangle.stack.fill") }
                     .tag(MainTab.library)
 
-                NavigationStack { BrowseRootView().browseRoutes().reserveMiniPlayer(visible: playback.currentSong != nil) }
+                NavigationStack { BrowseRootView().browseRoutes() }
+                    .reserveMiniPlayer(visible: playback.currentSong != nil)
                     .tabItem { Label("浏览".t, systemImage: "square.grid.2x2.fill") }
                     .tag(MainTab.browse)
 
-                NavigationStack { SearchView().browseRoutes().reserveMiniPlayer(visible: playback.currentSong != nil) }
+                NavigationStack { SearchView().browseRoutes() }
+                    .reserveMiniPlayer(visible: playback.currentSong != nil)
                     .tabItem { Label("搜索".t, systemImage: "magnifyingglass") }
                     .tag(MainTab.search)
 
                 NavigationStack(path: $navigation.settingsPath) {
                     SettingsView()
-                        .reserveMiniPlayer(visible: playback.currentSong != nil)
                         .navigationDestination(for: SettingsRoute.self) { route in
                             switch route {
                             case .downloads:
                                 DownloadsListView()
+                            case .login(let profile):
+                                LoginView(profile: profile)
                             }
                         }
                 }
+                    .reserveMiniPlayer(visible: playback.currentSong != nil)
                     .tabItem { Label("设置".t, systemImage: "gearshape.fill") }
                     .tag(MainTab.settings)
             }

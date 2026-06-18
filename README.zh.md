@@ -16,10 +16,10 @@ SynoMusic 通过 DSM 的 Audio Station Web API 工作，提供干净流畅的 iO
 | :---: | :---: |
 | ![播放器](docs/screenshots/04-player.png) | ![编辑器](docs/screenshots/05-editor.png) |
 
-## 最新版本：1.3.1
+## 最新版本：1.3.2
 
-- 优化 QuickConnect 外网中继登录、设备地址刷新与账号切换反馈。
-- 优化播放页上下文标题、实际音质显示、进度拖动与歌词控制。
+- 优化 QuickConnect 外网中继登录，刷新并优先使用 HTTPS 设备地址。
+- 优化播放页歌词设置入口位置，并支持实时预览后再保存。
 - 完整更新见 [`CHANGELOG.md`](CHANGELOG.md)。
 
 ## 功能

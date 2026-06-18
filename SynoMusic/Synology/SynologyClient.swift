@@ -294,7 +294,8 @@ enum SynologyLoginHelper {
             preferred: .https,
             report: report
         )
-        return resolved.candidates.map { candidate in
+        let candidates = mergeSavedQuickConnectRelay(from: profile, with: resolved.candidates)
+        return candidates.map { candidate in
             var copy = profile
             copy.quickConnectID = id
             copy.host = candidate.host
@@ -320,7 +321,8 @@ enum SynologyLoginHelper {
             preferred: .https,
             report: report
         )
-        guard let candidate = resolved.candidates.first else {
+        let candidates = mergeSavedQuickConnectRelay(from: profile, with: resolved.candidates)
+        guard let candidate = candidates.first else {
             throw QuickConnectResolver.ResolveError.noHost
         }
         var copy = profile
@@ -330,6 +332,35 @@ enum SynologyLoginHelper {
         copy.scheme = candidate.scheme
         copy.ignoreInvalidCertificate = true
         return copy
+    }
+
+    /// 把上一次成功保存的 QuickConnect 中继地址放回候选列表首位。
+    private static func mergeSavedQuickConnectRelay(
+        from profile: ServerProfile,
+        with candidates: [QuickConnectResolver.Candidate]
+    ) -> [QuickConnectResolver.Candidate] {
+        guard let saved = savedQuickConnectRelay(from: profile) else { return candidates }
+        var seen = Set<String>()
+        return ([saved] + candidates).filter { candidate in
+            let key = "\(candidate.scheme.rawValue)://\(candidate.host.lowercased()):\(candidate.port)"
+            return seen.insert(key).inserted
+        }
+    }
+
+    /// 从服务器档案里提取已保存的 QuickConnect relay 地址。
+    private static func savedQuickConnectRelay(from profile: ServerProfile) -> QuickConnectResolver.Candidate? {
+        guard profile.isQuickConnect,
+              isQuickConnectRelayHost(profile.host),
+              profile.port > 0 else {
+            return nil
+        }
+        return QuickConnectResolver.Candidate(host: profile.host, port: profile.port, scheme: profile.scheme)
+    }
+
+    /// 判断 host 是否为群晖 QuickConnect 的中继域名。
+    private static func isQuickConnectRelayHost(_ host: String) -> Bool {
+        let lower = host.lowercased()
+        return lower.hasPrefix("synr-") && lower.contains(".direct.quickconnect.")
     }
 
     /// 仅 QuickConnect HTTPS 在证书信任/域名不匹配时自动重试一次。

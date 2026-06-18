@@ -16,10 +16,10 @@ SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a 
 | :---: | :---: |
 | ![Player](docs/screenshots/04-player.png) | ![Editor](docs/screenshots/05-editor.png) |
 
-## Latest release: 1.3.1
+## Latest release: 1.3.2
 
-- Improves QuickConnect relay login, resolved device address refresh, and account switching feedback.
-- Refines player context titles, effective quality display, scrubber seeking, and lyric controls.
+- Improves QuickConnect relay login with refreshed HTTPS tunnel resolution.
+- Refines lyric settings placement and live preview behavior in the full player.
 - See [`CHANGELOG.md`](CHANGELOG.md) for the full release notes.
 
 ## Features

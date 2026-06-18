@@ -9,6 +9,7 @@ struct SettingsView: View {
     @EnvironmentObject private var theme: ThemeManager
     @EnvironmentObject private var lm: LanguageManager
     @EnvironmentObject private var playbackSettings: PlaybackSettings
+    @EnvironmentObject private var navigation: AppNavigationState
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var serverInfo: [String: String] = [:]
@@ -79,18 +80,7 @@ struct SettingsView: View {
                 infoRow("名称".t, active.name)
                 if active.isQuickConnect {
                     infoRow("QuickConnect", active.quickConnectID)
-                    infoRow("设备地址".t, active.resolvedDisplayURL == "未获取" ? "未获取".t : active.resolvedDisplayURL)
-                    Button {
-                        Task { await refreshQuickConnectAddress(for: active) }
-                    } label: {
-                        HStack {
-                            if refreshingQuickConnectID == active.id {
-                                ProgressView()
-                            }
-                            Label("更新设备地址".t, systemImage: "arrow.clockwise")
-                        }
-                    }
-                    .disabled(refreshingQuickConnectID != nil)
+                    quickConnectAddressRow(for: active)
                 } else {
                     infoRow("地址".t, active.displayURL)
                 }
@@ -330,6 +320,67 @@ struct SettingsView: View {
         }
     }
 
+    /// 展示 QuickConnect 设备地址，支持复制和手动刷新。
+    private func quickConnectAddressRow(for profile: ServerProfile) -> some View {
+        let address = profile.resolvedDisplayURL == "未获取" ? "未获取".t : profile.resolvedDisplayURL
+        let isRefreshing = refreshingQuickConnectID == profile.id
+
+        return VStack(alignment: .leading, spacing: 10) {
+            Button {
+                copyDeviceAddress(address)
+            } label: {
+                HStack(spacing: 12) {
+                    Text("设备地址".t)
+                        .foregroundStyle(.primary)
+                    Spacer(minLength: 12)
+                    Text(address)
+                        .font(.nocCaption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Image(systemName: "doc.on.doc")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(address == "未获取".t ? Color.secondary.opacity(0.55) : theme.current.accent(in: colorScheme))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(address == "未获取".t)
+
+            Button {
+                Task { await refreshQuickConnectAddress(for: profile) }
+            } label: {
+                HStack(spacing: 6) {
+                    if isRefreshing {
+                        ProgressView()
+                            .controlSize(.mini)
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.caption.weight(.semibold))
+                    }
+                    Text("更新设备地址".t)
+                        .font(.nocCaption.weight(.semibold))
+                }
+                .foregroundStyle(theme.current.accent(in: colorScheme))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(theme.current.accent(in: colorScheme).opacity(0.12), in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .disabled(refreshingQuickConnectID != nil)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .padding(.vertical, 2)
+    }
+
+    /// 复制设备地址到剪贴板并给出轻量反馈。
+    private func copyDeviceAddress(_ address: String) {
+        guard !address.isEmpty, address != "未获取".t else { return }
+        UIPasteboard.general.string = address
+        playback.setStatus("已复制".t)
+        Haptics.tap()
+    }
+
     /// 加载当前 Audio Station 服务信息，用于设置页展示会话状态。
     private func loadServerInfo() async {
         guard let api = session.client?.audioStation else { return }
@@ -415,6 +466,7 @@ struct SettingsView: View {
         if p.id == session.client?.profile.id { return }
         guard let pwd = serverStore.password(for: p), !pwd.isEmpty else {
             playback.setStatus("「\(p.name)」" + "未保存密码，请在登录页输入".t)
+            navigation.openLogin(for: p)
             return
         }
         switchingProfileID = p.id

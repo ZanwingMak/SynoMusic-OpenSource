@@ -25,6 +25,10 @@ struct FullPlayerView: View {
     @State private var dominantColor: Color = Color(red: 0.18, green: 0.10, blue: 0.25)
     @State private var isSeeking: Bool = false
     @State private var seekDraft: TimeInterval = 0
+    @State private var showLyricSettings = false
+    @State private var draftLyricFontSize: Double = 18
+    @State private var draftLyricAutoScroll: Bool = true
+    @State private var draftLyricDelay: Double = 0
 
     /// 创建全屏播放器，并在调试参数要求时预展开右上角菜单。
     init(isPresented: Binding<Bool>) {
@@ -156,6 +160,16 @@ struct FullPlayerView: View {
                     .presentationDetents([.large])
             }
         }
+        .sheet(isPresented: $showLyricSettings) {
+            LyricSettingsSheet(
+                fontSize: $draftLyricFontSize,
+                autoScroll: $draftLyricAutoScroll,
+                delay: $draftLyricDelay,
+                onSave: saveLyricSettings,
+                onCancel: cancelLyricSettings
+            )
+            .presentationDetents([.height(360), .medium])
+        }
     }
 
     /// 删除确认提示文案，避免内联插值让 SwiftUI 编译器超时。
@@ -261,6 +275,22 @@ struct FullPlayerView: View {
     /// 是否有任一定时停止策略已激活，决定月亮图标着色。
     private var sleepActive: Bool {
         playback.sleepRemaining != nil || playback.stopAtTrackEnd
+    }
+
+    /// 歌词字号预览值；设置面板打开时使用草稿，关闭后回到已保存设置。
+    private var lyricPreviewFontSize: Double {
+        showLyricSettings ? draftLyricFontSize : playback.lyricFontSize
+    }
+
+    /// 歌词自动滚动预览值；保存前不写入播放器设置。
+    private var lyricPreviewAutoScroll: Bool {
+        showLyricSettings ? draftLyricAutoScroll : playback.lyricAutoScroll
+    }
+
+    /// 歌词当前行预览值；调整延迟时即时重算，但取消后不会影响播放引擎。
+    private var lyricPreviewCurrentIndex: Int? {
+        guard showLyricSettings else { return playback.currentLyricIndex }
+        return currentLyricIndex(using: draftLyricDelay)
     }
 
     // MARK: 子组件
@@ -592,15 +622,11 @@ extension FullPlayerView {
             if showLyrics {
                 LyricsPanel(
                     lines: playback.lyrics,
-                    currentIndex: playback.currentLyricIndex,
+                    currentIndex: lyricPreviewCurrentIndex,
                     isLoading: playback.isFetchingLyrics,
-                    fontSize: playback.lyricFontSize,
-                    autoScroll: playback.lyricAutoScroll,
-                    delay: playback.lyricDelay,
-                    onSeek: { playback.seek(to: $0) },
-                    onFontSizeChange: { playback.adjustLyricFontSize(by: $0) },
-                    onAutoScrollChange: { playback.setLyricAutoScroll($0) },
-                    onDelayChange: { playback.setLyricDelay($0) }
+                    fontSize: lyricPreviewFontSize,
+                    autoScroll: lyricPreviewAutoScroll,
+                    onSeek: { playback.seek(to: $0) }
                 )
                     .transition(.opacity)
             } else {
@@ -641,11 +667,16 @@ extension FullPlayerView {
 
     private var trackInfo: some View {
         HStack(alignment: .center, spacing: Metrics.m) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: showLyrics ? 4 : 6) {
+                if showLyrics {
+                    lyricSettingsButton
+                        .transition(.scale(scale: 0.82).combined(with: .opacity))
+                }
+
                 Text(playback.currentSong?.title ?? "")
                     .font(.nocTitleHero)
                     .foregroundStyle(.white)
-                    .lineLimit(2)
+                    .lineLimit(showLyrics ? 1 : 2)
                 HStack(spacing: 8) {
                     Text(playback.currentSong?.artist ?? "")
                         .font(.nocBody)
@@ -695,10 +726,25 @@ extension FullPlayerView {
                     .buttonStyle(.plain)
                     .accessibilityLabel(playlists.isFavorite(song) ? "取消喜欢".t : "喜欢".t)
                 }
-                .frame(width: 82)
+                .frame(width: 82, alignment: .trailing)
             }
         }
         .padding(.horizontal, Metrics.l)
+    }
+
+    /// 歌词设置入口；只在歌词页展示，放在标题块左上方。
+    private var lyricSettingsButton: some View {
+        Button {
+            openLyricSettings()
+        } label: {
+            Image(systemName: "music.note.list")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.75))
+                .frame(width: 28, height: 22, alignment: .leading)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("歌词设置".t)
     }
 
     /// 当前播放音质徽标。
@@ -850,6 +896,52 @@ extension FullPlayerView {
         return String(format: "%d:%02d", total / 60, total % 60)
     }
 
+    /// 按指定延迟重算当前歌词行，用于设置面板打开期间的实时预览。
+    private func currentLyricIndex(using delay: Double) -> Int? {
+        guard !playback.lyrics.isEmpty else { return nil }
+        let lyricClock = playback.currentTime + delay
+        var lo = 0
+        var hi = playback.lyrics.count - 1
+        var found: Int?
+        while lo <= hi {
+            let mid = (lo + hi) / 2
+            if playback.lyrics[mid].timestamp <= lyricClock {
+                found = mid
+                lo = mid + 1
+            } else {
+                hi = mid - 1
+            }
+        }
+        return found
+    }
+
+    /// 打开歌词设置前复制当前已保存值，之后的调整只影响本次预览。
+    private func openLyricSettings() {
+        Haptics.tap()
+        draftLyricFontSize = playback.lyricFontSize
+        draftLyricAutoScroll = playback.lyricAutoScroll
+        draftLyricDelay = playback.lyricDelay
+        showLyricSettings = true
+    }
+
+    /// 保存歌词设置草稿，并写入播放引擎和本地偏好。
+    private func saveLyricSettings() {
+        let fontDelta = draftLyricFontSize - playback.lyricFontSize
+        if abs(fontDelta) > 0.001 {
+            playback.adjustLyricFontSize(by: fontDelta)
+        }
+        playback.setLyricAutoScroll(draftLyricAutoScroll)
+        playback.setLyricDelay(draftLyricDelay)
+        Haptics.success()
+        showLyricSettings = false
+    }
+
+    /// 取消歌词设置草稿；因为草稿未写入播放引擎，关闭后会恢复已保存效果。
+    private func cancelLyricSettings() {
+        Haptics.tap()
+        showLyricSettings = false
+    }
+
     /// Slider 拖动中只更新本地预览，松手后再执行一次真实 seek，避免连续 seek 卡顿。
     private func handleSeekEditingChanged(_ editing: Bool) {
         if editing {
@@ -913,14 +1005,10 @@ private struct LyricsPanel: View {
     let isLoading: Bool
     let fontSize: Double
     let autoScroll: Bool
-    let delay: Double
     let onSeek: (TimeInterval) -> Void
-    let onFontSizeChange: (Double) -> Void
-    let onAutoScrollChange: (Bool) -> Void
-    let onDelayChange: (Double) -> Void
 
     var body: some View {
-        ZStack(alignment: .top) {
+        Group {
             if isLoading && lines.isEmpty {
                 VStack(spacing: 10) {
                     ProgressView()
@@ -949,7 +1037,7 @@ private struct LyricsPanel: View {
                                     onSeek(line.timestamp)
                                 } label: {
                                     Text(line.text.isEmpty ? "♪" : line.text)
-                                        .font(.system(size: idx == currentIndex ? fontSize + 4 : fontSize, weight: idx == currentIndex ? .bold : .regular, design: .rounded))
+                                        .font(.system(size: fontSize, weight: idx == currentIndex ? .semibold : .regular, design: .rounded))
                                         .foregroundStyle(idx == currentIndex ? .white : .white.opacity(0.5))
                                         .multilineTextAlignment(.center)
                                         .frame(maxWidth: .infinity)
@@ -968,8 +1056,8 @@ private struct LyricsPanel: View {
                             }
                         }
                         .padding(.horizontal, Metrics.l)
-                        .padding(.top, 56)
-                        .padding(.bottom, 40)
+                        .padding(.top, 20)
+                        .padding(.bottom, 72)
                     }
                     .onAppear {
                         if autoScroll { scrollToCurrent(proxy) }
@@ -982,65 +1070,8 @@ private struct LyricsPanel: View {
                         if enabled { scrollToCurrent(proxy) }
                     }
                 }
-                controls
             }
         }
-    }
-
-    /// 顶部歌词控制条：字号、自动滚动、时间偏移。
-    private var controls: some View {
-        HStack(spacing: 8) {
-            lyricControlButton(systemName: "textformat.size", accessibility: "减小字号".t) {
-                onFontSizeChange(-1)
-            }
-            lyricControlButton(systemName: "textformat.size", accessibility: "增大字号".t) {
-                onFontSizeChange(1)
-            }
-            .scaleEffect(1.12)
-
-            Button {
-                Haptics.tap()
-                onAutoScrollChange(!autoScroll)
-            } label: {
-                Image(systemName: autoScroll ? "arrow.down.to.line" : "hand.raised")
-                    .frame(width: 28, height: 28)
-                    .foregroundStyle(autoScroll ? Theme.accent : .white.opacity(0.75))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("跟随进度滚动".t)
-
-            Spacer(minLength: 0)
-
-            lyricControlButton(systemName: "minus.circle", accessibility: "减少歌词延迟".t) {
-                onDelayChange(delay - 0.1)
-            }
-            Text(String(format: "%+.1fs", delay))
-                .font(.caption.monospacedDigit().weight(.semibold))
-                .foregroundStyle(.white.opacity(0.82))
-                .frame(width: 48)
-            lyricControlButton(systemName: "plus.circle", accessibility: "增加歌词延迟".t) {
-                onDelayChange(delay + 0.1)
-            }
-        }
-        .padding(.horizontal, 12)
-        .frame(height: 38)
-        .background(.black.opacity(0.24), in: Capsule(style: .continuous))
-        .padding(.horizontal, Metrics.l)
-        .padding(.top, 4)
-    }
-
-    /// 生成歌词控制条内的轻量图标按钮。
-    private func lyricControlButton(systemName: String, accessibility: String, action: @escaping () -> Void) -> some View {
-        Button {
-            Haptics.tap()
-            action()
-        } label: {
-            Image(systemName: systemName)
-                .frame(width: 28, height: 28)
-                .foregroundStyle(.white.opacity(0.82))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(accessibility)
     }
 
     /// 把当前歌词行滚动到中间。
@@ -1048,6 +1079,64 @@ private struct LyricsPanel: View {
         guard let currentIndex else { return }
         withAnimation(.easeInOut(duration: 0.4)) {
             proxy.scrollTo(currentIndex, anchor: .center)
+        }
+    }
+}
+
+/// 歌词设置面板：先编辑草稿，保存后才应用到播放引擎。
+private struct LyricSettingsSheet: View {
+    @Binding var fontSize: Double
+    @Binding var autoScroll: Bool
+    @Binding var delay: Double
+    let onSave: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("字体大小".t) {
+                    Stepper(value: $fontSize, in: 16...28, step: 1) {
+                        valueRow(title: "字体大小".t, value: "\(Int(fontSize))")
+                    }
+                    Slider(value: $fontSize, in: 16...28, step: 1)
+                }
+                Section("歌词延迟".t) {
+                    Stepper(value: $delay, in: -3...3, step: 0.1) {
+                        valueRow(title: "歌词延迟".t, value: formattedDelay)
+                    }
+                    Slider(value: $delay, in: -3...3, step: 0.1)
+                }
+                Section {
+                    Toggle("跟随进度滚动".t, isOn: $autoScroll)
+                }
+            }
+            .navigationTitle("歌词设置".t)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("取消".t) { onCancel() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("保存".t) { onSave() }
+                        .fontWeight(.semibold)
+                }
+            }
+        }
+    }
+
+    /// 当前歌词延迟的展示文本。
+    private var formattedDelay: String {
+        String(format: "%+.1fs", delay)
+    }
+
+    /// 设置项标题和值的紧凑展示行。
+    private func valueRow(title: String, value: String) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(value)
+                .font(.caption.monospacedDigit().weight(.semibold))
+                .foregroundStyle(.secondary)
         }
     }
 }
