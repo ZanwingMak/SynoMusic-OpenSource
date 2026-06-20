@@ -5,6 +5,15 @@
 
 ## [Unreleased]
 
+## [1.3.5] - 2026-06-20
+
+### 修复
+- 修复播放中被其他 App 媒体中断后，播放按钮仍显示为播放中的问题。
+- 修复其他 App 媒体结束后，SynoMusic 未按中断前状态自动恢复播放的问题。
+
+### 版本
+- 发布版本号更新为 `1.3.5`。
+
 ## [1.3.4] - 2026-06-18
 
 ### 修复
@@ -350,7 +359,8 @@
 - Swift 6 严格并发：`SynologyClient` / `AudioStationAPI` 标记 `@unchecked Sendable` 并加锁保护 `sid`
 - iOS 17.0 起；以 Xcode 26 / Swift 6.3 通过编译
 
-[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.4...HEAD
+[Unreleased]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.5...HEAD
+[1.3.5]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.4...v1.3.5
 [1.3.4]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.3...v1.3.4
 [1.3.3]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/ZanwingMak/SynoMusic/compare/v1.3.1...v1.3.2

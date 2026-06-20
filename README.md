@@ -16,10 +16,10 @@ SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a 
 | :---: | :---: |
 | ![Player](docs/screenshots/04-player.png) | ![Editor](docs/screenshots/05-editor.png) |
 
-## Latest release: 1.3.4
+## Latest release: 1.3.5
 
-- Fixes returning from the password sign-in page opened from Settings.
-- Keeps server switching smooth when a profile needs manual password entry.
+- Keeps the player button state accurate when another app interrupts audio.
+- Restores SynoMusic playback automatically after the external interruption ends.
 - See [`CHANGELOG.md`](CHANGELOG.md) for the full release notes.
 
 ## Features

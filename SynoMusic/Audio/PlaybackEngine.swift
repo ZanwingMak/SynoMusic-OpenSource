@@ -114,6 +114,8 @@ final class PlaybackEngine: ObservableObject {
     /// 播放偏好（后台播放 / 锁屏 / AirPlay）；由 App 注入。
     private var settings: PlaybackSettings?
     private var bgObserver: NSObjectProtocol?
+    private var foregroundObserver: NSObjectProtocol?
+    private var audioInterruptionObserver: NSObjectProtocol?
 
     // MARK: 私有
 
@@ -124,6 +126,8 @@ final class PlaybackEngine: ObservableObject {
     private var failObserver: NSObjectProtocol?
     /// 当前曲目的 status 订阅；切歌时取消。
     private var statusCancel: AnyCancellable?
+    /// 播放器状态订阅；用于把外部暂停 / 恢复同步回 UI。
+    private var playbackStateCancel: AnyCancellable?
     private var bag = Set<AnyCancellable>()
     private var originalQueue: [Song] = []   // 用于关闭随机时还原
     private var demoTicker: Task<Void, Never>?
@@ -153,10 +157,15 @@ final class PlaybackEngine: ObservableObject {
     private var lastActivityUpdate: Date = .distantPast
     /// 是否正处于 Demo 模拟（apiClient 为 nil 但用户仍点歌的场景）。
     private var isDemoPlayback: Bool = false
+    /// 音频会话被系统中断前是否处于播放状态，用于中断结束后恢复。
+    private var shouldResumeAfterInterruption: Bool = false
 
     init() {
         loadHistories()
         setupAudioSession()
+        setupAudioSessionInterruptionObserver()
+        setupAppLifecycleObservers()
+        setupPlaybackStateObserver()
         setupRemoteCommands()
         setupTimeObserver()
         setupEndObserver()
@@ -202,34 +211,36 @@ final class PlaybackEngine: ObservableObject {
         if isPlaying { pause() } else { resume() }
     }
 
+    /// 用户主动暂停播放，并清掉待自动恢复标记。
     func pause() {
+        shouldResumeAfterInterruption = false
         player.pause()
-        isPlaying = false
-        updateNowPlayingPlaybackState()
-        refreshLiveActivity()
+        setPlayingState(false)
     }
 
+    /// 用户主动恢复播放；必要时重新激活音频会话。
     func resume() {
+        shouldResumeAfterInterruption = false
+        activateAudioSessionIfNeeded()
         if isDemoPlayback {
-            isPlaying = true
+            setPlayingState(true)
             startDemoTicker()
-            updateNowPlayingPlaybackState()
             return
         }
         // 若从未加载，尝试加载当前。
         if player.currentItem == nil { loadCurrent(autoPlay: true); return }
         player.play()
-        isPlaying = true
-        updateNowPlayingPlaybackState()
-        refreshLiveActivity()
+        setPlayingState(true)
     }
 
+    /// 停止播放并清空队列，同时重置中断恢复状态。
     func stop() {
+        shouldResumeAfterInterruption = false
         player.pause()
         player.removeAllItems()
         demoTicker?.cancel()
         isDemoPlayback = false
-        isPlaying = false
+        setPlayingState(false)
         queue = []
         currentIndex = -1
         currentTime = 0
@@ -428,8 +439,11 @@ final class PlaybackEngine: ObservableObject {
         observeFailure(for: item)
 
         if autoPlay {
+            activateAudioSessionIfNeeded()
             player.play()
-            isPlaying = true
+            setPlayingState(true)
+        } else {
+            setPlayingState(false)
         }
 
         Task { @MainActor in
@@ -450,7 +464,7 @@ final class PlaybackEngine: ObservableObject {
         currentTime = 0
         effectiveQuality = quality
         isBuffering = false
-        isPlaying = autoPlay
+        setPlayingState(autoPlay)
         setStatus("演示模式：尚未连接服务器，未真实播放。", persistent: true)
         updateNowPlayingMetadata()
         if autoPlay { startDemoTicker() }
@@ -608,7 +622,7 @@ final class PlaybackEngine: ObservableObject {
                     } else {
                         self.setStatus("无法播放".t + ": \(reason)")
                         self.isBuffering = false
-                        self.isPlaying = false
+                        self.setPlayingState(false)
                     }
                 default:
                     break
@@ -739,6 +753,139 @@ final class PlaybackEngine: ObservableObject {
         }
     }
 
+    /// 在需要播放或恢复时激活音频会话；失败时保持 UI 可操作。
+    private func activateAudioSessionIfNeeded() {
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            // 音频会话激活失败时，AVPlayer 后续仍会给出状态 / 错误回调。
+        }
+    }
+
+    /// 监听系统音频中断：其他 App 播放媒体时同步暂停状态，中断结束后按需恢复。
+    private func setupAudioSessionInterruptionObserver() {
+        audioInterruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] notification in
+            let rawType = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+            Task { @MainActor in
+                self?.handleAudioSessionInterruption(typeRawValue: rawType)
+            }
+        }
+    }
+
+    /// 处理音频中断开始 / 结束事件，保证 UI 状态和恢复策略与系统音频会话一致。
+    private func handleAudioSessionInterruption(typeRawValue: UInt?) {
+        guard
+            let rawType = typeRawValue,
+            let type = AVAudioSession.InterruptionType(rawValue: rawType)
+        else { return }
+
+        switch type {
+        case .began:
+            shouldResumeAfterInterruption = isPlaying || player.timeControlStatus == .playing
+            player.pause()
+            demoTicker?.cancel()
+            isBuffering = false
+            setPlayingState(false)
+        case .ended:
+            let shouldResume = shouldResumeAfterInterruption
+            shouldResumeAfterInterruption = false
+            guard shouldResume, currentSong != nil else {
+                syncPlayingStateFromPlayer()
+                return
+            }
+            resumeAfterAudioSessionInterruption()
+        @unknown default:
+            syncPlayingStateFromPlayer()
+        }
+    }
+
+    /// 中断结束后的恢复入口；不依赖用户再次切回 App。
+    private func resumeAfterAudioSessionInterruption() {
+        activateAudioSessionIfNeeded()
+        if isDemoPlayback {
+            setPlayingState(true)
+            startDemoTicker()
+            return
+        }
+        if player.currentItem == nil {
+            loadCurrent(autoPlay: true)
+        } else {
+            player.play()
+            setPlayingState(true)
+        }
+    }
+
+    /// 监听 App 回到前台，修正被系统改动但未及时回调到 SwiftUI 的播放状态。
+    private func setupAppLifecycleObservers() {
+        foregroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.syncPlayingStateFromPlayer()
+            }
+        }
+    }
+
+    /// 监听 AVQueuePlayer 真实状态，修复外部媒体中断后按钮仍显示播放中的问题。
+    private func setupPlaybackStateObserver() {
+        playbackStateCancel = player.publisher(for: \.timeControlStatus, options: [.new])
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                Task { @MainActor in
+                    self?.handlePlayerTimeControlStatus(status)
+                }
+            }
+    }
+
+    /// 根据播放器 timeControlStatus 更新缓冲和播放状态。
+    private func handlePlayerTimeControlStatus(_ status: AVPlayer.TimeControlStatus) {
+        guard !isDemoPlayback else { return }
+        switch status {
+        case .playing:
+            isBuffering = false
+            setPlayingState(true)
+        case .paused:
+            isBuffering = false
+            setPlayingState(false)
+        case .waitingToPlayAtSpecifiedRate:
+            isBuffering = true
+        @unknown default:
+            break
+        }
+    }
+
+    /// 从播放器当前状态回写 SwiftUI 状态，用于前台恢复和系统事件兜底。
+    private func syncPlayingStateFromPlayer() {
+        guard !isDemoPlayback else { return }
+        switch player.timeControlStatus {
+        case .playing:
+            setPlayingState(true)
+        case .paused:
+            setPlayingState(false)
+        case .waitingToPlayAtSpecifiedRate:
+            isBuffering = true
+        @unknown default:
+            break
+        }
+    }
+
+    /// 统一更新播放状态，并同步锁屏信息和 Live Activity。
+    private func setPlayingState(_ playing: Bool) {
+        guard isPlaying != playing else {
+            updateNowPlayingPlaybackState()
+            return
+        }
+        isPlaying = playing
+        updateNowPlayingPlaybackState()
+        refreshLiveActivity()
+    }
+
     /// 应用播放偏好；启用后立刻按当前开关重新配置 audio session
     /// 并订阅 `didEnterBackgroundNotification` 在「后台播放」关闭时进入后台自动暂停。
     func applyPlaybackSettings(_ settings: PlaybackSettings) {
@@ -788,7 +935,7 @@ final class PlaybackEngine: ObservableObject {
                 }
                 if self.repeatMode == .one {
                     self.seek(to: 0)
-                    self.player.play()
+                    self.resume()
                 } else {
                     self.next()
                 }

@@ -16,10 +16,10 @@ SynoMusic 通过 DSM 的 Audio Station Web API 工作，提供干净流畅的 iO
 | :---: | :---: |
 | ![播放器](docs/screenshots/04-player.png) | ![编辑器](docs/screenshots/05-editor.png) |
 
-## 最新版本：1.3.4
+## 最新版本：1.3.5
 
-- 修复从设置页打开密码登录页后，登录成功不会自动返回设置页的问题。
-- 优化需要手动输入密码时的服务器切换体验。
+- 修复播放中被其他 App 媒体中断后，播放按钮状态不准确的问题。
+- 修复其他 App 媒体结束后，SynoMusic 未按中断前状态自动恢复播放的问题。
 - 完整更新见 [`CHANGELOG.md`](CHANGELOG.md)。
 
 ## 功能
