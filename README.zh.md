@@ -4,6 +4,8 @@
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
+[官网](https://zanwingmak.github.io/SynoMusic/) · [最新版本](https://github.com/ZanwingMak/SynoMusic/releases/latest)
+
 SynoMusic 通过 DSM 的 Audio Station Web API 工作，提供干净流畅的 iOS 原生体验：浏览、搜索、播放、本地多歌单收藏、全球电台、锁屏与灵动岛全控制。
 
 ## 截图

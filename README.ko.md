@@ -4,6 +4,8 @@
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
+[공식 웹사이트](https://zanwingmak.github.io/SynoMusic/) · [최신 릴리스](https://github.com/ZanwingMak/SynoMusic/releases/latest)
+
 SynoMusic은 DSM의 Audio Station Web API를 통해 깨끗하고 빠른 iOS 네이티브 경험을 제공합니다: 라이브러리 탐색, 검색, 재생, 로컬 플레이리스트, 전 세계 라디오, 잠금 화면과 다이내믹 아일랜드에서의 완전한 컨트롤.
 
 ## 스크린샷

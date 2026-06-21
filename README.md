@@ -4,6 +4,8 @@
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
+[Official Website](https://zanwingmak.github.io/SynoMusic/) · [Latest Release](https://github.com/ZanwingMak/SynoMusic/releases/latest)
+
 SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a clean, fast, iOS-native music experience: browse, search, play, sync favorites and custom playlists, listen to global radio, and control everything from the Lock Screen and Dynamic Island.
 
 ## Screenshots
