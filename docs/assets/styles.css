@@ -50,6 +50,7 @@ a {
 img {
   display: block;
   max-width: 100%;
+  height: auto;
 }
 
 button,
@@ -442,8 +443,8 @@ h3 {
 
 .features {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-rows: minmax(210px, auto);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: minmax(190px, auto);
   gap: 16px;
 }
 
@@ -481,13 +482,17 @@ h3 {
   box-shadow: 0 30px 60px rgba(45, 34, 41, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
-.feature-panel.large,
-.feature-panel.wide {
+.feature-panel {
   grid-column: span 2;
 }
 
+.feature-panel.large,
 .feature-panel.tall {
-  grid-row: span 2;
+  grid-column: span 3;
+}
+
+.feature-panel.wide {
+  grid-column: span 2;
 }
 
 .feature-icon {
@@ -542,12 +547,17 @@ h3 {
 
 .screen-rail {
   display: grid;
-  grid-template-columns: repeat(4, minmax(210px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: clamp(18px, 2.4vw, 30px);
 }
 
 .screen-rail figure {
   margin: 0;
+  padding: 10px 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 38px;
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .screen-rail figure:nth-child(even) {
@@ -556,6 +566,8 @@ h3 {
 
 .screen-rail img {
   width: 100%;
+  aspect-ratio: 1206 / 2622;
+  object-fit: contain;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 34px;
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.38);
@@ -776,6 +788,7 @@ h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .feature-panel,
   .feature-panel.large,
   .feature-panel.wide,
   .feature-panel.tall {
