@@ -4,9 +4,18 @@
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
-[官网](https://zanwingmak.github.io/SynoMusic/) · [最新版本](https://github.com/ZanwingMak/SynoMusic/releases/latest)
+[官网](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [最新版本](https://github.com/ZanwingMak/SynoMusic-OpenSource/releases/latest)
 
 SynoMusic 通过 DSM 的 Audio Station Web API 工作，提供干净流畅的 iOS 原生体验：浏览、搜索、播放、本地多歌单收藏、全球电台、锁屏与灵动岛全控制。
+
+## 开源版说明
+
+这个仓库包含 SynoMusic iOS App 的开源代码，包括主 App、灵动岛 / Live Activity 扩展、本地歌单与下载存储、Synology Audio Station API 客户端，以及 GitHub Pages 官网。
+
+- 你需要准备自己的群晖 NAS、DSM 账号和 Audio Station 权限；仓库不包含演示服务器、代理服务或任何内置账号。
+- Release IPA 只是为了方便安装；如果从源码构建，需要在 Xcode 中使用你自己的 Apple 开发者签名。
+- 账号凭证保存在 iOS Keychain，下载歌曲保存在 App 沙盒内。
+- 仓库截图和示例使用的是脱敏示例数据，请不要提交真实 NAS 地址、QuickConnect ID 或账号信息。
 
 ## 截图
 
@@ -40,22 +49,23 @@ SynoMusic 通过 DSM 的 Audio Station Web API 工作，提供干净流畅的 iO
 ## 系统要求
 
 - **iOS 17** 及更新
+- 从源码构建需要 **Xcode 26** 或更新
 - 群晖 NAS，已安装 **Audio Station** 并给目标账号开启 Audio Station 权限
 - 灵动岛：iPhone 14 Pro 及更新
 
 ## 从源代码构建
 
-工程文件由 [XcodeGen](https://github.com/yonaskolb/XcodeGen) 生成。
+仓库中的 Xcode 工程由 [`project.yml`](project.yml) 通过 [XcodeGen](https://github.com/yonaskolb/XcodeGen) 生成。修改工程结构、Target、构建配置或资源后，请重新生成工程。
 
 ```bash
 brew install xcodegen
-git clone https://github.com/ZanwingMak/SynoMusic.git
-cd SynoMusic
+git clone https://github.com/ZanwingMak/SynoMusic-OpenSource.git
+cd SynoMusic-OpenSource
 xcodegen generate
 open SynoMusic.xcodeproj
 ```
 
-在 Xcode 中设置你自己的开发者签名后即可运行。
+在 Xcode → Signing & Capabilities 中为 `SynoMusic` 和 `SynoMusicLive` 设置你自己的开发者签名后即可在模拟器或真机运行。
 
 ## 赞助
 

@@ -4,9 +4,18 @@
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
-[Official Website](https://zanwingmak.github.io/SynoMusic/) · [Latest Release](https://github.com/ZanwingMak/SynoMusic/releases/latest)
+[Official Website](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [Latest Release](https://github.com/ZanwingMak/SynoMusic-OpenSource/releases/latest)
 
 SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a clean, fast, iOS-native music experience: browse, search, play, sync favorites and custom playlists, listen to global radio, and control everything from the Lock Screen and Dynamic Island.
+
+## Open-source edition
+
+This repository contains the open-source SynoMusic iOS app, including the main app target, Live Activity extension, local playlist/download storage, Synology Audio Station API client, and the GitHub Pages website.
+
+- You bring your own Synology NAS, DSM account, and Audio Station permissions. No demo server, proxy service, or bundled credentials are included.
+- The release IPA is provided for convenience; building from source requires your own Apple signing team in Xcode.
+- Credentials are stored in the iOS Keychain, and downloaded songs stay inside the app sandbox.
+- Screenshots and examples in this repository use anonymized sample data. Please avoid committing private NAS hosts, QuickConnect IDs, or account information.
 
 ## Screenshots
 
@@ -40,22 +49,23 @@ SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a 
 ## Requirements
 
 - iPhone running **iOS 17 or later**
+- Xcode **26** or newer when building from source
 - A Synology NAS with **Audio Station** installed and the target user granted Audio Station permission in DSM
 - For Dynamic Island: iPhone 14 Pro or newer
 
 ## Build from source
 
-This project is generated via [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+The checked-in Xcode project is generated from [`project.yml`](project.yml) via [XcodeGen](https://github.com/yonaskolb/XcodeGen). Regenerate it after changing project structure, targets, build settings, or resources.
 
 ```bash
 brew install xcodegen
-git clone https://github.com/ZanwingMak/SynoMusic.git
-cd SynoMusic
+git clone https://github.com/ZanwingMak/SynoMusic-OpenSource.git
+cd SynoMusic-OpenSource
 xcodegen generate
 open SynoMusic.xcodeproj
 ```
 
-Set your own development team in Xcode → Signing & Capabilities, then run on a simulator or device.
+Set your own development team in Xcode → Signing & Capabilities for both `SynoMusic` and `SynoMusicLive`, then run on a simulator or device.
 
 ## Project layout
 
