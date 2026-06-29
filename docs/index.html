@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <meta name="description" content="SynoMusic is a native iOS music client for Synology Audio Station.">
-  <title>SynoMusic - Native Synology music for iPhone</title>
+  <meta name="description" content="SynoMusic is a polished iPhone music app for Synology Audio Station, NAS libraries, podcasts, radio, lyrics, downloads and iCloud sync.">
+  <title>SynoMusic - Native NAS music for iPhone</title>
   <link rel="icon" href="./assets/images/app-icon-preview.png">
   <link rel="apple-touch-icon" href="./assets/images/app-icon-preview.png">
   <link rel="stylesheet" href="./assets/styles.css">
@@ -20,8 +20,9 @@
       <nav class="main-nav" aria-label="Primary">
         <a href="#features" data-i18n="nav.features">Features</a>
         <a href="#screens" data-i18n="nav.screens">Screens</a>
+        <a href="#pricing" data-i18n="nav.pricing">Full Access</a>
         <a href="./privacy.html" data-i18n="nav.privacy">Privacy</a>
-        <a href="#download" data-i18n="nav.download">Download</a>
+        <a href="#download" data-i18n="nav.download">App Store</a>
       </nav>
       <label class="language-picker">
         <span class="sr-only" data-i18n="language.label">Language</span>
@@ -32,25 +33,28 @@
           <option value="ja">日本語</option>
           <option value="ko">한국어</option>
           <option value="de">Deutsch</option>
+          <option value="it">Italiano</option>
           <option value="fr">Français</option>
+          <option value="es">Español</option>
+          <option value="tr">Türkçe</option>
         </select>
       </label>
     </header>
 
     <main id="top">
-      <section class="hero-section" aria-labelledby="hero-title">
+      <section class="hero-section commercial-hero" aria-labelledby="hero-title">
         <div class="hero-copy" data-reveal>
-          <p class="eyebrow" data-i18n="hero.eyebrow">Native iOS client for Synology Audio Station</p>
-          <h1 id="hero-title" data-i18n="hero.title">Your Synology music, finally native on iPhone.</h1>
-          <p class="hero-lede" data-i18n="hero.lede">Stream your NAS library with a polished player, synced lyrics, offline downloads, QuickConnect, Lock Screen controls and Dynamic Island support.</p>
+          <p class="eyebrow" data-i18n="hero.eyebrow">App Store version for Synology Audio Station</p>
+          <h1 id="hero-title" data-i18n="hero.title">Bring your NAS music library to iPhone.</h1>
+          <p class="hero-lede" data-i18n="hero.lede">SynoMusic turns your Synology Audio Station library into a native iOS music experience with lyrics, downloads, podcasts, radio, widgets, iCloud sync and a refined player.</p>
           <div class="hero-actions">
-            <a class="button primary" href="https://github.com/ZanwingMak/SynoMusic-OpenSource/releases/latest" data-i18n="hero.primaryCta">Download latest release</a>
-            <a class="button secondary" href="https://github.com/ZanwingMak/SynoMusic-OpenSource" data-i18n="hero.secondaryCta">View source</a>
+            <a class="button primary" href="https://apps.apple.com/app/id6784094020" data-i18n="hero.primaryCta">View on the App Store</a>
+            <a class="button secondary" href="#pricing" data-i18n="hero.secondaryCta">See Full Access</a>
           </div>
           <div class="hero-meta" aria-label="Highlights">
             <span data-i18n="hero.metaOne">iOS 17+</span>
-            <span data-i18n="hero.metaTwo">Audio Station</span>
-            <span data-i18n="hero.metaThree">7 languages</span>
+            <span data-i18n="hero.metaTwo">3-day trial</span>
+            <span data-i18n="hero.metaThree">Privacy-first</span>
           </div>
         </div>
 
@@ -62,71 +66,78 @@
           </div>
           <div class="status-float status-top">
             <span class="status-dot"></span>
-            <span data-i18n="hero.floatOne">Direct NAS streaming</span>
+            <span data-i18n="hero.floatOne">NAS streaming</span>
           </div>
           <div class="status-float status-bottom">
             <span class="wave-icon" aria-hidden="true"></span>
-            <span data-i18n="hero.floatTwo">Lyrics stay in sync</span>
+            <span data-i18n="hero.floatTwo">Live lyrics</span>
           </div>
         </div>
       </section>
 
       <section class="section intro-strip" aria-label="Product summary" data-reveal>
         <div>
-          <p class="section-kicker" data-i18n="intro.kicker">Built for your own library</p>
-          <h2 data-i18n="intro.title">A refined music app for the library you already own.</h2>
+          <p class="section-kicker" data-i18n="intro.kicker">Built for serious listeners</p>
+          <h2 data-i18n="intro.title">A commercial iPhone app for the library you already own.</h2>
         </div>
-        <p data-i18n="intro.body">SynoMusic keeps the NAS at the center: credentials stay in Keychain, playback uses native iOS media controls, and your albums, artists, playlists and folders stay reachable without forcing a cloud subscription.</p>
+        <p data-i18n="intro.body">Use your own NAS instead of giving up your library to another cloud. SynoMusic keeps credentials in Keychain, downloads in the app sandbox, and playback in native iOS controls.</p>
       </section>
 
       <section id="features" class="section feature-grid" aria-labelledby="features-title">
         <div class="section-heading" data-reveal>
-          <p class="section-kicker" data-i18n="features.kicker">What it handles</p>
-          <h2 id="features-title" data-i18n="features.title">Everything expected from a serious NAS music client.</h2>
+          <p class="section-kicker" data-i18n="features.kicker">What you get</p>
+          <h2 id="features-title" data-i18n="features.title">A complete music app around your Synology library.</h2>
         </div>
         <div class="features">
           <article class="feature-panel large" data-reveal>
             <div class="feature-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M4 17V7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
             </div>
-            <h3 data-i18n="features.library.title">Library first</h3>
+            <h3 data-i18n="features.library.title">NAS library</h3>
             <p data-i18n="features.library.body">Browse albums, artists, genres, folders, server playlists and every song with fast native navigation.</p>
           </article>
           <article class="feature-panel tall" data-reveal>
             <div class="feature-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
             </div>
-            <h3 data-i18n="features.player.title">Polished playback</h3>
-            <p data-i18n="features.player.body">AVQueuePlayer, AirPlay, Lock Screen controls, Dynamic Island and automatic format fallback when original streams fail.</p>
+            <h3 data-i18n="features.player.title">Polished player</h3>
+            <p data-i18n="features.player.body">Square artwork or vinyl-style player, AirPlay, Lock Screen controls, Dynamic Island and background playback.</p>
           </article>
           <article class="feature-panel" data-reveal>
             <div class="feature-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M12 3v18M5 8h14M7 16h10"/></svg>
             </div>
-            <h3 data-i18n="features.lyrics.title">Live lyrics</h3>
-            <p data-i18n="features.lyrics.body">Read synced lyrics, tune font size, offset and follow mode, or fetch lyrics online when the NAS has none.</p>
+            <h3 data-i18n="features.lyrics.title">Lyrics and metadata</h3>
+            <p data-i18n="features.lyrics.body">Synced lyrics, lyric editing, online lyric lookup, artwork search, and quick web searches for songs and artists.</p>
           </article>
           <article class="feature-panel" data-reveal>
             <div class="feature-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
             </div>
-            <h3 data-i18n="features.offline.title">Offline cache</h3>
-            <p data-i18n="features.offline.body">Download songs into the app sandbox and manage cached tracks from Settings.</p>
+            <h3 data-i18n="features.offline.title">Downloads and imports</h3>
+            <p data-i18n="features.offline.body">Download songs, import local files, add music from links, and keep selected music available offline.</p>
+          </article>
+          <article class="feature-panel" data-reveal>
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 13a8 8 0 0 1 16 0"/><path d="M5 13v5M19 13v5M9 18h6"/></svg>
+            </div>
+            <h3 data-i18n="features.discovery.title">Podcasts and radio</h3>
+            <p data-i18n="features.discovery.body">Find podcasts by charts, language, category, country or region, and browse global radio stations.</p>
           </article>
           <article class="feature-panel wide" data-reveal>
             <div class="feature-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M12 3a7 7 0 0 0-7 7v3a7 7 0 0 0 14 0v-3a7 7 0 0 0-7-7Z"/><path d="M9 10h6M9 14h6"/></svg>
             </div>
-            <h3 data-i18n="features.quickconnect.title">QuickConnect and direct servers</h3>
-            <p data-i18n="features.quickconnect.body">Use HTTPS, local hosts, DDNS or QuickConnect with saved profiles and Keychain credentials.</p>
+            <h3 data-i18n="features.sync.title">iCloud and widgets</h3>
+            <p data-i18n="features.sync.body">Sync selected settings with iCloud, customize widgets, and keep your favorite entry points close.</p>
           </article>
         </div>
       </section>
 
       <section id="screens" class="section screen-showcase" aria-labelledby="screens-title">
         <div class="section-heading" data-reveal>
-          <p class="section-kicker" data-i18n="screens.kicker">Screens that feel at home on iOS</p>
-          <h2 id="screens-title" data-i18n="screens.title">Library, player and settings designed for repeated daily use.</h2>
+          <p class="section-kicker" data-i18n="screens.kicker">Designed for daily listening</p>
+          <h2 id="screens-title" data-i18n="screens.title">Library, player, settings and editing screens that feel at home on iOS.</h2>
         </div>
         <div class="screen-rail" aria-label="Application screenshots">
           <figure data-reveal>
@@ -148,14 +159,39 @@
         </div>
       </section>
 
+      <section id="pricing" class="section pricing-section" aria-labelledby="pricing-title">
+        <div class="section-heading" data-reveal>
+          <p class="section-kicker" data-i18n="pricing.kicker">Full Access</p>
+          <h2 id="pricing-title" data-i18n="pricing.title">Start with a 3-day trial, then choose the plan that fits.</h2>
+          <p data-i18n="pricing.body">Subscriptions unlock the complete feature set while active. Lifetime unlock is a one-time purchase for long-term use.</p>
+        </div>
+        <div class="pricing-grid">
+          <article class="pricing-card" data-reveal>
+            <span data-i18n="pricing.weekly.label">Weekly</span>
+            <strong data-i18n="pricing.weekly.title">Short trial listening</strong>
+            <p data-i18n="pricing.weekly.body">Good for trying the full app quickly.</p>
+          </article>
+          <article class="pricing-card highlighted" data-reveal>
+            <span data-i18n="pricing.yearly.label">Yearly</span>
+            <strong data-i18n="pricing.yearly.title">Best for everyday listening</strong>
+            <p data-i18n="pricing.yearly.body">A balanced plan for a personal NAS library.</p>
+          </article>
+          <article class="pricing-card" data-reveal>
+            <span data-i18n="pricing.lifetime.label">Lifetime</span>
+            <strong data-i18n="pricing.lifetime.title">One purchase</strong>
+            <p data-i18n="pricing.lifetime.body">Unlock once for long-term ownership.</p>
+          </article>
+        </div>
+      </section>
+
       <section id="privacy" class="section trust-section" aria-labelledby="privacy-title">
         <div class="trust-copy" data-reveal>
           <p class="section-kicker" data-i18n="privacy.kicker">Private by design</p>
           <h2 id="privacy-title" data-i18n="privacy.title">Your NAS stays the source of truth.</h2>
-          <p data-i18n="privacy.body">SynoMusic is an unofficial Audio Station client. It connects to your DSM account, stores passwords in iOS Keychain and keeps downloads inside the app sandbox.</p>
+          <p data-i18n="privacy.body">SynoMusic connects directly to the server you add. Passwords are stored in iOS Keychain, downloads stay inside the app sandbox, and purchases are handled by Apple StoreKit.</p>
           <div class="hero-actions legal-actions">
-            <a class="button legal-primary" href="./privacy.html">Privacy Policy</a>
-            <a class="button legal-secondary" href="./terms.html">Terms of Use</a>
+            <a class="button legal-primary" href="./privacy.html" data-i18n="privacy.policyCta">Privacy Policy</a>
+            <a class="button legal-secondary" href="./terms.html" data-i18n="privacy.termsCta">Terms of Use</a>
           </div>
         </div>
         <div class="state-board" data-reveal aria-live="polite">
@@ -166,8 +202,8 @@
           </div>
           <div class="state-row empty">
             <span></span>
-            <strong data-i18n="states.empty.title">No radio matches</strong>
-            <small data-i18n="states.empty.body">Change a filter and keep browsing.</small>
+            <strong data-i18n="states.empty.title">No server yet</strong>
+            <small data-i18n="states.empty.body">Add your NAS when you are ready.</small>
           </div>
           <div class="state-row error">
             <span></span>
@@ -181,13 +217,13 @@
         <div class="download-card">
           <img src="./assets/images/app-icon.png" width="96" height="96" alt="">
           <div>
-            <p class="section-kicker" data-i18n="download.kicker">Latest release</p>
-            <h2 id="download-title" data-i18n="download.title">Install SynoMusic 1.3.5</h2>
-            <p data-i18n="download.body">Download the latest unsigned IPA from GitHub, self-sign it with your preferred tool, or build from source with XcodeGen.</p>
+            <p class="section-kicker" data-i18n="download.kicker">Available on the App Store</p>
+            <h2 id="download-title" data-i18n="download.title">Get SynoMusic for iPhone.</h2>
+            <p data-i18n="download.body">Install the commercial App Store version for TestFlight-ready updates, in-app purchases, restore purchases, redeem codes and localized legal pages.</p>
           </div>
           <div class="download-actions">
-            <a class="button primary" href="https://github.com/ZanwingMak/SynoMusic-OpenSource/releases/latest" data-i18n="download.primaryCta">Get the IPA</a>
-            <a class="button secondary" href="https://github.com/ZanwingMak/SynoMusic-OpenSource#build-from-source" data-i18n="download.secondaryCta">Build from source</a>
+            <a class="button primary" href="https://apps.apple.com/app/id6784094020" data-i18n="download.primaryCta">Open App Store</a>
+            <a class="button secondary" href="https://github.com/ZanwingMak/SynoMusic-OpenSource/issues" data-i18n="download.secondaryCta">Feedback</a>
           </div>
         </div>
       </section>
@@ -195,11 +231,11 @@
 
     <footer class="site-footer">
       <span>SynoMusic</span>
-      <span data-i18n="footer.note">Unofficial Synology Audio Station client.</span>
+      <span data-i18n="footer.note">Commercial App Store version and open-source support site.</span>
       <div class="footer-links">
-        <a href="./privacy.html">Privacy</a>
-        <a href="./terms.html">Terms</a>
-        <a href="https://github.com/ZanwingMak/SynoMusic-OpenSource" data-i18n="footer.github">GitHub</a>
+        <a href="./privacy.html" data-i18n="footer.privacy">Privacy</a>
+        <a href="./terms.html" data-i18n="footer.terms">Terms</a>
+        <a href="https://github.com/ZanwingMak/SynoMusic-OpenSource" data-i18n="footer.github">Open source</a>
       </div>
     </footer>
   </div>

@@ -4,13 +4,13 @@
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
-[Official Website](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [Privacy Policy](https://zanwingmak.github.io/SynoMusic-OpenSource/privacy.html) · [Terms of Use](https://zanwingmak.github.io/SynoMusic-OpenSource/terms.html) · [Latest Release](https://github.com/ZanwingMak/SynoMusic-OpenSource/releases/latest)
+[Commercial Website](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [Privacy Policy](https://zanwingmak.github.io/SynoMusic-OpenSource/privacy.html) · [Terms of Use](https://zanwingmak.github.io/SynoMusic-OpenSource/terms.html) · [Latest Release](https://github.com/ZanwingMak/SynoMusic-OpenSource/releases/latest)
 
 SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a clean, fast, iOS-native music experience: browse, search, play, sync favorites and custom playlists, listen to global radio, and control everything from the Lock Screen and Dynamic Island.
 
 ## Open-source edition
 
-This repository contains the open-source SynoMusic iOS app, including the main app target, Live Activity extension, local playlist/download storage, Synology Audio Station API client, and the GitHub Pages website.
+This repository contains the open-source SynoMusic iOS app, including the main app target, Live Activity extension, local playlist/download storage, Synology Audio Station API client, and the GitHub Pages support site. The GitHub Pages homepage is also used as the public marketing website for the commercial App Store version.
 
 - You bring your own Synology NAS, DSM account, and Audio Station permissions. No demo server, proxy service, or bundled credentials are included.
 - The release IPA is provided for convenience; building from source requires your own Apple signing team in Xcode.
