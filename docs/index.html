@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <meta name="description" content="SynoMusic is a polished iPhone music app for Synology Audio Station, NAS libraries, podcasts, radio, lyrics, downloads and iCloud sync.">
-  <title>SynoMusic - Native NAS music for iPhone</title>
+  <meta name="description" content="SynoMusic is a polished iPhone music app for self-hosted music sources including Synology Audio Station, Plex, Jellyfin, Emby, WebDAV, SMB, local files, podcasts, radio, lyrics, downloads and iCloud sync.">
+  <title>SynoMusic - Self-hosted music for iPhone</title>
   <link rel="icon" href="./assets/images/app-icon-preview.png">
   <link rel="apple-touch-icon" href="./assets/images/app-icon-preview.png">
   <link rel="stylesheet" href="./assets/styles.css">
@@ -44,9 +44,9 @@
     <main id="top">
       <section class="hero-section commercial-hero" aria-labelledby="hero-title">
         <div class="hero-copy" data-reveal>
-          <p class="eyebrow" data-i18n="hero.eyebrow">App Store version for Synology Audio Station</p>
-          <h1 id="hero-title" data-i18n="hero.title">Bring your NAS music library to iPhone.</h1>
-          <p class="hero-lede" data-i18n="hero.lede">SynoMusic turns your Synology Audio Station library into a native iOS music experience with lyrics, downloads, podcasts, radio, widgets, iCloud sync and a refined player.</p>
+          <p class="eyebrow" data-i18n="hero.eyebrow">App Store version for self-hosted music</p>
+          <h1 id="hero-title" data-i18n="hero.title">Bring your own music library to iPhone.</h1>
+          <p class="hero-lede" data-i18n="hero.lede">SynoMusic turns Synology Audio Station, Plex, Jellyfin, Emby, WebDAV, SMB and local music into a native iOS listening experience with lyrics, downloads, podcasts, radio, widgets, iCloud sync and a refined player.</p>
           <div class="hero-actions">
             <a class="button primary" href="https://apps.apple.com/app/id6784094020" data-i18n="hero.primaryCta">View on the App Store</a>
             <a class="button secondary" href="#pricing" data-i18n="hero.secondaryCta">See Full Access</a>
@@ -66,7 +66,7 @@
           </div>
           <div class="status-float status-top">
             <span class="status-dot"></span>
-            <span data-i18n="hero.floatOne">NAS streaming</span>
+            <span data-i18n="hero.floatOne">Multi-source streaming</span>
           </div>
           <div class="status-float status-bottom">
             <span class="wave-icon" aria-hidden="true"></span>
@@ -80,21 +80,21 @@
           <p class="section-kicker" data-i18n="intro.kicker">Built for serious listeners</p>
           <h2 data-i18n="intro.title">A commercial iPhone app for the library you already own.</h2>
         </div>
-        <p data-i18n="intro.body">Use your own NAS instead of giving up your library to another cloud. SynoMusic keeps credentials in Keychain, downloads in the app sandbox, and playback in native iOS controls.</p>
+        <p data-i18n="intro.body">Use your own music source instead of giving up your library to another cloud. SynoMusic keeps credentials in Keychain, downloads in the app sandbox, and playback in native iOS controls.</p>
       </section>
 
       <section id="features" class="section feature-grid" aria-labelledby="features-title">
         <div class="section-heading" data-reveal>
           <p class="section-kicker" data-i18n="features.kicker">What you get</p>
-          <h2 id="features-title" data-i18n="features.title">A complete music app around your Synology library.</h2>
+          <h2 id="features-title" data-i18n="features.title">A complete music app around your self-hosted library.</h2>
         </div>
         <div class="features">
           <article class="feature-panel large" data-reveal>
             <div class="feature-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M4 17V7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
             </div>
-            <h3 data-i18n="features.library.title">NAS library</h3>
-            <p data-i18n="features.library.body">Browse albums, artists, genres, folders, server playlists and every song with fast native navigation.</p>
+            <h3 data-i18n="features.library.title">Music sources</h3>
+            <p data-i18n="features.library.body">Connect Synology Audio Station, Plex, Jellyfin, Emby, WebDAV, SMB or local files, then browse albums, artists, folders, playlists and every song with fast native navigation.</p>
           </article>
           <article class="feature-panel tall" data-reveal>
             <div class="feature-icon" aria-hidden="true">
@@ -174,7 +174,7 @@
           <article class="pricing-card highlighted" data-reveal>
             <span data-i18n="pricing.yearly.label">Yearly</span>
             <strong data-i18n="pricing.yearly.title">Best for everyday listening</strong>
-            <p data-i18n="pricing.yearly.body">A balanced plan for a personal NAS library.</p>
+            <p data-i18n="pricing.yearly.body">A balanced plan for a personal self-hosted music library.</p>
           </article>
           <article class="pricing-card" data-reveal>
             <span data-i18n="pricing.lifetime.label">Lifetime</span>
@@ -187,8 +187,8 @@
       <section id="privacy" class="section trust-section" aria-labelledby="privacy-title">
         <div class="trust-copy" data-reveal>
           <p class="section-kicker" data-i18n="privacy.kicker">Private by design</p>
-          <h2 id="privacy-title" data-i18n="privacy.title">Your NAS stays the source of truth.</h2>
-          <p data-i18n="privacy.body">SynoMusic connects directly to the server you add. Passwords are stored in iOS Keychain, downloads stay inside the app sandbox, and purchases are handled by Apple StoreKit.</p>
+          <h2 id="privacy-title" data-i18n="privacy.title">Your music source stays the source of truth.</h2>
+          <p data-i18n="privacy.body">SynoMusic connects directly to the source you add. Passwords and tokens are stored in iOS Keychain where applicable, exported server profiles do not include passwords, downloads stay inside the app sandbox, and purchases are handled by Apple StoreKit.</p>
           <div class="hero-actions legal-actions">
             <a class="button legal-primary" href="./privacy.html" data-i18n="privacy.policyCta">Privacy Policy</a>
             <a class="button legal-secondary" href="./terms.html" data-i18n="privacy.termsCta">Terms of Use</a>
@@ -198,12 +198,12 @@
           <div class="state-row loading">
             <span></span>
             <strong data-i18n="states.loading.title">Loading library</strong>
-            <small data-i18n="states.loading.body">Fetching albums from your NAS.</small>
+            <small data-i18n="states.loading.body">Fetching albums from your music source.</small>
           </div>
           <div class="state-row empty">
             <span></span>
             <strong data-i18n="states.empty.title">No server yet</strong>
-            <small data-i18n="states.empty.body">Add your NAS when you are ready.</small>
+            <small data-i18n="states.empty.body">Add your music source when you are ready.</small>
           </div>
           <div class="state-row error">
             <span></span>

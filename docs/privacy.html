@@ -53,22 +53,22 @@
         <div id="privacy-en" class="legal-language">
           <h2>English</h2>
           <h3>1. Our approach</h3>
-          <p>SynoMusic is a player for your personal music library and an unofficial client for Synology Audio Station. We do not operate a cloud music account service, we do not sell your personal information, and we do not intentionally collect your NAS password, music files, or listening content on servers operated by us.</p>
+          <p>SynoMusic is a player for your personal music library and an unofficial client for self-hosted music sources such as Synology Audio Station, Plex, Jellyfin, Emby, WebDAV, SMB, and local files. We do not operate a cloud music account service, we do not sell your personal information, and we do not intentionally collect your server password, tokens, music files, or listening content on servers operated by us.</p>
           <h3>2. Information processed on your device</h3>
-          <p>SynoMusic may store or process server address, QuickConnect ID, port, username, server label, login state, local playlists, favorites, playback history, download records, lyric settings, theme preferences, player settings, widget preferences, podcast subscriptions, imported local songs, and cached files.</p>
-          <p>Server passwords are stored in the iOS Keychain. Downloaded songs and imported files are stored in the app sandbox. Deleting the app usually removes local app data, but some Keychain or iCloud data may need to be managed through system settings or app features after reinstalling.</p>
-          <h3>3. NAS and media library access</h3>
-          <p>When you add your Synology NAS or a compatible Audio Station service, the app sends login, library, playback, lyrics, artwork, download, and metadata requests directly to the server address you provide. Your NAS, internet provider, DNS provider, or reverse proxy may log those requests. Only connect to servers and media content you are authorized to access.</p>
+          <p>SynoMusic may store or process server address, QuickConnect ID, port, username, server label, selected music library, provider type, Plex authorization token or server token, WebDAV/SMB path, login state, local playlists, favorites, playback history, download records, lyric settings, theme preferences, player settings, widget preferences, podcast subscriptions, imported local songs, and cached files.</p>
+          <p>Server passwords, tokens, and security-scoped folder permissions are stored in the iOS Keychain or the system-provided secure storage where applicable. Exported server profile files do not include passwords or Keychain-only secrets. Downloaded songs and imported files are stored in the app sandbox. Deleting the app usually removes local app data, but some Keychain or iCloud data may need to be managed through system settings or app features after reinstalling.</p>
+          <h3>3. Music source and media library access</h3>
+          <p>When you add Synology Audio Station, Plex, Jellyfin, Emby, WebDAV, SMB, or local files, the app sends login, library, playback, lyrics, artwork, download, and metadata requests directly to the source or third-party endpoint you choose. Your server, Plex account service, internet provider, DNS provider, reverse proxy, or file provider may log those requests. Only connect to servers, folders, and media content you are authorized to access.</p>
           <h3>4. iCloud sync</h3>
-          <p>If you enable iCloud sync, SynoMusic may sync selected configuration through Apple iCloud, such as server addresses, usernames, local playlists, theme, player style, widget choices, and appearance preferences. Passwords are not included in iCloud sync data. iCloud data is handled by Apple under Apple’s terms and privacy policy.</p>
+          <p>If you enable iCloud sync, SynoMusic may sync selected configuration through Apple iCloud, such as server addresses, usernames, selected libraries, local playlists, theme, player style, widget choices, and appearance preferences. Passwords and Keychain-only secrets are not included in iCloud sync data. iCloud data is handled by Apple under Apple’s terms and privacy policy.</p>
           <h3>5. Purchases and subscriptions</h3>
           <p>Subscriptions, free trials, lifetime unlocks, purchase restoration, and offer code redemption are handled by Apple App Store and StoreKit. We do not receive your full payment card number or billing details. The app reads product information, transaction state, renewal state, and entitlement state returned by StoreKit to unlock features and show subscription status.</p>
           <h3>6. Third-party services</h3>
-          <p>Some features request third-party services, such as Apple Podcasts / iTunes Search and public RSS feeds, Radio-Browser, LRCLIB, artwork lookup providers, or external web search links such as Google, Baidu, Wikipedia, and Moegirlpedia. Query terms, podcast or radio requests, IP address, device network information, and browser requests may be processed by those third parties under their own privacy policies.</p>
+          <p>Some features request third-party services, such as Plex authentication and server discovery, Apple Podcasts / iTunes Search and public RSS feeds, Radio-Browser, LRCLIB, artwork lookup providers, or external web search links such as Google, Baidu, Wikipedia, and Moegirlpedia. Query terms, podcast or radio requests, IP address, device network information, authorization status, and browser requests may be processed by those third parties under their own privacy policies.</p>
           <h3>7. Support and feedback</h3>
-          <p>If you contact the developer through GitHub Issues, email, App Store reviews, or other support channels, the content you choose to provide may include issue descriptions, device information, system version, screenshots, log snippets, or contact information. Please do not publicly submit NAS addresses, account names, passwords, tokens, or other sensitive information.</p>
+          <p>If you contact the developer through GitHub Issues, email, App Store reviews, or other support channels, the content you choose to provide may include issue descriptions, device information, system version, screenshots, log snippets, or contact information. Please do not publicly submit server addresses, account names, passwords, Plex tokens, WebDAV/SMB paths, or other sensitive information.</p>
           <h3>8. Data controls</h3>
-          <p>You can delete server profiles, downloads, playback history, local playlists, podcast subscriptions, and local imports in the app. You can also delete the app from iOS settings or manage iCloud data through Apple settings. Subscription cancellation, refunds, and purchase history are managed by Apple.</p>
+          <p>You can delete server profiles, downloads, playback history, local playlists, podcast subscriptions, and local imports in the app. You can also import or export server profiles; exported files are intended for your own backup and do not include passwords. You can delete the app from iOS settings or manage iCloud data through Apple settings. Subscription cancellation, refunds, and purchase history are managed by Apple.</p>
           <h3>9. Children, security, and updates</h3>
           <p>SynoMusic is not directed to children and does not knowingly collect personal information from children. We use iOS Keychain, the app sandbox, and system permissions to protect local data, but no network transmission or software system can be guaranteed to be absolutely secure. We may update this policy as features, laws, or review requirements change.</p>
           <h3>10. Contact</h3>
@@ -80,22 +80,22 @@
         <div id="privacy-zh-hans" class="legal-language">
           <h2>简体中文</h2>
           <h3>1. 我们的原则</h3>
-          <p>SynoMusic 是用于个人音乐库的播放器，也是 Synology Audio Station 的非官方客户端。我们不运营云端音乐账号服务，不出售你的个人信息，也不会主动把你的 NAS 密码、音乐文件或播放内容收集到我们自己的服务器。</p>
+          <p>SynoMusic 是用于个人音乐库的播放器，也是 Synology Audio Station、Plex、Jellyfin、Emby、WebDAV、SMB 和本地文件等自托管音乐源的非官方客户端。我们不运营云端音乐账号服务，不出售你的个人信息，也不会主动把你的服务器密码、令牌、音乐文件或播放内容收集到我们自己的服务器。</p>
           <h3>2. App 在本机处理的信息</h3>
-          <p>为了提供功能，SynoMusic 可能会在设备上保存或处理服务器地址、QuickConnect ID、端口、用户名、服务器备注、登录状态、本地歌单、收藏、播放历史、下载记录、歌词设置、主题偏好、播放器设置、小组件偏好、播客订阅、本地导入歌曲和缓存文件。</p>
-          <p>服务器密码保存在 iOS Keychain。下载歌曲和本地导入文件保存在 App 沙盒。删除 App 通常会移除本机 App 数据，但 Keychain 或 iCloud 中的部分数据可能需要通过系统设置或重新安装后的 App 功能单独处理。</p>
-          <h3>3. NAS 与媒体库访问</h3>
-          <p>当你添加自己的 Synology NAS 或兼容 Audio Station 服务时，App 会直接向你填写的服务器地址发送登录、资料库、播放、歌词、封面、下载和元数据请求。你的 NAS、网络服务商、DNS 服务商或反向代理可能会记录这些访问。请只连接你有权访问的服务器和媒体内容。</p>
+          <p>为了提供功能，SynoMusic 可能会在设备上保存或处理服务器地址、QuickConnect ID、端口、用户名、服务器备注、所选音乐库、音乐源类型、Plex 授权令牌或服务器 Token、WebDAV/SMB 路径、登录状态、本地歌单、收藏、播放历史、下载记录、歌词设置、主题偏好、播放器设置、小组件偏好、播客订阅、本地导入歌曲和缓存文件。</p>
+          <p>服务器密码、Token 和系统文件夹授权会按需保存在 iOS Keychain 或系统提供的安全存储中。导出的服务器配置文件不包含密码或仅保存在 Keychain 的敏感凭证。下载歌曲和本地导入文件保存在 App 沙盒。删除 App 通常会移除本机 App 数据，但 Keychain 或 iCloud 中的部分数据可能需要通过系统设置或重新安装后的 App 功能单独处理。</p>
+          <h3>3. 音乐源与媒体库访问</h3>
+          <p>当你添加 Synology Audio Station、Plex、Jellyfin、Emby、WebDAV、SMB 或本地文件时，App 会直接向你选择的音乐源或第三方端点发送登录、资料库、播放、歌词、封面、下载和元数据请求。你的服务器、Plex 账号服务、网络服务商、DNS 服务商、反向代理或文件提供方可能会记录这些访问。请只连接你有权访问的服务器、文件夹和媒体内容。</p>
           <h3>4. iCloud 同步</h3>
-          <p>如果你开启 iCloud 同步，SynoMusic 会通过 Apple iCloud 同步部分配置，例如服务器地址、用户名、本地歌单、主题、播放器样式、小组件选择和外观偏好。密码不会写入 iCloud 同步数据。iCloud 数据由 Apple 按其服务条款和隐私政策处理。</p>
+          <p>如果你开启 iCloud 同步，SynoMusic 会通过 Apple iCloud 同步部分配置，例如服务器地址、用户名、所选音乐库、本地歌单、主题、播放器样式、小组件选择和外观偏好。密码和仅保存在 Keychain 的敏感凭证不会写入 iCloud 同步数据。iCloud 数据由 Apple 按其服务条款和隐私政策处理。</p>
           <h3>5. 内购与订阅</h3>
           <p>订阅、免费试用、终身解锁、恢复购买和兑换码由 Apple App Store / StoreKit 处理。我们不会收到你的完整支付卡号或账单资料。App 只会读取 StoreKit 返回的商品信息、交易状态、续订状态和权益状态，用于解锁功能并显示订阅状态。</p>
           <h3>6. 第三方服务</h3>
-          <p>部分功能会请求第三方服务，例如 Apple Podcasts / iTunes 搜索与公开 RSS、Radio-Browser、LRCLIB、封面搜索服务，或 Google、百度、维基百科、萌娘百科等外部网页搜索入口。当你使用这些功能时，查询关键词、播客或电台请求、IP 地址、设备网络信息和浏览器请求可能由对应第三方服务处理，其隐私政策适用于其处理行为。</p>
+          <p>部分功能会请求第三方服务，例如 Plex 授权与服务器发现、Apple Podcasts / iTunes 搜索与公开 RSS、Radio-Browser、LRCLIB、封面搜索服务，或 Google、百度、维基百科、萌娘百科等外部网页搜索入口。当你使用这些功能时，查询关键词、播客或电台请求、IP 地址、设备网络信息、授权状态和浏览器请求可能由对应第三方服务处理，其隐私政策适用于其处理行为。</p>
           <h3>7. 支持与反馈</h3>
-          <p>如果你通过 GitHub Issues、电子邮件、App Store 评论或其他支持渠道联系开发者，你主动提供的内容可能包括问题描述、设备信息、系统版本、截图、日志片段或联系方式。请不要公开提交 NAS 地址、账号、密码、令牌或其他敏感信息。</p>
+          <p>如果你通过 GitHub Issues、电子邮件、App Store 评论或其他支持渠道联系开发者，你主动提供的内容可能包括问题描述、设备信息、系统版本、截图、日志片段或联系方式。请不要公开提交服务器地址、账号、密码、Plex Token、WebDAV/SMB 路径或其他敏感信息。</p>
           <h3>8. 数据删除与控制</h3>
-          <p>你可以在 App 内删除服务器配置、下载内容、播放历史、本地歌单、播客订阅或本地导入文件。你也可以在 iOS 设置中删除 App 或管理 iCloud 数据。订阅取消、退款和购买记录由 Apple 管理。</p>
+          <p>你可以在 App 内删除服务器配置、下载内容、播放历史、本地歌单、播客订阅或本地导入文件。你也可以导入或导出服务器配置；导出的文件仅用于你自己的备份，不包含密码。你也可以在 iOS 设置中删除 App 或管理 iCloud 数据。订阅取消、退款和购买记录由 Apple 管理。</p>
           <h3>9. 儿童、安全与更新</h3>
           <p>SynoMusic 不面向儿童提供专门服务，也不会有意收集儿童个人信息。我们使用 iOS Keychain、App 沙盒和系统权限保护本机数据，但任何网络传输和软件系统都不能保证绝对安全。我们可能会随功能、法律或审核要求更新本政策。</p>
           <h3>10. 联系方式</h3>
@@ -107,20 +107,20 @@
         <div id="privacy-zh-hant" class="legal-language">
           <h2>繁體中文</h2>
           <h3>1. 我們的原則</h3>
-          <p>SynoMusic 是用於個人音樂庫的播放器，也是 Synology Audio Station 的非官方用戶端。我們不營運雲端音樂帳號服務，不出售你的個人資訊，也不會主動把你的 NAS 密碼、音樂檔案或播放內容收集到我們自己的伺服器。</p>
+          <p>SynoMusic 是用於個人音樂庫的播放器，也是 Synology Audio Station、Plex、Jellyfin、Emby、WebDAV、SMB 和本機檔案等自託管音樂來源的非官方用戶端。我們不營運雲端音樂帳號服務，不出售你的個人資訊，也不會主動把你的伺服器密碼、令牌、音樂檔案或播放內容收集到我們自己的伺服器。</p>
           <h3>2. App 在本機處理的資訊</h3>
-          <p>SynoMusic 可能在裝置上保存或處理伺服器位址、QuickConnect ID、連接埠、使用者名稱、伺服器備註、登入狀態、本機歌單、收藏、播放記錄、下載記錄、歌詞設定、主題偏好、播放器設定、小工具偏好、Podcast 訂閱、本機匯入歌曲和快取檔案。</p>
-          <p>伺服器密碼保存在 iOS Keychain。下載歌曲和本機匯入檔案保存在 App 沙盒。刪除 App 通常會移除本機 App 資料，但 Keychain 或 iCloud 中的部分資料可能需要透過系統設定或重新安裝後的 App 功能另行處理。</p>
-          <h3>3. NAS 與媒體庫存取</h3>
-          <p>當你加入自己的 Synology NAS 或相容 Audio Station 服務時，App 會直接向你填寫的伺服器位址傳送登入、資料庫、播放、歌詞、封面、下載和中繼資料請求。你的 NAS、網路服務商、DNS 服務商或反向代理可能會記錄這些存取。請只連接你有權存取的伺服器和媒體內容。</p>
+          <p>SynoMusic 可能在裝置上保存或處理伺服器位址、QuickConnect ID、連接埠、使用者名稱、伺服器備註、所選音樂庫、音樂來源類型、Plex 授權令牌或伺服器 Token、WebDAV/SMB 路徑、登入狀態、本機歌單、收藏、播放記錄、下載記錄、歌詞設定、主題偏好、播放器設定、小工具偏好、Podcast 訂閱、本機匯入歌曲和快取檔案。</p>
+          <p>伺服器密碼、Token 和系統資料夾授權會按需保存在 iOS Keychain 或系統提供的安全儲存中。匯出的伺服器設定檔不包含密碼或僅保存在 Keychain 的敏感憑證。下載歌曲和本機匯入檔案保存在 App 沙盒。刪除 App 通常會移除本機 App 資料，但 Keychain 或 iCloud 中的部分資料可能需要透過系統設定或重新安裝後的 App 功能另行處理。</p>
+          <h3>3. 音樂來源與媒體庫存取</h3>
+          <p>當你加入 Synology Audio Station、Plex、Jellyfin、Emby、WebDAV、SMB 或本機檔案時，App 會直接向你選擇的音樂來源或第三方端點傳送登入、資料庫、播放、歌詞、封面、下載和中繼資料請求。你的伺服器、Plex 帳號服務、網路服務商、DNS 服務商、反向代理或檔案提供方可能會記錄這些存取。請只連接你有權存取的伺服器、資料夾和媒體內容。</p>
           <h3>4. iCloud 同步</h3>
-          <p>如果你開啟 iCloud 同步，SynoMusic 會透過 Apple iCloud 同步部分設定，例如伺服器位址、使用者名稱、本機歌單、主題、播放器樣式、小工具選擇和外觀偏好。密碼不會寫入 iCloud 同步資料。iCloud 資料由 Apple 依其服務條款和隱私權政策處理。</p>
+          <p>如果你開啟 iCloud 同步，SynoMusic 會透過 Apple iCloud 同步部分設定，例如伺服器位址、使用者名稱、所選音樂庫、本機歌單、主題、播放器樣式、小工具選擇和外觀偏好。密碼和僅保存在 Keychain 的敏感憑證不會寫入 iCloud 同步資料。iCloud 資料由 Apple 依其服務條款和隱私權政策處理。</p>
           <h3>5. 內購與訂閱</h3>
           <p>訂閱、免費試用、終身解鎖、恢復購買和兌換碼由 Apple App Store / StoreKit 處理。我們不會收到你的完整付款卡號或帳單資料。App 只會讀取 StoreKit 返回的商品資訊、交易狀態、續訂狀態和權益狀態，用於解鎖功能並顯示訂閱狀態。</p>
           <h3>6. 第三方服務</h3>
-          <p>部分功能會請求第三方服務，例如 Apple Podcasts / iTunes 搜尋與公開 RSS、Radio-Browser、LRCLIB、封面搜尋服務，或 Google、百度、維基百科、萌娘百科等外部網頁搜尋入口。使用這些功能時，查詢關鍵字、Podcast 或電台請求、IP 位址、裝置網路資訊和瀏覽器請求可能由對應第三方服務處理。</p>
+          <p>部分功能會請求第三方服務，例如 Plex 授權與伺服器探索、Apple Podcasts / iTunes 搜尋與公開 RSS、Radio-Browser、LRCLIB、封面搜尋服務，或 Google、百度、維基百科、萌娘百科等外部網頁搜尋入口。使用這些功能時，查詢關鍵字、Podcast 或電台請求、IP 位址、裝置網路資訊、授權狀態和瀏覽器請求可能由對應第三方服務處理。</p>
           <h3>7. 支援、資料控制與聯絡</h3>
-          <p>你可以在 App 內刪除伺服器設定、下載內容、播放記錄、本機歌單、Podcast 訂閱或本機匯入檔案。訂閱取消、退款和購買記錄由 Apple 管理。如需支援、回饋或隱私請求，請透過 GitHub Issues 聯絡：<a href="https://github.com/ZanwingMak/SynoMusic-OpenSource/issues">https://github.com/ZanwingMak/SynoMusic-OpenSource/issues</a></p>
+          <p>你可以在 App 內刪除伺服器設定、下載內容、播放記錄、本機歌單、Podcast 訂閱或本機匯入檔案，也可以匯入或匯出伺服器設定；匯出的檔案僅供你自行備份，不包含密碼。訂閱取消、退款和購買記錄由 Apple 管理。如需支援、回饋或隱私請求，請透過 GitHub Issues 聯絡：<a href="https://github.com/ZanwingMak/SynoMusic-OpenSource/issues">https://github.com/ZanwingMak/SynoMusic-OpenSource/issues</a></p>
         </div>
 
         <hr class="legal-divider">

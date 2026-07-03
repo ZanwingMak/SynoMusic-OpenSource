@@ -1,18 +1,19 @@
 # SynoMusic
 
-> A beautiful, native iOS music client for your Synology NAS — built on Audio Station.
+> A beautiful, native iOS music client for self-hosted music libraries.
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
 [Commercial Website](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [Privacy Policy](https://zanwingmak.github.io/SynoMusic-OpenSource/privacy.html) · [Terms of Use](https://zanwingmak.github.io/SynoMusic-OpenSource/terms.html) · [Latest Release](https://github.com/ZanwingMak/SynoMusic-OpenSource/releases/latest)
 
-SynoMusic talks to the Audio Station Web API on your Synology DSM to give you a clean, fast, iOS-native music experience: browse, search, play, sync favorites and custom playlists, listen to global radio, and control everything from the Lock Screen and Dynamic Island.
+SynoMusic gives personal music libraries a clean, fast, iOS-native experience: browse, search, play, sync favorites and custom playlists, listen to global radio, and control everything from the Lock Screen and Dynamic Island. The commercial App Store version is positioned for multiple music sources including Synology Audio Station, Plex, Jellyfin, Emby, WebDAV, SMB, and local files.
 
 ## Open-source edition
 
-This repository contains the open-source SynoMusic iOS app, including the main app target, Live Activity extension, local playlist/download storage, Synology Audio Station API client, and the GitHub Pages support site. The GitHub Pages homepage is also used as the public marketing website for the commercial App Store version.
+This repository contains the open-source SynoMusic iOS app, including the main app target, Live Activity extension, local playlist/download storage, Synology Audio Station API client, and the GitHub Pages support site. The GitHub Pages homepage is also used as the public marketing website and legal/support site for the commercial App Store version; commercial-only implementation is not mirrored here.
 
-- You bring your own Synology NAS, DSM account, and Audio Station permissions. No demo server, proxy service, or bundled credentials are included.
+- You bring your own music server, account, media files, and permissions. No demo server, proxy service, or bundled credentials are included.
+- The open-source code currently focuses on Synology Audio Station; the App Store version may include additional private integrations such as Plex, Jellyfin, Emby, WebDAV, SMB, local imports, subscriptions, and review-mode behavior.
 - The release IPA is provided for convenience; building from source requires your own Apple signing team in Xcode.
 - Credentials are stored in the iOS Keychain, and downloaded songs stay inside the app sandbox.
 - Screenshots and examples in this repository use anonymized sample data. Please avoid committing private NAS hosts, QuickConnect IDs, or account information.
@@ -35,7 +36,7 @@ This repository contains the open-source SynoMusic iOS app, including the main a
 
 ## Features
 
-- **NAS first**: Multi-server profiles with Keychain credentials, 2FA (OTP), self-signed certificate trust, HTTPS/QuickConnect
+- **Self-hosted first**: Multi-server profiles with Keychain credentials, 2FA (OTP), self-signed certificate trust, HTTPS/QuickConnect where supported
 - **Streaming**: AVQueuePlayer, automatic raw → MP3 transcode fallback when a format is unsupported, AirPlay, CarPlay-compatible Remote Command Center
 - **Library**: Albums, Artists, Genres, Folders, Server playlists, *All Songs* with paginated load and sort
 - **Local playlists**: Multiple custom playlists, "Favorites" as a pinned built-in, batch edit, multi-add via sheet
@@ -50,7 +51,7 @@ This repository contains the open-source SynoMusic iOS app, including the main a
 
 - iPhone running **iOS 17 or later**
 - Xcode **26** or newer when building from source
-- A Synology NAS with **Audio Station** installed and the target user granted Audio Station permission in DSM
+- For this open-source build: a Synology NAS with **Audio Station** installed and the target user granted Audio Station permission in DSM
 - For Dynamic Island: iPhone 14 Pro or newer
 
 ## Build from source
@@ -102,4 +103,4 @@ If SynoMusic saves you a Spotify subscription, consider supporting development.
 
 This project is licensed under the **GNU General Public License v3.0**. See [`LICENSE`](LICENSE).
 
-> SynoMusic is an unofficial Audio Station client. *Synology*, *DSM*, and *Audio Station* are trademarks of Synology Inc.
+> SynoMusic is an unofficial client for personal music sources. *Synology*, *DSM*, *Audio Station*, *Plex*, *Jellyfin*, *Emby*, and related names are trademarks of their respective owners.
