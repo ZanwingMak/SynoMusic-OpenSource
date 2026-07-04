@@ -26,12 +26,14 @@
 }
 
 html {
+  overflow-x: hidden;
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
 body {
+  overflow-x: hidden;
   min-width: 320px;
   margin: 0;
   background:
@@ -1001,61 +1003,148 @@ h3 {
 
   .site-header {
     top: 10px;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
     margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: 22px;
   }
 
   .brand span {
     display: none;
   }
 
+  .brand img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .language-picker {
+    justify-self: end;
+    min-width: 0;
+  }
+
   .language-picker select {
     max-width: 118px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .hero-section {
-    gap: 18px;
-    padding-bottom: 40px;
+    gap: 22px;
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 14px;
+    padding: 32px 18px 28px;
+    border-radius: 30px;
+  }
+
+  .hero-copy {
+    max-width: 100%;
+    min-width: 0;
   }
 
   h1 {
-    font-size: clamp(2.85rem, 16vw, 4.5rem);
+    margin-bottom: 16px;
+    font-size: clamp(2.35rem, 12vw, 3.4rem);
+    line-height: 1;
   }
 
   h2 {
-    font-size: clamp(2rem, 11vw, 3.4rem);
+    font-size: clamp(1.95rem, 9.5vw, 3rem);
+    line-height: 1.03;
+  }
+
+  .hero-lede,
+  .intro-strip p,
+  .trust-copy p,
+  .download-card p,
+  .legal-lede {
+    font-size: 1rem;
   }
 
   .hero-actions,
   .download-actions {
     display: grid;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .button {
+    min-width: 0;
+    width: 100%;
+    min-height: 46px;
+    padding-inline: 14px;
+    text-align: center;
+  }
+
+  .hero-meta {
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .hero-meta span {
+    padding: 7px 9px;
+    font-size: 0.8rem;
   }
 
   .hero-visual {
-    min-height: 500px;
+    min-height: 360px;
+    margin-top: 4px;
+  }
+
+  .visual-orbit {
+    inset: 20px 0 22px;
+    width: 100%;
+    border-radius: 28px;
   }
 
   .phone-stack {
-    min-height: 500px;
+    width: min(100%, 320px);
+    min-height: 360px;
+    margin-inline: auto;
   }
 
   .phone-shot {
-    width: min(72vw, 280px);
-    border-radius: 30px;
+    width: min(64vw, 214px);
+    border-radius: 24px;
+  }
+
+  .shot-front {
+    left: 6px;
+  }
+
+  .shot-back {
+    top: 34px;
+    right: 4px;
+    transform: rotate(6deg) translateX(10px) scale(0.88);
   }
 
   .status-float {
-    max-width: 190px;
+    max-width: 150px;
+    white-space: normal;
+    line-height: 1.15;
+    padding: 10px 11px;
     font-size: 0.82rem;
   }
 
   .status-top {
-    top: 72px;
+    top: 54px;
     left: 0;
   }
 
   .status-bottom {
     right: 0;
-    bottom: 78px;
+    bottom: 50px;
+  }
+
+  .section {
+    padding: 64px 0;
+  }
+
+  .intro-strip {
+    gap: 16px;
+    padding: 6px 0;
   }
 
   .features,
@@ -1066,29 +1155,122 @@ h3 {
 
   .screen-rail {
     display: flex;
-    gap: 18px;
-    margin-inline: -12px;
-    padding: 0 12px 10px;
+    gap: 14px;
+    margin-inline: 0;
+    padding: 0 2px 12px;
     overflow-x: auto;
     overscroll-behavior-inline: contain;
-    scroll-padding-inline: 12px;
+    scroll-padding-inline: 2px;
     scroll-snap-type: x mandatory;
     scrollbar-width: thin;
   }
 
   .screen-rail figure {
-    flex: 0 0 min(78vw, 330px);
+    flex: 0 0 min(76vw, 280px);
     margin-top: 0;
+    padding: 8px;
+    border-radius: 28px;
     scroll-snap-align: center;
   }
 
   .screen-rail img {
     width: 100%;
     margin: 0 auto;
+    border-radius: 24px;
+  }
+
+  .screen-showcase {
+    width: min(100% - 20px, 1320px);
+    padding: 46px 16px;
+    border-radius: 30px;
+  }
+
+  .feature-panel,
+  .pricing-card {
+    min-height: auto;
+    border-radius: 22px;
+  }
+
+  .feature-panel {
+    padding: 20px;
+  }
+
+  .feature-icon {
+    margin-bottom: 18px;
+  }
+
+  .state-row {
+    grid-template-columns: 38px 1fr;
+    padding: 14px;
+  }
+
+  .state-row span {
+    width: 38px;
+    height: 38px;
+    border-radius: 13px;
+  }
+
+  .download-section {
+    padding-bottom: 72px;
   }
 
   .download-card {
+    gap: 18px;
     justify-items: start;
+    border-radius: 26px;
+  }
+
+  .download-card img {
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+  }
+
+  .site-footer {
+    display: grid;
+    gap: 10px;
+    padding-bottom: 28px;
+  }
+
+  .legal-page {
+    width: min(100% - 20px, 980px);
+    padding: 56px 0 52px;
+  }
+
+  .legal-hero {
+    padding: 34px 0 24px;
+  }
+
+  .legal-hero h1 {
+    font-size: clamp(2.3rem, 12vw, 3.4rem);
+    line-height: 1;
+  }
+
+  .legal-index {
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .legal-index a {
+    padding: 8px 10px;
+    font-size: 0.82rem;
+  }
+
+  .legal-card {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .legal-language h2 {
+    margin-bottom: 20px;
+  }
+
+  .legal-language h3 {
+    font-size: 1.06rem;
+  }
+
+  .legal-divider {
+    margin: 32px 0;
   }
 }
 
@@ -1116,39 +1298,43 @@ h3 {
   }
 
   h1 {
-    font-size: clamp(2.5rem, 14vw, 3.55rem);
+    font-size: clamp(2.1rem, 11vw, 3rem);
   }
 
   h2 {
-    font-size: clamp(1.85rem, 10vw, 2.85rem);
+    font-size: clamp(1.75rem, 9.5vw, 2.5rem);
+  }
+
+  .hero-section {
+    padding: 28px 14px 24px;
   }
 
   .hero-visual {
-    min-height: 430px;
+    min-height: 330px;
   }
 
   .phone-stack {
-    width: 100%;
-    min-height: 430px;
+    width: min(100%, 288px);
+    min-height: 330px;
   }
 
   .phone-shot {
-    width: min(72vw, 238px);
+    width: min(62vw, 190px);
     border-radius: 26px;
   }
 
   .shot-back {
-    transform: rotate(7deg) translateX(12px) scale(0.88);
+    transform: rotate(6deg) translateX(8px) scale(0.88);
   }
 
   .status-float {
-    max-width: 168px;
-    padding: 10px 11px;
+    max-width: 134px;
+    padding: 9px 10px;
     font-size: 0.76rem;
   }
 
   .status-bottom {
-    bottom: 60px;
+    bottom: 42px;
   }
 
   .feature-panel,
@@ -1161,7 +1347,33 @@ h3 {
   }
 
   .screen-rail figure {
-    flex-basis: min(82vw, 300px);
+    flex-basis: min(78vw, 260px);
+  }
+
+  .legal-card {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 360px) {
+  .site-header,
+  .hero-section,
+  .section,
+  .site-footer,
+  .legal-page {
+    width: calc(100% - 16px);
+  }
+
+  .language-picker select {
+    max-width: 96px;
+  }
+
+  .phone-shot {
+    width: min(60vw, 176px);
+  }
+
+  .status-float {
+    display: none;
   }
 }
 
