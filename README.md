@@ -4,7 +4,7 @@
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
-[Commercial Website](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [Privacy Policy](https://zanwingmak.github.io/SynoMusic-OpenSource/privacy.html) · [Terms of Use](https://zanwingmak.github.io/SynoMusic-OpenSource/terms.html) · [Latest Release](https://github.com/ZanwingMak/SynoMusic-OpenSource/releases/latest)
+[Download on the App Store](https://apps.apple.com/us/app/synomusic/id6784094020) · [Commercial Website](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [Privacy Policy](https://zanwingmak.github.io/SynoMusic-OpenSource/privacy.html) · [Terms of Use](https://zanwingmak.github.io/SynoMusic-OpenSource/terms.html) · [Latest Release](https://github.com/ZanwingMak/SynoMusic-OpenSource/releases/latest)
 
 SynoMusic gives personal music libraries a clean, fast, iOS-native experience: browse, search, play, sync favorites and custom playlists, listen to global radio, and control everything from the Lock Screen and Dynamic Island. The commercial App Store version is positioned for multiple music sources including Synology Audio Station, Plex, Jellyfin, Emby, WebDAV, SMB, and local files.
 

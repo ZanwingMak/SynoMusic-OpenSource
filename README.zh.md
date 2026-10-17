@@ -4,7 +4,7 @@
 
 [English](README.md) · [简体中文](README.zh.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
 
-[官网](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [最新版本](https://github.com/ZanwingMak/SynoMusic-OpenSource/releases/latest)
+[在 App Store 下载](https://apps.apple.com/us/app/synomusic/id6784094020) · [官网](https://zanwingmak.github.io/SynoMusic-OpenSource/) · [最新版本](https://github.com/ZanwingMak/SynoMusic-OpenSource/releases/latest)
 
 SynoMusic 为个人音乐库提供干净流畅的 iOS 原生体验：浏览、搜索、播放、本地多歌单收藏、全球电台、锁屏与灵动岛全控制。商业 App Store 版本面向多种音乐源，包括 Synology Audio Station、Plex、Jellyfin、Emby、WebDAV、SMB 和本地文件。
 
